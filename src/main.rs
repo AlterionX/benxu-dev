@@ -1,32 +1,21 @@
 #![feature(proc_macro_hygiene, decl_macro)]
 
-#[macro_use] extern crate rocket;
+#[macro_use]
+extern crate rocket;
+extern crate maud;
+extern crate chrono;
 
-mod links;
-mod contacts;
-mod resume;
-mod projects;
-mod blog;
+mod routing;
+mod pages;
 
-#[get("/")]
-fn get_index() -> &'static str {
-    "Hello, world!"
-}
 
 fn main() {
     rocket::ignite().mount(
         "/",
-        routes![
-            get_index,
-            resume::get,
-            links::get,
-            contacts::get,
-            projects::get,
-            projects::project::get,
-        ],
+        routing::routes(),
     ).mount(
         "/blog",
-        blog::routes(),
+        routing::blog::routes(),
     ).launch();
 }
 

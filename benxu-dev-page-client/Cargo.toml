@@ -1,0 +1,11 @@
+[package]
+name = "benxu-dev-page-client"
+version = "0.1.0"
+authors = ["AlterionX <ben.xu.cs@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+maud = { version = "0.21.0", features = ["rocket"] }
+chrono = { version = "0.4.7", features = ["serde"] }
+serde = { version = "1.0.94", features = ["derive"] }
+

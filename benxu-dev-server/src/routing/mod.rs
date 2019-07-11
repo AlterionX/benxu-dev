@@ -1,6 +1,6 @@
 use crate::pages;
 use rocket::Route;
-use maud::{html, Markup};
+use maud::{Markup};
 
 mod links;
 mod contacts;
@@ -11,9 +11,7 @@ pub mod blog;
 #[get("/")]
 fn get_index() -> Markup {
     let msg = "msg";
-    pages::basic_page(html! {
-        p { (msg) }
-    }, None)
+    pages::index(msg)
 }
 
 pub fn routes() -> Vec<Route> {

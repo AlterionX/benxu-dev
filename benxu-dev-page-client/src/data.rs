@@ -1,16 +1,16 @@
-use maud::{Markup, html, DOCTYPE, Render};
+use maud::{Markup, html, Render};
 use chrono::{Utc, Datelike};
 
 pub struct MetaData<'a> {
-    lang: &'a str,
-    charset: &'a str,
-    scripts: &'a [Script],
-    css: &'a [Css],
-    title: &'a str,
-    description: &'a str,
-    copyright: Copyright<'a>,
-    menu: Option<&'a Menu<'a>>,
-    contact: Option<&'a Contact<'a>>
+    pub lang: &'a str,
+    pub charset: &'a str,
+    pub scripts: &'a [Script<'a>],
+    pub css: &'a [Css<'a>],
+    pub title: &'a str,
+    pub description: &'a str,
+    pub copyright: Copyright<'a>,
+    pub menu: Option<&'a Menu<'a>>,
+    pub contact: Option<&'a Contact<'a>>
 }
 impl <'a> MetaData<'a> {
     pub fn new() -> Self {
@@ -42,8 +42,26 @@ impl <'a> Default for MetaData<'a> {
         }
     }
 }
-pub struct Script;
-pub struct Css;
+pub struct Script<'a> {
+    src: &'a str,
+}
+impl<'a> Render for Script<'a> {
+    fn render(&self) -> Markup {
+        html! {
+            script href={ "/static/js/"(self.src) };
+        }
+    }
+}
+pub struct Css<'a> {
+    src: &'a str,
+}
+impl<'a> Render for Css<'a> {
+    fn render(&self) -> Markup {
+        html! {
+            link rel="stylesheet" href={ "/static/css/"(self.src) };
+        }
+    }
+}
 pub struct Email<'a> {
     user: &'a str,
     domain: &'a str,
@@ -68,7 +86,7 @@ impl<'a> Render for Contact<'a> {
         }
     }
 }
-struct Name<'a> {
+pub struct Name<'a> {
     first: &'a str,
     middle: Option<&'a str>,
     last: &'a str,
@@ -85,7 +103,7 @@ impl<'a> Render for Name<'a> {
         }
     }
 }
-struct Copyright<'a> {
+pub struct Copyright<'a> {
     name: &'a Name<'a>,
     icon: &'a str,
     rights_clause: &'a str,
@@ -146,62 +164,3 @@ impl <'a> Render for &Menu<'a> {
     }
 }
 
-fn head(meta: &MetaData) -> Markup {
-    html! {
-        head {
-            meta charset=(meta.charset);
-            title { (meta.title) }
-            meta name="description" content=(meta.description);
-        }
-    }
-}
-fn header(meta: &MetaData) -> Markup {
-    html! {
-        header {
-            @if let Some(menu) = meta.menu {
-                (menu)
-            }
-        }
-    }
-}
-fn footer(meta: &MetaData) -> Markup {
-    html! {
-        footer {
-            @if let Some(contact) = meta.contact {
-                (contact)
-            }
-            (meta.copyright)
-        }
-    }
-}
-fn body(m: Markup, meta: &MetaData) -> Markup {
-    html! {
-        body {
-            (header(meta))
-            main {
-                (m)
-            }
-            (footer(meta))
-        }
-    }
-}
-fn page(m: Markup, meta: &MetaData) -> Markup {
-    html! {
-        (DOCTYPE)
-        html lang=(meta.lang) {
-            (head(&meta))
-            (body(m, &meta))
-        }
-    }
-}
-pub fn basic_page(m: Markup, meta_data: Option<&MetaData>) -> Markup {
-    let store;
-    let meta;
-    if let Some(meta_ref) = meta_data {
-        meta = meta_ref;
-    } else {
-        store = MetaData::default();
-        meta = &store;
-    }
-    page(m, meta)
-}

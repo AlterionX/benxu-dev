@@ -1,6 +1,21 @@
 use maud::{Markup, html, Render};
 use chrono::{Utc, Datelike};
 
+pub struct LogoLink<'a> {
+    pub url: &'a str,
+    pub logo: &'a str,
+    pub alt_text: &'a str,
+}
+impl<'a> Render for LogoLink<'a> {
+    fn render(&self) -> Markup {
+        html! {
+            a href=(self.url) {
+                img.link-logo src=(self.logo) alt=(self.alt_text);
+            }
+        }
+    }
+}
+
 pub struct MetaData<'a> {
     pub lang: &'a str,
     pub charset: &'a str,
@@ -10,12 +25,13 @@ pub struct MetaData<'a> {
     pub description: &'a str,
     pub copyright: Copyright<'a>,
     pub menu: Option<&'a Menu<'a>>,
-    pub contact: Option<&'a Contact<'a>>
+    pub contact: Option<&'a Contact<'a>>,
+    pub logo: Option<&'a Logo<'a>>,
 }
 impl <'a> MetaData<'a> {
     pub fn new() -> Self {
         let meta = MetaData::default();
-        return meta;
+        meta
     }
 }
 impl <'a> Default for MetaData<'a> {
@@ -39,11 +55,22 @@ impl <'a> Default for MetaData<'a> {
             },
             menu: None,
             contact: None,
+            logo: None,
+        }
+    }
+}
+pub struct Logo<'a> {
+    pub src: &'a str,
+}
+impl<'a> Render for Logo<'a> {
+    fn render(&self) -> Markup {
+        html! {
+            img.logo src=(self.src);
         }
     }
 }
 pub struct Script<'a> {
-    src: &'a str,
+    pub src: &'a str,
 }
 impl<'a> Render for Script<'a> {
     fn render(&self) -> Markup {
@@ -53,18 +80,18 @@ impl<'a> Render for Script<'a> {
     }
 }
 pub struct Css<'a> {
-    src: &'a str,
+    pub src: &'a str,
 }
 impl<'a> Render for Css<'a> {
     fn render(&self) -> Markup {
         html! {
-            link rel="stylesheet" href={ "/static/css/"(self.src) };
+            link rel="stylesheet" href={ "/public/css/"(self.src)".css" };
         }
     }
 }
 pub struct Email<'a> {
-    user: &'a str,
-    domain: &'a str,
+    pub user: &'a str,
+    pub domain: &'a str,
 }
 pub enum PhoneNumber<'a> {
     US {
@@ -75,8 +102,8 @@ pub enum PhoneNumber<'a> {
     }
 }
 pub struct Contact<'a> {
-    email: &'a[Email<'a>],
-    phone: &'a[PhoneNumber<'a>],
+    pub email: &'a[Email<'a>],
+    pub phone: &'a[PhoneNumber<'a>],
 }
 impl<'a> Render for Contact<'a> {
     fn render(&self) -> Markup {
@@ -87,10 +114,10 @@ impl<'a> Render for Contact<'a> {
     }
 }
 pub struct Name<'a> {
-    first: &'a str,
-    middle: Option<&'a str>,
-    last: &'a str,
-    nicknames: &'a[&'a str],
+    pub first: &'a str,
+    pub middle: Option<&'a str>,
+    pub last: &'a str,
+    pub nicknames: &'a[&'a str],
 }
 impl<'a> Render for Name<'a> {
     fn render(&self) -> Markup {
@@ -104,9 +131,9 @@ impl<'a> Render for Name<'a> {
     }
 }
 pub struct Copyright<'a> {
-    name: &'a Name<'a>,
-    icon: &'a str,
-    rights_clause: &'a str,
+    pub name: &'a Name<'a>,
+    pub icon: &'a str,
+    pub rights_clause: &'a str,
 }
 impl<'a> Render for Copyright<'a> {
     fn render(&self) -> Markup {
@@ -114,14 +141,14 @@ impl<'a> Render for Copyright<'a> {
         let start_year = year - 1;
         let end_year = year + 1;
         html! {
-            p { (self.icon) " " (start_year) "-" (end_year) " " (self.name) ". " (self.rights_clause) "." }
+            p.copyright { (self.icon) " " (start_year) "-" (end_year) " " (self.name) ". " (self.rights_clause) "." }
         }
     }
 }
 pub struct MenuItem<'a> {
-    text: &'a str,
-    link: Option<&'a str>,
-    children: Option<&'a Menu<'a>>,
+    pub text: &'a str,
+    pub link: Option<&'a str>,
+    pub children: Option<&'a Menu<'a>>,
 }
 impl<'a> MenuItem<'a> {
     fn render_possible_link(link: Option<&str>, text: &str) -> Markup {
@@ -146,11 +173,11 @@ impl <'a> Render for MenuItem<'a> {
         }
     }
 }
-pub struct Menu<'a>([MenuItem<'a>]);
+pub struct Menu<'a>(pub &'a[MenuItem<'a>]);
 impl <'a> Render for Menu<'a> {
     fn render(&self) -> Markup {
         html! {
-            ul {
+            ul.menu {
                 @for item in self.0.iter() {
                     (item)
                 }

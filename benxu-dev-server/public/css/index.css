@@ -1,0 +1,22 @@
+.profile {
+    margin: auto;
+    text-align: center;
+}
+
+.propic {
+    width: 50vw;
+    height: 50vw;
+    max-width: 300px;
+    max-height: 300px;
+
+    border: solid #EEEEEE;
+    border-radius: 50%;
+
+    object-fit: cover;
+}
+.tagline {
+}
+
+.slide {
+    text-align: left;
+}

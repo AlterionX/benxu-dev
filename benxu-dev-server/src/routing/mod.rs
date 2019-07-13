@@ -10,8 +10,7 @@ pub mod blog;
 
 #[get("/")]
 fn get_index() -> Markup {
-    let msg = "msg";
-    pages::index(msg)
+    pages::index()
 }
 
 pub fn routes() -> Vec<Route> {

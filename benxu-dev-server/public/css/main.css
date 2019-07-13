@@ -1,0 +1,52 @@
+html, body {
+    min-height: 100%;
+}
+
+html {
+    /* The image used */
+    background-image: url("../img/site-bg.jpg");
+    background-color: #0000009e;
+    background-blend-mode: darken;
+
+    /* Full height */
+    height: 100%;
+    width: 100%;
+
+    /* Center and scale the image nicely */
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.site-header {
+    flex-grow: 0;
+    
+    width: 100%;
+
+    padding: 20px;
+}
+.site-body {
+    flex-grow: 1;
+
+    width: 100%;
+    max-width: 700px;
+
+    padding: 50px 50px;
+}
+.site-footer {
+    flex-grow: 0;
+
+    width: 100%;
+
+    padding: 20px 20px;
+}
+
+.copyright {
+    color: #CCCCCC;
+}

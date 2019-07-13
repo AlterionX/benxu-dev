@@ -7,15 +7,6 @@ fn head(meta: &MetaData) -> Markup {
             meta charset=(meta.charset);
             title { (meta.title) }
             meta name="description" content=(meta.description);
-        }
-    }
-}
-fn header(meta: &MetaData) -> Markup {
-    html! {
-        header {
-            @if let Some(menu) = meta.menu {
-                (menu)
-            }
             @for css in meta.css {
                 (css)
             }
@@ -25,9 +16,21 @@ fn header(meta: &MetaData) -> Markup {
         }
     }
 }
+fn header(meta: &MetaData) -> Markup {
+    html! {
+        header.site-header {
+            @if let Some(logo) = meta.logo {
+                (logo)
+            }
+            @if let Some(menu) = meta.menu {
+                (menu)
+            }
+        }
+    }
+}
 fn footer(meta: &MetaData) -> Markup {
     html! {
-        footer {
+        footer.site-footer {
             @if let Some(contact) = meta.contact {
                 (contact)
             }
@@ -38,8 +41,9 @@ fn footer(meta: &MetaData) -> Markup {
 fn body(m: Markup, meta: &MetaData) -> Markup {
     html! {
         body {
+            div.bg-img {}
             (header(meta))
-            main {
+            main.site-body {
                 (m)
             }
             (footer(meta))

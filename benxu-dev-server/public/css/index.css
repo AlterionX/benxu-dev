@@ -1,3 +1,10 @@
+.site-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
 .profile {
     margin: auto;
     text-align: center;
@@ -6,8 +13,12 @@
 .propic {
     width: 50vw;
     height: 50vw;
-    max-width: 300px;
-    max-height: 300px;
+    max-width: 160px;
+    max-height: 160px;
+    min-width: 100px;
+    min-height: 100px;
+
+    margin-bottom: 1.3em;
 
     border: solid #EEEEEE;
     border-radius: 50%;
@@ -15,8 +26,43 @@
     object-fit: cover;
 }
 .tagline {
+    font-size: 2.5em;
+
+    padding: 0.5em;
+    border: solid white;
+    margin-bottom: 1.5rem;
+
+    text-transform: uppercase;
 }
 
+.slides {
+    padding: 2em 0;
+    width: 100%;
+    box-sizing: content-box;
+}
 .slide {
+    visibility: hidden;
     text-align: left;
+    width: 100%;
+    opacity: 0;
+    transition: opacity 2s;
+}
+.active-slide {
+    visibility: visible;
+    opacity: 1;
+}
+
+.slide-heading {
+    font-size: 1.3em;
+    margin-bottom: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-bottom: 1em;
+}
+.slide-text {
+    margin-bottom: 1em;
+}
+
+.intro ul {
+    list-style: square inside;
 }

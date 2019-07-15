@@ -5,17 +5,19 @@ html, body {
 html {
     /* The image used */
     background-image: url("../img/site-bg.jpg");
-    background-color: #0000009e;
+    background-color: #000000ae;
     background-blend-mode: darken;
-
-    /* Full height */
-    height: 100%;
-    width: 100%;
+    background-attachment: fixed;
 
     /* Center and scale the image nicely */
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
+
+    /* Full height */
+    height: 100%;
+    width: 100%;
+    min-width: 408px;
 }
 
 body {
@@ -24,9 +26,13 @@ body {
     align-items: center;
 }
 
+li {
+    padding-left: 2rem;
+}
+
 .site-header {
     flex-grow: 0;
-    
+
     width: 100%;
 
     padding: 20px;
@@ -35,9 +41,9 @@ body {
     flex-grow: 1;
 
     width: 100%;
-    max-width: 700px;
+    max-width: calc(700px + 2em);
 
-    padding: 50px 50px;
+    padding: 50px 2em;
 }
 .site-footer {
     flex-grow: 0;
@@ -47,6 +53,31 @@ body {
     padding: 20px 20px;
 }
 
+.logo {
+}
+
 .copyright {
     color: #CCCCCC;
 }
+
+.link-group {
+}
+.link-anchor {
+    display: inline-flex;
+    margin-right: 0.75em;
+    align-items: center;
+    justify-content: center;;
+}
+.link-anchor:last-of-type {
+    padding-right: 0;
+}
+.link-logo {
+    max-height: 2rem;
+    filter: invert(0%);
+    vertical-align: middle;
+    margin-right: 0.5em;
+}
+.link-anchor:hover > .link-logo {
+    filter: invert(50%);
+}
+

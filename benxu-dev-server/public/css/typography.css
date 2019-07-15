@@ -1,3 +1,17 @@
 * {
     color: #EEEEEE;
+    font-size: 16px;
+    line-height: 1.3em;
+}
+
+.italic {
+    font-style: italic;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+li, p {
+    margin-bottom: 0.3em;
 }

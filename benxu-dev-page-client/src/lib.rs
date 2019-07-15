@@ -3,118 +3,135 @@
 mod data;
 mod partials;
 
-use maud::{Markup, html, Render, PreEscaped};
+use maud::{Markup, html, Render};
 
-fn slide<T: Render, U: Render>(title: T, text: U) -> Markup {
+fn link_group<'a>() -> Markup {
+    let links = vec![data::LogoLink {
+        url: "https://github.com/AlterionX/",
+        logo: "public/img/icon/github.png",
+        alt_text: "Github",
+        text: "AlterionX",
+    }, data::LogoLink {
+        url: "mailto:ben.xu.cs@gmail.com",
+        logo: "public/img/icon/email.svg",
+        alt_text: "Email",
+        text: "ben.xu.cs@gmail.com",
+    }];
     html! {
-        .slide {
-            h2.slide-title { (title) }
+        .link-group {
+            @for link in links.iter() {
+                (link)
+            }
+        }
+    }
+}
+
+fn slides() -> Markup {
+    html! {
+        .slides {
+            (my_intro())
+            (my_story())
+            (my_interests())
+            (my_passion())
+            (my_free_time())
+        }
+    }
+}
+fn slide<T: Render, U: Render>(title: T, text: U, cls: Option<&str>) -> Markup {
+    html! {
+        div class={ "slide" @if let Some(cls) = cls { " " (cls) } } {
+            h2.slide-heading { (title) }
             .slide-text { (text) }
         }
     }
 }
 fn my_intro() -> Markup {
-    slide(
-        "Nice to meet you,",
-        html! {
-            p { "I'm Ben, a developer. but I've said that already, haven't I? Well, in that case, I am:" }
-
-            ul {
-                li {
-                    "an architect; I dream of clean code structures and consistency."
-                }
-                li {
-                    "a writer; " a href="https://www.nanowrimo.org/participants/alterionx/novels" { "NaNoWriMo" } " \
-                    (a.k.a. November) is simultaneously my favorite and most hated month of the year."
-                }
-                li {
-                    "a gamer; can't wait for " a href="https://www.cyberpunk.net/us/en/" { "Cyberpunk 2077." }
-                }
-                li {
-                    "a linguist: I technically know Chinese, and am studying Japanese."
-                }
-                li {
-                    "a reader; I love to read. But that can get long, so let's save the details for later."
-                }
-                li {
-                    "a programmer; I love to code. But that can also get long, so let's save the details for later, too."
-                }
+    slide("Nice to meet you", html! {
+        p { "My name is Ben. I am a developer, but I am also:" }
+        ul {
+            li {
+                "a reader; I love to read. But that can get long, so let's save the details for later."
             }
-
-            p {
-                "But mostly, I just enjoy watching pretty colors scroll really " span { "really" } " fast on \
-                my terminal screen when I'm running my programs."
+            li {
+                "a writer; " a href="https://www.nanowrimo.org/participants/alterionx/novels" { "NaNoWriMo" } " \
+                (a.k.a. November) is simultaneously my favorite and most hated month of the year."
             }
-        },
-    )
+            li {
+                "a gamer; can't wait for " a href="https://www.cyberpunk.net/us/en/" { "Cyberpunk 2077." }
+            }
+            li {
+                "a linguist: I technically know Chinese, and am studying Japanese."
+            }
+        }
+        p {
+            "But mostly, I just enjoy watching pretty colors scroll really " span.italic.bold { "really" } " fast down \
+            my terminal screen while I run my programs."
+        }
+    }, Some("intro active-slide"))
 }
 fn my_interests() -> Markup {
-    slide("", html! {
+    slide("Everything is fascinating", html! {
         p {
             "C, C++, Rust are my favorite languages."
             "I have work dealt with OpenGl and Vulkan."
             "I've dabbled with Unity, Godot, and Unreal."
             ""
         }
-    })
+    }, None)
 }
 fn my_story() -> Markup {
-    slide("", html! {
+    slide("Improve a little, every day", html! {
         p {
             "My life is built around being a logical thinker and emotional actor."
         }
-    })
+    }, None)
 }
-fn my_focus() -> Markup {
-    slide("", html! {
+fn my_passion() -> Markup {
+    slide("I love my work", html! {
         p {
             "I focus on systems development, rendering, and physical simulation."
             "I have a heavy interest in game development and story writing."
         }
-    })
+    }, None)
 }
-fn my_favorite_media() -> Markup {
-    slide("", html! {
+fn my_free_time() -> Markup {
+    slide("Taking breaks", html! {
         p {
-            a href="https://brandonsanderson.com/" { "Brandon Sanderson" } "'s my favorite author, \
+            "Reading is awesome. " a href="https://brandonsanderson.com/" { "Brandon Sanderson" } "'s my favorite author, \
             but " a href="https://www.patrickrothfuss.com/content/index.asp" { "Patrick Rothfuss" } " is the most \
             inspirational one—still waiting for " span.underline { "The Doors of Stone" } ". (It's alright. We've just \
             been waiting for about a decade.) Rothfuss is the one who inspired me to write, so I aim to take just as long \
             as him to finish my stories."
         }
-    })
+    }, None)
 }
 
-pub fn index() -> Markup {
-    let mut meta = data::MetaData::default();
-    meta.css = &[
+fn css_scripts<'a>() -> [data::Css<'a>; 4] {
+    [
         data::Css { src: "reset" },
         data::Css { src: "typography" },
         data::Css { src: "main" },
         data::Css { src: "index" },
+    ]
+}
+
+pub fn index() -> Markup {
+    let (glue, load) = data::Script::wasm_bindgen_loader("benxu_dev_page_home_script");
+    let js_scripts = [
+        data::Script::External(glue.as_str()),
+        data::Script::Embedded(load.as_str()),
     ];
-    let links = vec![data::LogoLink {
-        url: "https://github.com/AlterionX/",
-        logo: "public/img/icon/github.png",
-        alt_text: "Github",
-    }];
+    let css_scripts = css_scripts();
+    let meta = data::MetaData::builder()
+        .scripts(&js_scripts[..])
+        .css(&css_scripts[..])
+        .build();
     partials::basic_page(html! {
         div.profile {
-            p.blurb { "I'm a." }
-            h1.tagline { "Developer. Reader. Gamer. Writer." }
+            h1.tagline { "Ben Xu | Developer" }
             img.propic src="public/img/propic.jpg" alt="Profile Picture";
-            .slides {
-                (my_intro())
-                (my_story())
-                (my_interests())
-                (my_focus())
-                (my_favorite_media())
-            }
-            .link-group {
-                @for link in links.iter() {
-                    (link)
-                }
-            }
+            (link_group())
+            (slides())
         }
     }, Some(&meta))
 }

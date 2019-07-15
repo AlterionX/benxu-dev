@@ -3,6 +3,7 @@
 members = [
     "benxu-dev-server",
     "benxu-dev-page-client",
+    "benxu-dev-page-home-script",
     "benxu-dev-blog-client",
 ]
 

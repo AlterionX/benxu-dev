@@ -1,62 +1,58 @@
-use maud::{Markup, html, Render};
+use maud::{Markup, html, Render, PreEscaped};
+use typed_builder::TypedBuilder;
 use chrono::{Utc, Datelike};
 
 pub struct LogoLink<'a> {
     pub url: &'a str,
     pub logo: &'a str,
     pub alt_text: &'a str,
+    pub text: &'a str,
 }
 impl<'a> Render for LogoLink<'a> {
     fn render(&self) -> Markup {
         html! {
-            a href=(self.url) {
-                img.link-logo src=(self.logo) alt=(self.alt_text);
+            a.link-anchor href=(self.url) {
+                img.link-logo src=(self.logo) alt=(self.alt_text); (self.text)
             }
         }
     }
 }
 
+#[derive(TypedBuilder)]
 pub struct MetaData<'a> {
+    #[builder(default="en-US")]
     pub lang: &'a str,
+    #[builder(default="UTF-8")]
     pub charset: &'a str,
+    #[builder(default_code="&[]")]
     pub scripts: &'a [Script<'a>],
+    #[builder(default=&[])]
     pub css: &'a [Css<'a>],
+    #[builder(default="Benjamin Xu")]
     pub title: &'a str,
+    #[builder(default="Benjamin Xu's personal site.")]
     pub description: &'a str,
+    #[builder(default_code=r#"Copyright {
+        name: &Name {
+            first: "Benjamin",
+            middle: Some("Peiyan"),
+            last: "Xu",
+            nicknames: &[],
+        },
+        icon: "©",
+        rights_clause: "All rights reserved",
+    }"#)]
     pub copyright: Copyright<'a>,
+    #[builder(default)]
     pub menu: Option<&'a Menu<'a>>,
+    #[builder(default)]
     pub contact: Option<&'a Contact<'a>>,
+    #[builder(default)]
     pub logo: Option<&'a Logo<'a>>,
-}
-impl <'a> MetaData<'a> {
-    pub fn new() -> Self {
-        let meta = MetaData::default();
-        meta
-    }
 }
 impl <'a> Default for MetaData<'a> {
     fn default() -> Self {
-        MetaData {
-            lang: "en-US",
-            charset: "UTF-8",
-            scripts: &[],
-            css: &[],
-            title: "Benjamin Xu",
-            description: "Benjamin Xu's personal site.",
-            copyright: Copyright {
-                name: &Name {
-                    first: "Benjamin",
-                    middle: Some("Peiyan"),
-                    last: "Xu",
-                    nicknames: &[],
-                },
-                icon: "©",
-                rights_clause: "All rights reserved",
-            },
-            menu: None,
-            contact: None,
-            logo: None,
-        }
+        Self::builder().build()
     }
 }
 pub struct Logo<'a> {
@@ -69,14 +65,25 @@ impl<'a> Render for Logo<'a> {
         }
     }
 }
-pub struct Script<'a> {
-    pub src: &'a str,
+pub enum Script<'a> {
+    External(&'a str),
+    Embedded(&'a str),
 }
 impl<'a> Render for Script<'a> {
     fn render(&self) -> Markup {
-        html! {
-            script href={ "/static/js/"(self.src) };
+        match self {
+            Script::External(src) => html! { script src={ "/public/js/"(src) } {} },
+            Script::Embedded(src) => html! { script { (PreEscaped(src)) } },
         }
+    }
+}
+impl<'a> Script<'a> {
+    pub fn wasm_bindgen_loader(name: &str) -> (String, String) {
+        let glue = format!("wasm-bindgen-glue/{}.js", name);
+        let load = format!("window.onload = function() {{\
+            wasm_bindgen(\"/public/wasm/{}_bg.wasm\");\
+        }};", name);
+        (glue, load)
     }
 }
 pub struct Css<'a> {

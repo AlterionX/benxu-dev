@@ -1,0 +1,184 @@
+#![feature(type_ascription)]
+
+extern crate wasm_bindgen;
+extern crate web_sys;
+
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
+
+use std::cmp::max;
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace=console)]
+    fn log(a: &str);
+}
+
+fn cast_node_to_html_ele(node: web_sys::Node) -> Result<web_sys::HtmlElement, web_sys::Node> {
+    node.dyn_into()
+}
+fn cast_ele_to_html_ele(node: web_sys::Element) -> Result<web_sys::HtmlElement, web_sys::Element> {
+    node.dyn_into()
+}
+struct NodeListIter<'a> {
+    nodes: &'a web_sys::NodeList,
+    next_idx: u32,
+}
+impl<'a> NodeListIter<'a> {
+    fn new(nodes: &'a web_sys::NodeList) -> Self {
+        NodeListIter {
+            nodes,
+            next_idx: 0,
+        }
+    }
+}
+impl<'a> Iterator for NodeListIter<'a> {
+    type Item = web_sys::Node;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.next_idx >= self.nodes.length() {
+            None
+        } else {
+            let curr_idx = self.next_idx;
+            self.next_idx = curr_idx + 1;
+            self.nodes.item(curr_idx)
+        }
+    }
+}
+fn get_slides() -> Result<(web_sys::Element, web_sys::NodeList), JsValue> {
+    let window = web_sys::window().expect("no global `window` exists");
+    let document = window.document().expect("should have a document on window");
+
+    let slide_container = document.query_selector(".slides")?.expect("No slide container.");
+    let slides = document.query_selector_all(".slide")?;
+    Ok((slide_container, slides))
+}
+
+fn set_height(e: &web_sys::HtmlElement, height: &str) -> Result<(), JsValue> {
+    e.style().set_property("height", height)
+}
+fn unset_height(e: &web_sys::HtmlElement) -> Result<(), JsValue> {
+    e.style().set_property("height", "")
+}
+fn to_px_string(num: i32) -> String {
+    num.to_string() + "px"
+}
+fn set_sizing(e: &web_sys::HtmlElement, height: i32) -> Result<(), JsValue> {
+    let needed_e_size = to_px_string(height); // need to set height to integral value
+    let needed_margin_size = to_px_string(-height);
+    e.style().set_property("margin-bottom", needed_margin_size.as_str())?;
+    e.style().set_property("height",  needed_e_size.as_str())?;
+    Ok(())
+}
+
+fn align_slides() -> Result<(), JsValue> {
+    let (slide_container, slides) = get_slides()?;
+
+    let slide_container = cast_ele_to_html_ele(slide_container)?;
+    let slides = NodeListIter::new(&slides)
+        .map(cast_node_to_html_ele)
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let mut max_height = 0;
+    for slide in slides.iter() {
+        unset_height(slide)?;
+        let height = slide.offset_height();
+        set_sizing(slide, height)?;
+        max_height = max(height, max_height);
+    }
+
+    let container_height = to_px_string(max_height);
+    set_height(&slide_container, &container_height)?;
+
+    Ok(())
+}
+
+fn find_active_slides(slides: &[web_sys::HtmlElement]) -> Vec<usize> {
+    slides.iter().enumerate()
+        .filter(|(_, slide)| slide.class_list().contains("active-slide"))
+        .map(|(idx, _)| idx)
+        .collect()
+}
+fn unset_active(slide: &web_sys::HtmlElement) -> Result<(), JsValue> {
+    let classes = slide.class_list();
+    classes.add_1("active-slide")
+}
+fn set_active(slide: &web_sys::HtmlElement) -> Result<(), JsValue> {
+    let classes = slide.class_list();
+    classes.remove_1("active-slide")
+}
+fn shift_active_slide<
+    F: for <'a> Fn(&'a [web_sys::HtmlElement], &[usize]) -> &'a web_sys::HtmlElement
+>(
+    determine_active_slide: F
+) -> Result<(), JsValue> {
+    let (_, slides) = get_slides()?;
+
+    let slides = NodeListIter::new(&slides)
+        .map(cast_node_to_html_ele)
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let curr_active_slide_indices = find_active_slides(&slides);
+    let next_active_slide = determine_active_slide(&slides, &curr_active_slide_indices);
+
+    set_active(next_active_slide)?;
+    curr_active_slide_indices.iter().map(|&idx| &slides[idx]).map(unset_active).collect()
+}
+
+fn find_next_slide<'a>(slides: &'a [web_sys::HtmlElement], active_slide_indices: &[usize]) -> &'a web_sys::HtmlElement {
+    if active_slide_indices.len() == 0 {
+        &slides[0]
+    } else if active_slide_indices.len() == 1 {
+        let curr_active_slide_idx = active_slide_indices[0];
+        let next_active_slide_idx = (curr_active_slide_idx + 1) % slides.len();
+        &slides[next_active_slide_idx]
+    } else {
+        // TODO: Should this even be here?
+        let curr_active_slide_idx = active_slide_indices[0];
+        let next_active_slide_idx = (curr_active_slide_idx + 1) % slides.len();
+        &slides[next_active_slide_idx]
+    }
+}
+fn next_slide() -> Result<(), JsValue> {
+    log("interval triggered");
+    shift_active_slide(find_next_slide)
+}
+
+fn find_prev_slide<'a>(slides: &'a [web_sys::HtmlElement], active_slide_indices: &[usize]) -> &'a web_sys::HtmlElement {
+    if active_slide_indices.len() == 0 {
+        &slides[0]
+    } else if active_slide_indices.len() == 1 {
+        let curr_active_slide_idx = active_slide_indices[0];
+        let next_active_slide_idx = (curr_active_slide_idx + slides.len() - 1) % slides.len();
+        &slides[next_active_slide_idx]
+    } else {
+        // TODO: Should this even be here?
+        let curr_active_slide_idx = active_slide_indices[0];
+        let next_active_slide_idx = (curr_active_slide_idx + slides.len() - 1) % slides.len();
+        &slides[next_active_slide_idx]
+    }
+}
+fn prev_slide() -> Result<(), JsValue> {
+    shift_active_slide(find_prev_slide)
+}
+
+fn sec_to_ms(seconds: i32) -> i32 {
+    seconds * 1_000
+}
+
+#[wasm_bindgen(start)]
+pub fn packaging() -> Result<(), JsValue> {
+    let window = web_sys::window().expect("no global `window` exists");
+
+    let resize_handler = Closure::wrap(Box::new(|_: web_sys::UiEvent| { let _ = align_slides(); }) as Box<dyn Fn(_)>);
+    window.add_event_listener_with_callback("resize", resize_handler.as_ref().unchecked_ref())?;
+    std::mem::forget(resize_handler);
+
+    let interval_handler = Closure::wrap(Box::new(|_: i8| { next_slide().expect("no issues"); }) as Box<dyn Fn(_)>);
+    window.set_interval_with_callback_and_timeout_and_arguments_0(interval_handler.as_ref().unchecked_ref(), sec_to_ms(5))?;
+    std::mem::forget(interval_handler);
+
+    align_slides()?;
+
+    Ok(())
+}
+

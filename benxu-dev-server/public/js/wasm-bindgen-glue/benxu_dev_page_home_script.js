@@ -202,10 +202,6 @@ function init(module) {
     imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
         takeObject(arg0);
     };
-    imports.wbg.__wbg_log_50e2d8db811e4f15 = function(arg0, arg1) {
-        let varg0 = getStringFromWasm(arg0, arg1);
-        console.log(varg0);
-    };
     imports.wbg.__wbindgen_cb_drop = function(arg0) {
         const obj = takeObject(arg0).original;
         if (obj.cnt-- == 1) {
@@ -264,6 +260,15 @@ function init(module) {
         } catch (e) {
             handleError(e);
         }
+    };
+    imports.wbg.__widl_f_ready_state_Document = function(ret, arg0) {
+
+        const retptr = passStringToWasm(getObject(arg0).readyState);
+        const retlen = WASM_VECTOR_LEN;
+        const mem = getUint32Memory();
+        mem[ret / 4] = retptr;
+        mem[ret / 4 + 1] = retlen;
+
     };
     imports.wbg.__widl_f_class_list_Element = function(arg0) {
         return addHeapObject(getObject(arg0).classList);
@@ -337,15 +342,15 @@ function init(module) {
     imports.wbg.__wbindgen_rethrow = function(arg0) {
         throw takeObject(arg0);
     };
-    imports.wbg.__wbindgen_closure_wrapper49 = function(arg0, arg1, arg2) {
+    imports.wbg.__wbindgen_closure_wrapper50 = function(arg0, arg1, arg2) {
 
-        const f = wasm.__wbg_function_table.get(12);
+        const f = wasm.__wbg_function_table.get(16);
         const d = wasm.__wbg_function_table.get(13);
         const b = arg1;
         const cb = function(arg0) {
             this.cnt++;
             try {
-                return f(this.a, b, arg0);
+                return f(this.a, b, addHeapObject(arg0));
 
             } finally {
                 if (--this.cnt === 0) {
@@ -363,15 +368,15 @@ function init(module) {
 
         return addHeapObject(real);
     };
-    imports.wbg.__wbindgen_closure_wrapper51 = function(arg0, arg1, arg2) {
+    imports.wbg.__wbindgen_closure_wrapper48 = function(arg0, arg1, arg2) {
 
-        const f = wasm.__wbg_function_table.get(16);
+        const f = wasm.__wbg_function_table.get(12);
         const d = wasm.__wbg_function_table.get(13);
         const b = arg1;
         const cb = function(arg0) {
             this.cnt++;
             try {
-                return f(this.a, b, addHeapObject(arg0));
+                return f(this.a, b, arg0);
 
             } finally {
                 if (--this.cnt === 0) {

@@ -2,8 +2,6 @@
 
 #[macro_use]
 extern crate rocket;
-extern crate maud;
-extern crate benxu_dev_page_client;
 
 use benxu_dev_page_client as pages;
 use std::path::Path;

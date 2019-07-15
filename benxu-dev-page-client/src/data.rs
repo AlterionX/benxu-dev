@@ -72,7 +72,7 @@ pub enum Script<'a> {
 impl<'a> Render for Script<'a> {
     fn render(&self) -> Markup {
         match self {
-            Script::External(src) => html! { script src={ "/public/js/"(src) } {} },
+            Script::External(src) => html! { script defer?[true] src={ "/public/js/"(src) } {} },
             Script::Embedded(src) => html! { script { (PreEscaped(src)) } },
         }
     }
@@ -80,9 +80,14 @@ impl<'a> Render for Script<'a> {
 impl<'a> Script<'a> {
     pub fn wasm_bindgen_loader(name: &str) -> (String, String) {
         let glue = format!("wasm-bindgen-glue/{}.js", name);
-        let load = format!("window.onload = function() {{\
-            wasm_bindgen(\"/public/wasm/{}_bg.wasm\");\
-        }};", name);
+        let load = format!("\
+            document.addEventListener(\
+                \"DOMContentLoaded\",\
+                function(){{\
+                    wasm_bindgen(\"/public/wasm/{}_bg.wasm\");\
+                }}\
+            );\
+        ", name);
         (glue, load)
     }
 }

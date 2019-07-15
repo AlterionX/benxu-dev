@@ -1,18 +1,9 @@
 #![feature(type_ascription)]
 
-extern crate wasm_bindgen;
-extern crate web_sys;
-
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 use std::cmp::max;
-
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace=console)]
-    fn log(a: &str);
-}
 
 fn cast_node_to_html_ele(node: web_sys::Node) -> Result<web_sys::HtmlElement, web_sys::Node> {
     node.dyn_into()
@@ -139,7 +130,6 @@ fn find_next_slide<'a>(slides: &'a [web_sys::HtmlElement], active_slide_indices:
     }
 }
 fn next_slide() -> Result<(), JsValue> {
-    log("interval triggered");
     shift_active_slide(find_next_slide)
 }
 
@@ -170,14 +160,17 @@ pub fn packaging() -> Result<(), JsValue> {
     let window = web_sys::window().expect("no global `window` exists");
 
     let resize_handler = Closure::wrap(Box::new(|_: web_sys::UiEvent| { let _ = align_slides(); }) as Box<dyn Fn(_)>);
+    if window.document().expect("Document present").ready_state() != "loading" {
+        align_slides()?;
+    } else {
+        window.add_event_listener_with_callback("DOMContentLoaded", resize_handler.as_ref().unchecked_ref())?;
+    }
     window.add_event_listener_with_callback("resize", resize_handler.as_ref().unchecked_ref())?;
     std::mem::forget(resize_handler);
 
     let interval_handler = Closure::wrap(Box::new(|_: i8| { next_slide().expect("no issues"); }) as Box<dyn Fn(_)>);
     window.set_interval_with_callback_and_timeout_and_arguments_0(interval_handler.as_ref().unchecked_ref(), sec_to_ms(5))?;
     std::mem::forget(interval_handler);
-
-    align_slides()?;
 
     Ok(())
 }

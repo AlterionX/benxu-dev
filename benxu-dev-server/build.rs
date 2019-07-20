@@ -11,6 +11,7 @@ fn main() {
         "img",
     ];
     for needed_dir in needed_dirs.iter() {
+        #[allow(unused_results, unused_must_use)]
         fs::create_dir(static_file_dir.join(needed_dir)); // ignore
     }
     for entry in fs::read_dir(static_file_dir.join("wasm-pack")).unwrap() {

@@ -37,7 +37,6 @@
 }
 
 .slides {
-    padding: 2em 0;
     width: 100%;
     box-sizing: content-box;
 }
@@ -51,6 +50,7 @@
 .active-slide {
     visibility: visible;
     opacity: 1;
+    transition: opacity 2s;
 }
 
 .slide-heading {
@@ -62,6 +62,29 @@
 }
 .slide-text {
     margin-bottom: 1em;
+}
+
+.slide-markers {
+    width: 100%;
+    text-align: center;
+}
+.slide-marker {
+    width: 10px;
+    height: 10px;
+
+    margin-right: 5px;
+
+    border: solid #EEEEEE;
+    border-radius: 50%;
+    background: #00000000;
+
+    display: inline-block;
+}
+.slide-marker:last-of-type {
+    margin-right: 0;
+}
+.active-slide-marker {
+    background: #EEEEEE;
 }
 
 .intro ul {

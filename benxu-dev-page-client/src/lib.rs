@@ -35,6 +35,9 @@ fn slides() -> Markup {
             (my_passion())
             (my_free_time())
         }
+        .slide-markers {
+            (slide_markers(5))
+        }
     }
 }
 fn slide<T: Render, U: Render>(title: T, text: U, cls: Option<&str>) -> Markup {
@@ -43,6 +46,18 @@ fn slide<T: Render, U: Render>(title: T, text: U, cls: Option<&str>) -> Markup {
             h2.slide-heading { (title) }
             .slide-text { (text) }
         }
+    }
+}
+fn slide_markers(slide_cnt: u8) -> Markup {
+    html! {
+        @for i in 0..slide_cnt {
+            (slide_marker(i))
+        }
+    }
+}
+fn slide_marker(idx: u8) -> Markup {
+    html! {
+        div class={"slide-marker" @if idx == 0 { (" active-slide-marker") }}  {}
     }
 }
 fn my_intro() -> Markup {
@@ -75,7 +90,8 @@ fn my_interests() -> Markup {
             "C, C++, Rust are my favorite languages."
             "I have work dealt with OpenGl and Vulkan."
             "I've dabbled with Unity, Godot, and Unreal."
-            ""
+            "I would like to get involved with Amethyst as well."
+            "At some point, I would like to help out with the emulator development scene as well."
         }
     }, None)
 }

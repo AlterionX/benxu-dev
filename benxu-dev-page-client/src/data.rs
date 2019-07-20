@@ -84,7 +84,10 @@ impl<'a> Script<'a> {
             document.addEventListener(\
                 \"DOMContentLoaded\",\
                 function(){{\
-                    wasm_bindgen(\"/public/wasm/{}_bg.wasm\");\
+                    var mod = wasm_bindgen(\"/public/wasm/{}_bg.wasm\");\
+                    if (mod.load_listeners) {{\
+                        var listeners = mod.load_listeners();\
+                    }}\
                 }}\
             );\
         ", name);

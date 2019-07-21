@@ -7,6 +7,8 @@ fn head(meta: &MetaData) -> Markup {
             meta charset=(meta.charset);
             title { (meta.title) }
             meta name="description" content=(meta.description);
+            meta name="viewport" content="width=device-width, initial-scale=1";
+            meta name="theme-color" content=(meta.theme_color);
             @for css in meta.css {
                 (css)
             }

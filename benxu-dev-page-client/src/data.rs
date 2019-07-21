@@ -49,6 +49,8 @@ pub struct MetaData<'a> {
     pub contact: Option<&'a Contact<'a>>,
     #[builder(default)]
     pub logo: Option<&'a Logo<'a>>,
+    #[builder(default="#00003f")]
+    pub theme_color: &'a str,
 }
 impl <'a> Default for MetaData<'a> {
     fn default() -> Self {

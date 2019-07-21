@@ -37,9 +37,11 @@ fn slides() -> Markup {
             (my_reading_time())
             (my_gaming_time())
         }
+        #slide-next {}
         .slide-markers {
             (slide_markers(7))
         }
+        #slide-prev {}
     }
 }
 fn slide<T: Render, U: Render>(title: T, text: U, cls: Option<&str>) -> Markup {
@@ -59,7 +61,7 @@ fn slide_markers(slide_cnt: u8) -> Markup {
 }
 fn slide_marker(idx: u8) -> Markup {
     html! {
-        div class={"slide-marker" @if idx == 0 { (" active-slide-marker") }}  {}
+        div id = { "slide-marker-"(idx) } class={"slide-marker" @if idx == 0 { (" active-slide-marker") }}  {}
     }
 }
 fn my_intro() -> Markup {

@@ -1,3 +1,4 @@
+use std::fs;
 use maud::{Markup, html, Render, PreEscaped};
 use typed_builder::TypedBuilder;
 use chrono::{Utc, Datelike};
@@ -96,19 +97,37 @@ impl<'a> Script<'a> {
         (glue, load)
     }
 }
-pub struct Css<'a> {
-    pub src: &'a str,
+pub enum Css<'a> {
+    Critical { src: &'a str },
+    NonCritical { src: &'a str },
 }
 impl<'a> Render for Css<'a> {
     fn render(&self) -> Markup {
-        html! {
-            link rel="stylesheet" href={ "/public/css/"(self.src)".css" };
+        match self {
+            Css::NonCritical { src } => html! { link rel="stylesheet" href={
+                "/public/css/"(src)".css"
+            }{} },
+            Css::Critical { src } => {
+                let style = fs::read_to_string(
+                    format!("./public/css/{}.css", src).as_str()
+                ).expect(
+                    format!("./public/css/{}.css is missing", src).as_str()
+                );
+                html! { style { (PreEscaped(style)) } }
+            },
         }
     }
 }
 pub struct Email<'a> {
     pub user: &'a str,
     pub domain: &'a str,
+}
+impl<'a> Render for Email<'a> {
+    fn render(&self) -> Markup {
+        html! {
+            (self.user)"@"(self.domain)
+        }
+    }
 }
 pub enum PhoneNumber<'a> {
     US {
@@ -118,15 +137,30 @@ pub enum PhoneNumber<'a> {
         icon: &'a str,
     }
 }
+impl<'a> Render for PhoneNumber<'a> {
+    fn render(&self) -> Markup {
+        match self {
+            PhoneNumber::US {
+                icon, area_code, prefix, line_number
+            } => html! {
+                (icon)": ("(area_code)") "(prefix)"-"(line_number)
+            }
+        }
+    }
+}
 pub struct Contact<'a> {
     pub email: &'a[Email<'a>],
     pub phone: &'a[PhoneNumber<'a>],
 }
 impl<'a> Render for Contact<'a> {
     fn render(&self) -> Markup {
-        let year = Utc::now().year();
         html! {
-            p { "(self.icon) (year - 1)-(year + 1) (self.name). (self.rights_clause)." }
+            @for email in self.email {
+                p.contact-email { "Email: " (email) }
+            }
+            @for phone in self.phone {
+                p.contact-phone-number { "Phone: " (phone) }
+            }
         }
     }
 }

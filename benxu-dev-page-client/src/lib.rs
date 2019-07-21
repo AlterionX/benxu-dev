@@ -188,10 +188,10 @@ fn my_gaming_time() -> Markup {
 
 fn css_scripts<'a>() -> [data::Css<'a>; 4] {
     [
-        data::Css { src: "reset" },
-        data::Css { src: "typography" },
-        data::Css { src: "main" },
-        data::Css { src: "index" },
+        data::Css::Critical { src: "reset" },
+        data::Css::Critical { src: "typography" },
+        data::Css::Critical { src: "main" },
+        data::Css::Critical { src: "index" },
     ]
 }
 

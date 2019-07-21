@@ -4,7 +4,7 @@ html, body {
 
 html {
     /* The image used */
-    background-image: url("../img/site-bg.jpg");
+    background-image: url("/public/img/site-bg.jpg");
     background-color: #000000ae;
     background-blend-mode: darken;
     background-attachment: fixed;

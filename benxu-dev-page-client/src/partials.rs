@@ -72,3 +72,4 @@ pub fn basic_page(m: Markup, meta_data: Option<&MetaData>) -> Markup {
     }
     page(m, meta)
 }
+

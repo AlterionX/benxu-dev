@@ -43,7 +43,7 @@ li {
     width: 100%;
     max-width: calc(700px + 2em);
 
-    padding: 50px 2em;
+    padding: 20px 2em;
 }
 .site-footer {
     flex-grow: 0;
@@ -57,7 +57,7 @@ li {
 }
 
 .copyright {
-    color: #CCCCCC;
+    color: #777777;
 }
 
 .link-group {

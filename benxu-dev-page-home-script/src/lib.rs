@@ -5,12 +5,6 @@ use wasm_bindgen::JsCast;
 
 use std::cmp::max;
 
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace=console)]
-    fn log(a: &str);
-}
-
 fn cast_node_to_html_ele(node: web_sys::Node) -> Result<web_sys::HtmlElement, web_sys::Node> {
     node.dyn_into()
 }
@@ -86,7 +80,6 @@ fn align_slides() -> Result<(), JsValue> {
 
     let container_height = to_px_string(max_height);
     set_height(&slide_container, &container_height)?;
-    log(&container_height);
 
     Ok(())
 }
@@ -136,7 +129,6 @@ fn find_next_slide<'a>(slides: &'a [(web_sys::HtmlElement, web_sys::HtmlElement)
     } else if active_slide_indices.len() == 1 {
         let curr_active_slide_idx = active_slide_indices[0];
         let next_active_slide_idx = (curr_active_slide_idx + 1) % slides.len();
-        log(format!("{:?}", next_active_slide_idx).as_str());
         &slides[next_active_slide_idx]
     } else {
         unreachable!("Should never reach here. {:?}", active_slide_indices);

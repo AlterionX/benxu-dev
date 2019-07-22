@@ -1,5 +1,0 @@
-[production]
-address = "localhost"
-port = 4000
-limits = { forms = 32768 }
-

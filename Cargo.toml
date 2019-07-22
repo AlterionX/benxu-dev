@@ -1,9 +1,9 @@
 [workspace]
 
 members = [
-    "benxu-dev-server",
-    "benxu-dev-page-client",
-    "benxu-dev-page-home-script",
-    "benxu-dev-blog-client",
+    "server",
+    "page-client",
+    "wasm-script",
+    "blog-client",
 ]
 

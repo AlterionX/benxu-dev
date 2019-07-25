@@ -176,16 +176,12 @@ fn sec_to_ms(seconds: i32) -> i32 {
 
 type OptionalClosure<T> = Option<Closure<T>>;
 static mut OPT_SLIDE_COLLAPSE: OptionalClosure<dyn Fn(web_sys::UiEvent) -> ()> = None;
+
 static mut OPT_SLIDE_TIMED_ADVANCE: OptionalClosure<dyn Fn(i8)> = None;
-static mut OPT_SLIDE_NEXT: OptionalClosure<dyn Fn(i8)> = None;
-static mut OPT_SLIDE_PREV: OptionalClosure<dyn Fn(i8)> = None;
-static mut OPT_SLIDE_SELECT: [OptionalClosure<dyn Fn(i8)>; 7] = [None, None, None, None, None, None, None]; // TODO fix when enum variants become types
-
 static mut OPT_SLIDE_TIMED_ADVANCE_ID: Option<i32> = None;
-
 fn set_slide_progression_timer(window: &web_sys::Window) -> Result<(), JsValue> {
     let interval_handler = unsafe { OPT_SLIDE_TIMED_ADVANCE.as_ref().unwrap() };
-    let timer_id = window.set_interval_with_callback_and_timeout_and_arguments_0(interval_handler.as_ref().unchecked_ref(), sec_to_ms(5))?;
+    let timer_id = window.set_interval_with_callback_and_timeout_and_arguments_0(interval_handler.as_ref().unchecked_ref(), sec_to_ms(50))?;
 
     unsafe {
         OPT_SLIDE_TIMED_ADVANCE_ID = Some(timer_id);
@@ -201,7 +197,48 @@ fn reset_slide_progression_timer() -> Result<(), JsValue> {
         _ => (),
     }
     set_slide_progression_timer(&window)?;
-    
+
+    Ok(())
+}
+static mut OPT_SLIDE_SELECT: [OptionalClosure<dyn Fn(i8)>; 7] = [None, None, None, None, None, None, None]; // TODO fix when enum variants become types
+fn bind_per_marker_listener(document: &web_sys::Document, slide_idx: usize) -> Result<(), JsValue> {
+    let listener = unsafe {
+        OPT_SLIDE_SELECT[slide_idx] = Some(Closure::wrap(Box::new(move |_: i8| {
+            set_slide(slide_idx).expect("no issues");
+            reset_slide_progression_timer().expect("no issues");
+        }) as Box<dyn Fn(_)>));
+        OPT_SLIDE_SELECT[slide_idx].as_ref().unwrap()
+    };
+    let selector = format!("#slide-marker-{}", slide_idx);
+    let marker = document.query_selector(selector.as_str())?.expect("Has a marker.");
+    let marker = cast_ele_to_html_ele(marker)?;
+    marker.add_event_listener_with_callback("click", listener.as_ref().unchecked_ref())?;
+    Ok(())
+}
+static mut OPT_SLIDE_NEXT: OptionalClosure<dyn Fn(i8)> = None;
+fn bind_next_slide_button(document: &web_sys::Document) -> Result<(), JsValue> {
+    let listener = unsafe {
+        OPT_SLIDE_NEXT = Some(Closure::wrap(Box::new(|_: i8| {
+            next_slide().expect("no issues");
+        }) as Box<dyn Fn(_)>));
+        OPT_SLIDE_NEXT.as_ref().unwrap()
+    };
+    let button = document.query_selector("#slide-next")?.expect("Has a marker.");
+    let button = cast_ele_to_html_ele(button)?;
+    button.add_event_listener_with_callback("click", listener.as_ref().unchecked_ref())?;
+    Ok(())
+}
+static mut OPT_SLIDE_PREV: OptionalClosure<dyn Fn(i8)> = None;
+fn bind_prev_slide_button(document: &web_sys::Document) -> Result<(), JsValue> {
+    let listener = unsafe {
+        OPT_SLIDE_PREV = Some(Closure::wrap(Box::new(|_: i8| {
+            prev_slide().expect("no issues");
+        }) as Box<dyn Fn(_)>));
+        OPT_SLIDE_PREV.as_ref().unwrap()
+    };
+    let button = document.query_selector("#slide-prev")?.expect("Has a marker.");
+    let button = cast_ele_to_html_ele(button)?;
+    button.add_event_listener_with_callback("click", listener.as_ref().unchecked_ref())?;
     Ok(())
 }
 
@@ -210,18 +247,6 @@ pub fn init() -> Result<(), JsValue> {
     unsafe {
         OPT_SLIDE_COLLAPSE = Some(Closure::wrap(Box::new(|_: web_sys::UiEvent| { let _ = align_slides(); }) as Box<dyn Fn(_)>));
         OPT_SLIDE_TIMED_ADVANCE = Some(Closure::wrap(Box::new(|_: i8| { next_slide().expect("no issues"); }) as Box<dyn Fn(_)>));
-        OPT_SLIDE_NEXT = Some(Closure::wrap(Box::new(|_: i8| {
-            next_slide().expect("no issues");
-        }) as Box<dyn Fn(_)>));
-        OPT_SLIDE_PREV = Some(Closure::wrap(Box::new(|_: i8| {
-            prev_slide().expect("no issues");
-        }) as Box<dyn Fn(_)>));
-        for slide_idx in 0..7 {
-            OPT_SLIDE_SELECT[slide_idx] = Some(Closure::wrap(Box::new(move |_: i8| {
-                set_slide(slide_idx).expect("no issues");
-                reset_slide_progression_timer().expect("no issues");
-            }) as Box<dyn Fn(_)>))
-        }
     }
 
     let window = web_sys::window().expect("no global `window` exists");
@@ -239,12 +264,10 @@ pub fn init() -> Result<(), JsValue> {
     set_slide_progression_timer(&window)?;
 
     for slide_idx in 0..7 {
-        let listener = unsafe { OPT_SLIDE_SELECT[slide_idx].as_ref().unwrap() };
-        let selector = format!("#slide-marker-{}", slide_idx);
-        let marker = document.query_selector(selector.as_str())?.expect("Has a marker.");
-        let marker = cast_ele_to_html_ele(marker)?;
-        marker.add_event_listener_with_callback("click", listener.as_ref().unchecked_ref())?;
+        bind_per_marker_listener(&document, slide_idx)?;
     }
+    bind_next_slide_button(&document)?;
+    bind_prev_slide_button(&document)?;
 
     Ok(())
 }

@@ -37,11 +37,13 @@ fn slides() -> Markup {
             (my_reading_time())
             (my_gaming_time())
         }
-        #slide-next {}
-        .slide-markers {
-            (slide_markers(7))
+        .slide-attachments {
+            img#slide-prev.slide-attachment src="public/img/left-simple-arrow.svg";
+            .slide-markers.slide-attachment {
+                (slide_markers(7))
+            }
+            img#slide-next.slide-attachment src="public/img/right-simple-arrow.svg";
         }
-        #slide-prev {}
     }
 }
 fn slide<T: Render, U: Render>(title: T, text: U, cls: Option<&str>) -> Markup {
@@ -198,7 +200,7 @@ fn css_scripts<'a>() -> [data::Css<'a>; 4] {
 }
 
 pub fn index() -> Markup {
-    let (glue, load) = data::Script::wasm_bindgen_loader("benxu_dev_page_home_script");
+    let (glue, load) = data::Script::wasm_bindgen_loader("wasm_script");
     let js_scripts = [
         data::Script::External(glue.as_str()),
         data::Script::Embedded(load.as_str()),

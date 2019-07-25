@@ -18,8 +18,8 @@ Cargo.lock
 #**/*.rs.bk
 
 # generated files
-benxu-dev-server/benxu-dev-server
-benxu-dev-server/public/wasm-pack/
-benxu-dev-server/public/wasm/
-benxu-dev-server/public/js/wasm-bindgen-glue/
+server/benxu-dev-server
+server/public/wasm-pack/
+server/public/wasm/
+server/public/js/wasm-bindgen-glue/
 

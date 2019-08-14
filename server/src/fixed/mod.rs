@@ -6,7 +6,6 @@ mod links;
 mod contacts;
 mod resume;
 mod projects;
-pub mod blog;
 
 #[get("/")]
 fn get_index() -> Markup {

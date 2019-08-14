@@ -2,8 +2,11 @@
 
 members = [
     "server",
+    # static pages
     "page-client",
     "wasm-script",
+    # blog pages
     "blog-client",
+    "blog-db",
 ]
 

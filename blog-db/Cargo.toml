@@ -1,12 +1,12 @@
 [package]
-name = "page-client"
+name = "blog-db"
 version = "0.1.0"
 authors = ["AlterionX <ben.xu.cs@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-maud = { version = "0.21.0", features = ["rocket"] }
 chrono = { version = "0.4.7", features = ["serde"] }
+diesel = { version = "1.4.2", features = ["postgres", "chrono"] }
 serde = { version = "1.0.98", features = ["derive"] }
-typed-builder = "0.3.0"
+dotenv = "0.14.1"
 

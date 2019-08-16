@@ -20,7 +20,16 @@ pub struct Key {
     key: Vec<u8>,
     nonce: Vec<u8>,
 }
-impl base::Key for Key {}
+impl base::Key for Key {
+    type Settings = ();
+    fn generate(setting: &Self::Settings) -> Self {
+        let mut key = vec![0u8; 32];
+        OsRng.fill_bytes(key.as_mut_slice());
+        let mut nonce = vec![0u8; 16];
+        OsRng.fill_bytes(nonce.as_mut_slice());
+        Self::new(key.as_slice(), nonce.as_slice())
+    }
+}
 impl symm::Key for Key {}
 impl Key {
     pub fn new(key: &[u8], nonce: &[u8]) -> Self {
@@ -40,13 +49,7 @@ impl Key {
 pub struct Algo(Cipher);
 impl base::Algo for Algo {
     type Key = Key;
-    fn generate_key() -> Self::Key {
-        let mut key = vec![0u8; 32];
-        OsRng.fill_bytes(key.as_mut_slice());
-        let mut nonce = vec![0u8; 16];
-        OsRng.fill_bytes(nonce.as_mut_slice());
-        Self::Key::new(key.as_slice(), nonce.as_slice())
-    }
+    fn key_settings<'a>(&'a self) -> &'a <<Self as base::Algo>::Key as base::Key>::Settings { &() }
 }
 impl symm::Algo for Algo {
     fn encrypt(key: &Key, msg: &[u8]) -> Result<Vec<u8>, symm::EncryptError> {

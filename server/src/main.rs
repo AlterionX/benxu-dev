@@ -1,4 +1,4 @@
-#![feature(proc_macro_hygiene, decl_macro, optin_builtin_traits, type_ascription, copy_within)]
+#![feature(proc_macro_hygiene, decl_macro, optin_builtin_traits, type_ascription)]
 
 #[macro_use] extern crate rocket;
 
@@ -32,9 +32,10 @@ fn main() {
         AdHoc::on_attach("Crypto: Key Rotation Mechanism", |rocket| {
             // TODO when rocket 0.5 lands, graceful shutdown
             let key_rotator = Box::new(crypto::KeyRotator::<
-                crate::DefaultAlgo
+                crate::DefaultAlgo,
             >::init(
-                None
+                DefaultAlgo {},
+                None,
             ));
             let key_store = Arc::clone(&key_rotator.key_store);
             let rocket = rocket.manage(key_store);

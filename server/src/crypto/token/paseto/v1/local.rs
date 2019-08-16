@@ -1,5 +1,7 @@
 use serde::Serialize;
 use serde_json as json;
+use std::ops::Deref;
+
 use super::{
     super::error,
     nonce::{Randomness, Nonce},
@@ -9,6 +11,7 @@ use crate::crypto::{
     token::paseto::shared::multi_part_pre_auth_encoding,
     algo::{
         Algo as A,
+        Key as K,
         hash::hmac::sha384::Algo as HMAC_SHA384,
         key_deriv::hkdf::sha384::Algo as HKDF_SHA384,
         cipher::{
@@ -20,28 +23,41 @@ use crate::crypto::{
 
 const HEADER: &'static str = "v1.local.";
 
-struct Key;
-trait KnownClaims {}
+pub trait KnownClaims {}
+impl KnownClaims for String {}
 
-struct NakedToken<T: Serialize + KnownClaims, F: Serialize> {
+pub struct NakedToken<'tok, T: Serialize + KnownClaims, F: Serialize> {
     msg: T,
     footer: Option<F>,
-    key: <HMAC_SHA384 as A>::Key,
+    key: &'tok[u8],
     rand: Randomness,
 }
-impl<T: Serialize + KnownClaims, F: Serialize> NakedToken<T, F> {
-    fn serialize<'a>(self) -> Result<SerializedToken, json::Error> {
+impl<'tok, T: Serialize + KnownClaims, F: Serialize> NakedToken<'tok, T, F> {
+    pub fn new(msg: T, footer: Option<F>, key: &'tok[u8]) -> Self {
+        Self {
+            msg: msg,
+            footer: footer,
+            key: key,
+            rand: Randomness::new(),
+        }
+    }
+    fn serialize(self) -> Result<SerializedToken<'tok>, json::Error> {
         SerializedToken::from_naked_tok(self)
     }
 }
-struct SerializedToken {
+#[cfg(test)]
+impl<'tok, T: Serialize + KnownClaims, F: Serialize> NakedToken<'tok, T, F> {
+    pub fn new_with_rand(msg: T, footer: Option<F>, key: &'tok[u8]) {
+    }
+}
+struct SerializedToken<'ser> {
     msg: Vec<u8>,
     footer: Option<Vec<u8>>,
-    key: <HMAC_SHA384 as A>::Key,
+    key: &'ser[u8],
     randomness: Randomness,
 }
-impl<'encryption> SerializedToken {
-    fn from_naked_tok<T: Serialize + KnownClaims, F: Serialize>(tok: NakedToken<T, F>) -> Result<Self, json::Error> {
+impl<'ser> SerializedToken<'ser> {
+    fn from_naked_tok<T: Serialize + KnownClaims, F: Serialize>(tok: NakedToken<'ser, T, F>) -> Result<Self, json::Error> {
         let msg = json::to_string(&tok.msg)?.as_bytes().to_vec();
         let footer = tok.footer.map(|f| json::to_string(&f)).transpose()?.map(|s| s.as_bytes().to_vec());
         Ok(Self {
@@ -51,20 +67,21 @@ impl<'encryption> SerializedToken {
             randomness: tok.rand,
         })
     }
-    fn preprocess(self) -> SerializedTokenWithNonceAndKeys {
-        SerializedTokenWithNonceAndKeys::create_from(self)
+    fn preprocess(self) -> PrimedToken {
+        PrimedToken::create_from(self)
     }
 }
-struct SerializedTokenWithNonceAndKeys {
+struct PrimedToken {
     msg: Vec<u8>,
     footer: Option<Vec<u8>>,
     nonce: Nonce,
     auth_key: Vec<u8>,
     encryption_key: Vec<u8>,
 }
-impl SerializedTokenWithNonceAndKeys {
+impl PrimedToken {
     fn create_keys<'a>(nonce: &'a Nonce) -> (Vec<u8>, Vec<u8>) {
-        let key_deriv_key = <HKDF_SHA384 as A>::Key::create(nonce.get_salt());
+        let hkdf = HKDF_SHA384::new(nonce.get_salt().to_vec(), vec![]);
+        let key_deriv_key = <<HKDF_SHA384 as A>::Key as K>::generate(hkdf.key_settings());
         let mut keys = HKDF_SHA384::generate(
             key_deriv_key,
             &[
@@ -99,7 +116,7 @@ struct EncryptedToken {
     nonce: Nonce,
 }
 impl EncryptedToken {
-    fn create_from(tok: SerializedTokenWithNonceAndKeys) -> Result<Self, symm::EncryptError>  {
+    fn create_from(tok: PrimedToken) -> Result<Self, symm::EncryptError>  {
         let encrypted_message = <AES256_CTR as symm::Algo>::encrypt(&<AES256_CTR as A>::Key::new(tok.encryption_key.as_slice(), tok.nonce.get_crypt_nonce()), tok.msg.as_slice())?;
         Ok(Self {
             msg: encrypted_message,
@@ -141,8 +158,11 @@ impl SignedEncryptedToken {
         PasetoToken::create_from(self)
     }
 }
-struct PasetoToken(Vec<u8>);
+pub struct PasetoToken(Vec<u8>);
 impl PasetoToken {
+    pub fn new(buffer: Vec<u8>) -> Self {
+        Self(buffer)
+    }
     fn create_from(tok: SignedEncryptedToken) -> Self {
         Self(
             [
@@ -160,6 +180,14 @@ impl PasetoToken {
         )
     }
 }
+impl Deref for PasetoToken {
+    type Target = [u8];
+    fn deref<'a>(&'a self) -> &'a Self::Target {
+        &self.0
+    }
+}
+
+
 
 pub struct Token;
 impl Token {
@@ -176,4 +204,20 @@ impl Token {
         )
     }
 }
+
+
+#[cfg(test)]
+mod unit_tests {
+  use super::*;
+
+  #[test]
+  fn v1_local_encrypt() {
+      let tok = NakedToken::<String, ()>::new("Hello".to_owned(), None, "WOW".as_bytes());
+      Token.encrypt(tok).map_err(|_| ()).unwrap();
+  }
+  #[test]
+  fn v1_local_decrypt() {
+  }
+}
+
 

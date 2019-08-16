@@ -15,24 +15,27 @@ use std::{
     },
     ops::Deref,
 };
-use crate::crypto::algo::Algo;
+use crate::crypto::algo::{Algo, Key};
 
-pub struct CurrAndLastKey<T: Algo> {
-    pub last: T::Key,
-    pub curr: T::Key,
+pub struct CurrAndLastKey<A: Algo> {
+    pub algo: Arc<A>,
+    pub last: A::Key,
+    pub curr: A::Key,
 }
-impl<T: Algo> CurrAndLastKey<T> {
-    fn new() -> Self {
-        let key = T::generate_key();
+impl<A: Algo> CurrAndLastKey<A> {
+    fn new(alg: A) -> Self {
+        let key = A::Key::generate(alg.key_settings());
         Self {
+            algo: Arc::new(alg),
             last: key.clone(),
             curr: key,
         }
     }
     fn progress(&self) -> Self {
         Self {
+            algo: Arc::clone(&self.algo),
             last: self.curr.clone(),
-            curr: T::generate_key(),
+            curr: A::Key::generate(self.algo.key_settings()),
         }
     }
 }
@@ -50,9 +53,9 @@ pub struct KeyRotator<T: Algo> {
     kill_handle: Option<(Sender<()>, thread::JoinHandle<()>)>,
 }
 
-impl<T: Algo + 'static> KeyRotator<T> {
-    pub fn init(period_between_rotation: Option<Duration>) -> KeyRotator<T> {
-        let local_copy = Arc::new(KeyStore(RwLock::new(Arc::new(CurrAndLastKey::new()))));
+impl<A: Algo + Send + Sync + 'static> KeyRotator<A> {
+    pub fn init(alg: A, period_between_rotation: Option<Duration>) -> KeyRotator<A> {
+        let local_copy = Arc::new(KeyStore(RwLock::new(Arc::new(CurrAndLastKey::new(alg)))));
 
         let remote_copy = Arc::clone(&local_copy);
         let (tx, rx) = channel();

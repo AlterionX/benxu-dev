@@ -6,6 +6,7 @@ use rand::{
 
 #[derive(Clone)]
 pub struct Randomness([u8; 32]);
+// TODO use const generics for how much randomness once it becomes available
 impl Randomness {
     pub fn new() -> Randomness {
         let mut nonce = [0; 32];
@@ -25,7 +26,7 @@ impl Nonce {
         let randomness = randomness.0;
         let key = hmac::SigningKey::new(&digest::SHA384, &randomness);
         let hash = hmac::sign(&key, msg);
-        let mut free_buffer = randomness; // should I just alloc another one...?
+        let mut free_buffer = randomness; // should I just alloc another one...? Oh well.
         free_buffer[0..32].copy_from_slice(&hash.as_ref()[0..32]);
         Nonce(free_buffer)
     }
@@ -43,28 +44,29 @@ impl Nonce {
 mod unit_tests {
     use super::*;
 
-    impl<'a> HasMsgBuffer<'a> for &str {
-        fn msg(&self) -> &'a [u8] {
-            self.as_bytes()
-        }
-    }
     #[test]
     fn test_nonce_derivation() {
         // Constants copied directly from paseto source.
         let msg_a = String::from("The quick brown fox jumped over the lazy dog.");
         let msg_b = String::from("The quick brown fox jumped over the lazy dof.");
-        let nonce = hex::decode(String::from("808182838485868788898a8b8c8d8e8f")).expect("Failed to decode nonce!");
+        let nonce = hex::decode(String::from("808182838485868788898a8b8c8d8e8f00000000000000000000000000000000")).expect("Failed to decode nonce!");
+        let mut nonce_arr = [0u8; 32];
+        println!("{:?}", nonce.len());
+        debug_assert!(nonce.len() == 32, "Original nonce has incorrect length.");
+        for (i, b) in nonce.as_slice().iter().enumerate() {
+            nonce_arr[i] = *b;
+        }
 
-        let calculated_nonce_a = Nonce::create_from(&Randomness::precomputed(nonce), msg_a.as_bytes());
-        let calculated_nonce_b = Nonce::create_from(&Randomness::precomputed(nonce), msg_b.as_bytes());
+        let calculated_nonce_a = Nonce::create_from(Randomness::precomputed(nonce_arr.clone()), msg_a.as_bytes());
+        let calculated_nonce_b = Nonce::create_from(Randomness::precomputed(nonce_arr), msg_b.as_bytes());
 
         assert_eq!(
             "5e13b4f0fc111bf0cf9de4e97310b687858b51547e125790513cc1eaaef173cc".to_owned(),
-            hex::encode(&calculated_nonce_a)
+            hex::encode(calculated_nonce_a.as_slice())
         );
         assert_eq!(
             "e1ba992f5cccd31714fd8c73adcdadabb00d0f23955a66907170c10072d66ffd".to_owned(),
-            hex::encode(&calculated_nonce_b)
+            hex::encode(calculated_nonce_b.as_slice())
         )
     }
 }

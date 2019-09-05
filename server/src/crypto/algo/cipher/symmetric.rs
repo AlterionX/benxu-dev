@@ -1,9 +1,11 @@
 use crate::crypto::algo as base;
 
 pub trait Key: base::Key {}
+#[derive(Debug)]
 pub enum DecryptError {
     Base,
 }
+#[derive(Debug)]
 pub enum EncryptError {
     Base,
 }

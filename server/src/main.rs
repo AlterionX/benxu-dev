@@ -1,4 +1,4 @@
-#![feature(proc_macro_hygiene, decl_macro, optin_builtin_traits, type_ascription)]
+#![feature(const_str_as_bytes, proc_macro_hygiene, decl_macro, optin_builtin_traits, type_ascription, try_trait, generic_associated_types)]
 
 #[macro_use] extern crate rocket;
 
@@ -12,6 +12,7 @@ use rocket_contrib::serve::StaticFiles;
 use page_client as pages;
 
 mod crypto;
+mod encoding;
 mod fixed;
 mod blog;
 

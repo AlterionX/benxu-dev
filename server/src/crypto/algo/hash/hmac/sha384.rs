@@ -17,7 +17,7 @@ use crate::crypto::algo::{
 
 #[derive(Clone)]
 pub struct Key(Arc<hmac::SigningKey>);
-impl base::Key for Key {
+impl base::SafeGenerateKey for Key {
     type Settings = ();
     fn generate(_: &()) -> Self {
         let mut nonce = [0; 32];

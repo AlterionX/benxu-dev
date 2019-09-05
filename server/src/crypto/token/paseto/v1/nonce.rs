@@ -22,6 +22,13 @@ impl Randomness {
 #[derive(Clone)]
 pub struct Nonce([u8; 32]);
 impl Nonce {
+    pub fn recreate_nonce(old_nonce: &[u8]) -> Nonce {
+        let mut nonce_data = [0; 32];
+        for (idx, val) in old_nonce.iter().enumerate() {
+            nonce_data[idx] = *val;
+        }
+        Nonce(nonce_data)
+    }
     pub fn create_from(randomness: Randomness, msg: &[u8]) -> Nonce {
         let randomness = randomness.0;
         let key = hmac::SigningKey::new(&digest::SHA384, &randomness);

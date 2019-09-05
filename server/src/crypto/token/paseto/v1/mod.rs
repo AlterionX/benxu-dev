@@ -4,7 +4,7 @@ pub mod public;
 pub mod nonce;
 
 pub enum Type {
-    Local(local::Token),
-    Public(public::Token),
+    Local(local::Protocol),
+    Public(public::Protocol),
 }
 

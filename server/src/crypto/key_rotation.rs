@@ -15,14 +15,14 @@ use std::{
     },
     ops::Deref,
 };
-use crate::crypto::algo::{Algo, Key};
+use crate::crypto::algo::{Algo, SafeGenerateKey};
 
 pub struct CurrAndLastKey<A: Algo> {
     pub algo: Arc<A>,
     pub last: A::Key,
     pub curr: A::Key,
 }
-impl<A: Algo> CurrAndLastKey<A> {
+impl<K: SafeGenerateKey + Clone + Send + Sync, A: Algo<Key = K>> CurrAndLastKey<A> {
     fn new(alg: A) -> Self {
         let key = A::Key::generate(alg.key_settings());
         Self {
@@ -53,7 +53,7 @@ pub struct KeyRotator<T: Algo> {
     kill_handle: Option<(Sender<()>, thread::JoinHandle<()>)>,
 }
 
-impl<A: Algo + Send + Sync + 'static> KeyRotator<A> {
+impl<K: SafeGenerateKey + Clone + Send + Sync, A: Algo<Key = K> + Send + Sync + 'static> KeyRotator<A> {
     pub fn init(alg: A, period_between_rotation: Option<Duration>) -> KeyRotator<A> {
         let local_copy = Arc::new(KeyStore(RwLock::new(Arc::new(CurrAndLastKey::new(alg)))));
 

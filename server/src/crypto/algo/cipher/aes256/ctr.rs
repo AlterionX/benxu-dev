@@ -20,7 +20,7 @@ pub struct Key {
     key: Vec<u8>,
     nonce: Vec<u8>,
 }
-impl base::Key for Key {
+impl base::SafeGenerateKey for Key {
     type Settings = ();
     fn generate(setting: &Self::Settings) -> Self {
         let mut key = vec![0u8; 32];
@@ -49,7 +49,7 @@ impl Key {
 pub struct Algo(Cipher);
 impl base::Algo for Algo {
     type Key = Key;
-    fn key_settings<'a>(&'a self) -> &'a <<Self as base::Algo>::Key as base::Key>::Settings { &() }
+    fn key_settings<'a>(&'a self) -> &'a <<Self as base::Algo>::Key as base::SafeGenerateKey>::Settings { &() }
 }
 impl symm::Algo for Algo {
     fn encrypt(key: &Key, msg: &[u8]) -> Result<Vec<u8>, symm::EncryptError> {

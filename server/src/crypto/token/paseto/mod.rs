@@ -2,6 +2,15 @@ pub mod v1;
 pub mod v2;
 
 pub mod error;
+pub mod token;
+
+pub use token::{
+    Data as DataToken,
+    SerializedData as SerializedDataToken,
+    Packed as PackedToken,
+    Header as TokenHeader,
+    Unpacked as UnpackedToken,
+};
 
 enum Version {
     V1(v1::Type),
@@ -19,63 +28,71 @@ pub fn decrypt_phase_one<T>(array: &[u8]) -> Result<Expanded, ExpansionError> {
     })
 }
 
-pub mod shared {
-    pub fn append_u64_to_little_endian_byte_array(to_encode: u64, byte_array: &mut [u8]) -> Result<(), &'static str> {
-        const U64_BYTE_WIDTH: usize = 8;
-        const BYTE_BIT_WIDTH: usize = 8;
-        const U64_BIT_WIDTH: usize = U64_BYTE_WIDTH * BYTE_BIT_WIDTH;
-        const U64_HIGH_BIT_MASK: u64 = 0x1u64 << (U64_BIT_WIDTH - 1);
+pub fn append_u64_to_little_endian_byte_array(to_encode: u64, byte_array: &mut [u8]) -> Result<(), &'static str> {
+    const U64_BYTE_WIDTH: usize = 8;
+    const BYTE_BIT_WIDTH: usize = 8;
+    const U64_BIT_WIDTH: usize = U64_BYTE_WIDTH * BYTE_BIT_WIDTH;
+    const U64_HIGH_BIT_MASK: u64 = 0x1u64 << (U64_BIT_WIDTH - 1);
 
-        if byte_array.len() < U64_BYTE_WIDTH {
-            Err("")?;
-        }
-
-        let to_encode = to_encode & !U64_HIGH_BIT_MASK;
-
-        for offset_byte_shift in 0..U64_BYTE_WIDTH {
-            let offset_bit_shift = offset_byte_shift * BYTE_BIT_WIDTH;
-            let to_encode_offset = to_encode >> offset_bit_shift;
-            // cast should truncate, but just in case
-            const LOW_BYTE_MASK: u64 = 0xff;
-            let low_byte = (to_encode_offset & LOW_BYTE_MASK) as u8;
-            byte_array[offset_byte_shift] = low_byte;
-        }
-        Ok(())
+    if byte_array.len() < U64_BYTE_WIDTH {
+        Err("")?;
     }
 
-    pub fn multi_part_pre_auth_encoding(pieces: &[&[u8]]) -> Result<Vec<u8>, &'static str> {
+    let to_encode = to_encode & !U64_HIGH_BIT_MASK;
 
-        // precalc size
-        const HEADER_SIZE: usize = 8;
-        let mut total_size = 0;
-        total_size += HEADER_SIZE + (HEADER_SIZE * pieces.len());
-        for piece in pieces.iter() {
-            total_size += piece.len();
-        }
+    for offset_byte_shift in 0..U64_BYTE_WIDTH {
+        let offset_bit_shift = offset_byte_shift * BYTE_BIT_WIDTH;
+        let to_encode_offset = to_encode >> offset_bit_shift;
+        // cast should truncate, but just in case
+        const LOW_BYTE_MASK: u64 = 0xff;
+        let low_byte = (to_encode_offset & LOW_BYTE_MASK) as u8;
+        byte_array[offset_byte_shift] = low_byte;
+    }
+    Ok(())
+}
+pub fn multi_part_pre_auth_encoding(pieces: &[&[u8]]) -> Result<Vec<u8>, &'static str> {
 
-        // alloc and append
-        let mut buffer = vec![0; total_size];
-        let mut current_position = 0;
+    // precalc size
+    const HEADER_SIZE: usize = 8;
+    let mut total_size = 0;
+    total_size += HEADER_SIZE + (HEADER_SIZE * pieces.len());
+    for piece in pieces.iter() {
+        total_size += piece.len();
+    }
+
+    // alloc and append
+    let mut buffer = vec![0; total_size];
+    let mut current_position = 0;
+
+    let next_position = current_position + HEADER_SIZE;
+    append_u64_to_little_endian_byte_array(pieces.len() as u64, &mut buffer[current_position..next_position])?;
+    current_position = next_position;
+
+    for piece in pieces.iter() {
 
         let next_position = current_position + HEADER_SIZE;
-        append_u64_to_little_endian_byte_array(pieces.len() as u64, &mut buffer[current_position..next_position])?;
+        append_u64_to_little_endian_byte_array(piece.len() as u64, &mut buffer[current_position..next_position])?;
         current_position = next_position;
 
-        for piece in pieces.iter() {
+        let next_position = current_position + piece.len();
+        buffer[current_position..next_position].copy_from_slice(piece);
+        current_position = next_position;
 
-            let next_position = current_position + HEADER_SIZE;
-            append_u64_to_little_endian_byte_array(piece.len() as u64, &mut buffer[current_position..next_position])?;
-            current_position = next_position;
-
-            let next_position = current_position + piece.len();
-            buffer[current_position..next_position].copy_from_slice(piece);
-            current_position = next_position;
-
-        }
-
-        Ok(buffer)
     }
 
+    Ok(buffer)
+}
+
+pub fn collapse_to_vec(data: &[&[u8]]) -> Vec<u8> {
+    data.iter().flat_map(|s| s.iter()).map(|b| *b).collect()
+}
+
+pub trait KnownClaims {}
+impl KnownClaims for String {}
+
+#[cfg(test)]
+mod unit_test {
+    use super::*;
     #[test]
     fn test_le64() {
         let mut buffer = [0u8; 8];
@@ -134,3 +151,4 @@ pub mod shared {
         }
     }
 }
+

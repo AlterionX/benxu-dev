@@ -8,7 +8,7 @@ use crate::crypto::algo::{
 
 pub struct PlainTextAlgo;
 
-impl base::Key for () {
+impl base::SafeGenerateKey for () {
     type Settings = ();
     fn generate(_: &()) -> Self { () }
 }
@@ -16,7 +16,7 @@ impl base::cipher::symmetric::Key for () {}
 
 impl base::Algo for PlainTextAlgo {
     type Key = ();
-    fn key_settings<'a>(&'a self) -> &'a <<Self as base::Algo>::Key as base::Key>::Settings { &() }
+    fn key_settings<'a>(&'a self) -> &'a <<Self as base::Algo>::Key as base::SafeGenerateKey>::Settings { &() }
 }
 impl symm::Algo for PlainTextAlgo {
     fn decrypt(key: &Self::Key, data: &[u8]) -> Result<Vec<u8>, super::symmetric::DecryptError> { Ok(data.to_vec()) }

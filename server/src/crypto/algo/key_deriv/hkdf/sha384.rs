@@ -19,7 +19,7 @@ pub struct KeySettings {
 
 #[derive(Clone)]
 pub struct Key(Arc<SigningKey>);
-impl base::Key for Key {
+impl base::SafeGenerateKey for Key {
     type Settings = KeySettings;
     fn generate<'a>(settings: &'a Self::Settings) -> Self {
         let mut extracted_key = SigningKey::new(&SHA384, settings.salt.as_slice());
@@ -40,7 +40,7 @@ pub struct Algo {
 }
 impl base::Algo for Algo {
     type Key = Key;
-    fn key_settings<'a>(&'a self) -> &'a <<Self as base::Algo>::Key as base::Key>::Settings {
+    fn key_settings<'a>(&'a self) -> &'a <<Self as base::Algo>::Key as base::SafeGenerateKey>::Settings {
         &self.settings
     }
 }

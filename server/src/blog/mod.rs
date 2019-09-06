@@ -60,3 +60,4 @@ pub fn routes() -> Vec<Route> {
         auth::delete,
     ]
 }
+

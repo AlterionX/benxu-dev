@@ -42,6 +42,8 @@ pub mod decryption;
 mod nonce;
 pub mod error;
 
+pub use crate::crypto::algo::cipher::xchacha20::poly1305::{Algo, Key};
+
 const VERSION: &'static str = "v2";
 const PURPOSE: &'static str = "local";
 pub const HEADER: token::Header = token::Header::new(
@@ -61,12 +63,13 @@ impl token::Unpacked {
     }
 }
 
+// TODO make paseto return original on failure
 pub struct Protocol;
 impl Protocol {
-    pub fn encrypt<T: Serialize + KnownClaims, F: Serialize>(self, tok: token::Data<T, F>, key: &<XCHACHA20_POLY1305 as A>::Key) -> Result<token::Packed, error::Error> {
+    pub fn encrypt<T: Serialize, F: Serialize>(self, tok: token::Data<T, F>, key: &<XCHACHA20_POLY1305 as A>::Key) -> Result<token::Packed, error::Error> {
         Self::type_encrypt(tok, key)
     }
-    fn type_encrypt<T: Serialize + KnownClaims, F: Serialize>(tok: token::Data<T, F>, key: &<XCHACHA20_POLY1305 as A>::Key) -> Result<token::Packed, Error> {
+    fn type_encrypt<T: Serialize, F: Serialize>(tok: token::Data<T, F>, key: &<XCHACHA20_POLY1305 as A>::Key) -> Result<token::Packed, Error> {
         Ok(tok
            .serialize()?
            .v2_local_init()
@@ -75,10 +78,10 @@ impl Protocol {
            .pack()
         )
     }
-    pub fn decrypt<T: DeserializeOwned + KnownClaims, F: DeserializeOwned>(tok: token::Packed, key: &<XCHACHA20_POLY1305 as A>::Key) -> Result<token::Data<T, F>, error::Error> {
+    pub fn decrypt<T: DeserializeOwned, F: DeserializeOwned>(tok: token::Packed, key: &<XCHACHA20_POLY1305 as A>::Key) -> Result<token::Data<T, F>, error::Error> {
         Self::type_decrypt(tok, key)
     }
-    fn type_decrypt<T: DeserializeOwned + KnownClaims, F: DeserializeOwned>(tok: token::Packed, key: &<XCHACHA20_POLY1305 as A>::Key) -> Result<token::Data<T, F>, error::Error> {
+    fn type_decrypt<T: DeserializeOwned, F: DeserializeOwned>(tok: token::Packed, key: &<XCHACHA20_POLY1305 as A>::Key) -> Result<token::Data<T, F>, error::Error> {
         Ok(tok
            .unpack()?
            .v2_local_to_basic()?

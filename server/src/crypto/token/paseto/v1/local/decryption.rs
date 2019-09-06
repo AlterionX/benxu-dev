@@ -35,10 +35,10 @@ impl BasicToken {
         })
     }
 
-    fn message<'a>(&'a self) -> &'a[u8] {
+    fn message(&self) -> &[u8] {
         &self.buffer[32..self.message_boundary]
     }
-    fn signature<'a>(&'a self) -> &'a[u8] {
+    fn signature(&self) -> &[u8] {
         &self.buffer[self.message_boundary..]
     }
 

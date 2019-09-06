@@ -7,6 +7,8 @@ use std::{
     sync::{
         Arc,
         RwLock,
+        RwLockReadGuard,
+        PoisonError,
         mpsc::{
             Sender,
             channel,
@@ -40,11 +42,17 @@ impl<K: SafeGenerateKey + Clone + Send + Sync, A: Algo<Key = K>> CurrAndLastKey<
     }
 }
 
-pub struct KeyStore<T: Algo>(RwLock<Arc<CurrAndLastKey<T>>>);
-impl<T: Algo> Deref for KeyStore<T> {
-    type Target = RwLock<Arc<CurrAndLastKey<T>>>;
+type GuardOrPoison<'a, T> = Result<RwLockReadGuard<'a, Arc<T>>, PoisonError<RwLockReadGuard<'a, Arc<T>>>> ;
+pub struct KeyStore<A: Algo>(RwLock<Arc<CurrAndLastKey<A>>>);
+impl<A: Algo> Deref for KeyStore<A> {
+    type Target = RwLock<Arc<CurrAndLastKey<A>>>;
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+impl<A: Algo> KeyStore<A> {
+    pub fn curr_and_last(&self) -> GuardOrPoison<'_, CurrAndLastKey<A>> {
+        self.read()
     }
 }
 

@@ -4,31 +4,12 @@ pub mod v2;
 pub mod error;
 pub mod token;
 
-pub use token::{
-    Data as DataToken,
-    SerializedData as SerializedDataToken,
-    Packed as PackedToken,
-    Header as TokenHeader,
-    Unpacked as UnpackedToken,
-};
-
 enum Version {
     V1(v1::Type),
     V2(v2::Type),
 }
 
-pub enum ExpansionError {
-}
-pub struct Expanded {
-    paseto_version: Version,
-}
-pub fn decrypt_phase_one<T>(array: &[u8]) -> Result<Expanded, ExpansionError> {
-    Ok(Expanded {
-        paseto_version: Version::V2(v2::Type::Public(v2::public::Protocol)),
-    })
-}
-
-pub fn append_u64_to_little_endian_byte_array(to_encode: u64, byte_array: &mut [u8]) -> Result<(), &'static str> {
+fn append_u64_to_little_endian_byte_array(to_encode: u64, byte_array: &mut [u8]) -> Result<(), &'static str> {
     const U64_BYTE_WIDTH: usize = 8;
     const BYTE_BIT_WIDTH: usize = 8;
     const U64_BIT_WIDTH: usize = U64_BYTE_WIDTH * BYTE_BIT_WIDTH;

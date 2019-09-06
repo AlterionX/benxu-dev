@@ -19,6 +19,8 @@ mod blog;
 type DefaultAlgo = crypto::algo::cipher::plaintext::PlainTextAlgo;
 
 fn main() {
+    // initialize + prep all the things
+    sodiumoxide::init().unwrap();
     dotenv().expect("All systems nominal");
     let public_path = Path::new("./public").canonicalize().unwrap();
     rocket::ignite().mount(

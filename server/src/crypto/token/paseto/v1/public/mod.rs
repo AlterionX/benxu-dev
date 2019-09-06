@@ -4,6 +4,7 @@ mod local_prelude {
     pub use std::{ops::Deref, str, convert::TryFrom};
     pub use crate::{
         crypto::{
+            BoolToResult,
             token::paseto::{
                 multi_part_pre_auth_encoding,
                 collapse_to_vec,
@@ -64,6 +65,7 @@ impl token::SerializedData {
 }
 impl token::Unpacked {
     fn v1_public_verify(self, key: &RSAKey) -> Result<VerifiedToken, Error> {
+        self.verify_header(HEADER).ok_or(Error::Unpacking)?;
         VerifiedToken::try_from((self, key))
     }
 }

@@ -52,6 +52,8 @@ impl base::Algo for Algo {
     fn key_settings<'a>(&'a self) -> &'a <<Self as base::Algo>::Key as base::SafeGenerateKey>::Settings { &() }
 }
 impl symm::Algo for Algo {
+    type EncryptArgs = [u8];
+    type DecryptArgs = [u8];
     fn encrypt(key: &Key, msg: &[u8]) -> Result<Vec<u8>, symm::EncryptError> {
         encrypt(Cipher::aes_256_ctr(), key.as_key(), Some(key.as_nonce()), msg).map_err(|_| symm::EncryptError::Base)
     }

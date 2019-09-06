@@ -24,7 +24,7 @@ pub struct Expanded {
 }
 pub fn decrypt_phase_one<T>(array: &[u8]) -> Result<Expanded, ExpansionError> {
     Ok(Expanded {
-        paseto_version: Version::V2(v2::Type::Public(v2::public::Token)),
+        paseto_version: Version::V2(v2::Type::Public(v2::public::Protocol)),
     })
 }
 

@@ -19,6 +19,8 @@ impl base::Algo for PlainTextAlgo {
     fn key_settings<'a>(&'a self) -> &'a <<Self as base::Algo>::Key as base::SafeGenerateKey>::Settings { &() }
 }
 impl symm::Algo for PlainTextAlgo {
+    type EncryptArgs = [u8];
+    type DecryptArgs = [u8];
     fn decrypt(key: &Self::Key, data: &[u8]) -> Result<Vec<u8>, super::symmetric::DecryptError> { Ok(data.to_vec()) }
     fn encrypt(key: &Self::Key, data: &[u8]) -> Result<Vec<u8>, super::symmetric::EncryptError> { Ok(data.to_vec()) }
 }

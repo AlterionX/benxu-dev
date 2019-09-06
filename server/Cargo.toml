@@ -21,7 +21,9 @@ dotenv = "0.14.1"
 ring = { version = "0.13.5", features = ["rsa_signing"] }
 openssl = "0.10.24"
 rand = "0.7.0"
+sodiumoxide = "0.2.4"
 hex = "0.3.2"
 base64 = "0.10.1"
 untrusted = "0.6.2"
+blake2-rfc = "0.2.18"
 

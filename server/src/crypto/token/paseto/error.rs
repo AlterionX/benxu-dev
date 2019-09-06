@@ -2,7 +2,6 @@ use serde_json as json;
 use std::str::Utf8Error;
 use crate::crypto::algo::{
     cipher::symmetric as symm,
-    hash::asymmetric as hash_asymm,
 };
 #[derive(Debug)]
 pub enum UnpackError {

@@ -1,4 +1,10 @@
-use ring::{hmac, digest};
+use crate::crypto::algo::{
+    Algo as A,
+    hash::{
+        symmetric::Algo as HashA,
+        hmac::sha384::Algo as HMAC_SHA384,
+    },
+};
 use rand::{
     rngs::OsRng,
     RngCore,
@@ -31,10 +37,10 @@ impl Nonce {
     }
     pub fn create_from(randomness: Randomness, msg: &[u8]) -> Nonce {
         let randomness = randomness.0;
-        let key = hmac::SigningKey::new(&digest::SHA384, &randomness);
-        let hash = hmac::sign(&key, msg);
+        let key = <HMAC_SHA384 as A>::Key::new(&randomness);
+        let hash = <HMAC_SHA384 as HashA>::sign(msg, &key);
         let mut free_buffer = randomness; // should I just alloc another one...? Oh well.
-        free_buffer[0..32].copy_from_slice(&hash.as_ref()[0..32]);
+        free_buffer[0..32].copy_from_slice(&hash[0..32]);
         Nonce(free_buffer)
     }
     pub fn get_salt<'a>(&'a self) -> &'a [u8] {
@@ -47,6 +53,7 @@ impl Nonce {
         &self.0
     }
 }
+
 #[cfg(test)]
 mod unit_tests {
     use super::*;

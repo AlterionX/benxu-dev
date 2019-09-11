@@ -1,4 +1,4 @@
-#![feature(const_str_as_bytes, proc_macro_hygiene, decl_macro, optin_builtin_traits, type_ascription, try_trait, generic_associated_types)]
+#![feature(const_str_as_bytes, proc_macro_hygiene, decl_macro, try_trait)]
 
 #[macro_use] extern crate rocket;
 

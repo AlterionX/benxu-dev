@@ -41,6 +41,10 @@ pub mod accounts {
             status::Custom(Status::new(501, "Not yet implemented"), ())
         }
     }
+    pub mod credentials {
+        pub mod credential {
+        }
+    }
 }
 
 pub fn routes() -> Vec<Route> {
@@ -57,7 +61,6 @@ pub fn routes() -> Vec<Route> {
         accounts::account::delete,
         auth::get,
         auth::post,
-        auth::patch,
         auth::delete,
     ]
 }

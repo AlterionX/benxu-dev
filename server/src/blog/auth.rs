@@ -23,7 +23,6 @@ use rocket::{
     },
     State,
 };
-use rocket_contrib::json::Json;
 use serde::{
     Serialize,
     Deserializer,
@@ -521,6 +520,7 @@ pub enum AuthenticationData {
     Password(PasswordData),
 }
 impl AuthenticationData {
+    // TODO ship creation code to crate::blog::accounts.
     /// Authenticates or creates user or modifies table.
     fn authenticate_or_create(
         &self,
@@ -680,19 +680,16 @@ impl FromDataSimple for LoginData {
 }
 
 #[must_use]
-fn add_authz_tok_if_absent(cookies: &mut Cookies, tok: CredentialToken, key: &<paseto::v2::local::Algo as A>::Key) -> Result<(), ()> {
-    if cookies.get(Credentials::<()>::AUTH_COOKIE_NAME).is_some() {
-        return Err(())
-    };
-    cookies.add(Cookie::new(
+fn add_authz_tok(cookies: &mut Cookies, tok: CredentialToken, key: &<paseto::v2::local::Algo as A>::Key) -> Result<(), ()> {
+    cookies.add(Cookie::build(
         Credentials::<()>::AUTH_COOKIE_NAME,
         paseto::v2::local::Protocol.encrypt(tok, key)
             .map_err(|_| ())
             .and_then(|s| str::from_utf8(&s).map(|s| s.to_owned()).map_err(|_| ()))?,
-    ));
+    ).secure(true).http_only(true).finish());
     Ok(())
 }
-/// Route handler for logging into the blog as well as creating an account.
+/// Route handler for creating a session as well as creating an user.
 #[post("/login", format = "json", data = "<data>")]
 pub fn post(
     db: db::DB,
@@ -708,36 +705,25 @@ pub fn post(
         credentials.as_ref(),
         data.user_to_create,
     ).map_err(|e| status::Custom::from(e))?;
-    add_authz_tok_if_absent(
-        &mut cookies,
-        paseto::token::Data {
-            msg: UnverifiedPermissionsCredential::new(user.id, perms).0,
-            footer: None
-        },
-        &tok_key_store.curr_and_last().map_err(|_| status::Custom(Status::InternalServerError, ()))?.curr,
-    ).map_err(|_| status::Custom(Status::InternalServerError, ()))?;
-    Ok(Redirect::to("/")) // TODO create a landing page + replace
-}
-/// change a credential
-#[patch("/login", format = "json", data = "<login_data>")]
-pub fn patch(
-    db: db::DB,
-    login_data: Json<AuthenticationData>,
-    cookies: Cookies,
-    credentials: Option<Credentials<AnyPermissions>>,
-) -> status::Custom<()> {
-    // db.insert_user(basic);
-    if credentials.is_some() {
-        // create_new_and_replace(db, password, user);
+    if cookies.get(Credentials::<()>::AUTH_COOKIE_NAME).is_some() {
+        Ok(Redirect::to("/")) // TODO create a landing page + replace
     } else {
+        add_authz_tok(
+            &mut cookies,
+            paseto::token::Data {
+                msg: UnverifiedPermissionsCredential::new(user.id, perms).0,
+                footer: None
+            },
+            &tok_key_store.curr_and_last().map_err(|_| status::Custom(Status::InternalServerError, ()))?.curr,
+        ).map_err(|_| status::Custom(Status::InternalServerError, ()))?;
+        Ok(Redirect::to("/")) // TODO create a landing page + replace
     }
-    status::Custom(Status::new(501, "Not yet implemented"), ())
 }
-/// deletes an account
+/// Route handler for deleting a session.
 #[delete("/login")]
-pub fn delete(db: db::DB) -> status::Custom<()> {
-    // db.delete_user(db::find_user_by_hash()?);
-    status::Custom(Status::new(501, "Not yet implemented"), ())
+pub fn delete(mut cookies: Cookies) -> status::Custom<()> {
+    cookies.remove(Cookie::named(Credentials::<()>::AUTH_COOKIE_NAME));
+    status::Custom(Status::Ok, ())
 }
 
 #[cfg(test)]

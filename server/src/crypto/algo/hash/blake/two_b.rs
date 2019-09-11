@@ -41,11 +41,13 @@ impl base::Algo for Algo {
     fn key_settings<'a>(&'a self) -> &<<Self as base::Algo>::Key as base::Key>::Settings { &self.0 }
 }
 impl sym::Algo for Algo {
-    fn sign(msg: &[u8], key: &Self::Key) -> Vec<u8> {
+    type SigningInput = [u8];
+    fn sign(msg: &Self::SigningInput, key: &Self::Key) -> Vec<u8> {
         let key = &key;
         blake2b(key.hash_len(), &key, msg).as_bytes().to_vec()
     }
-    fn verify(msg: &[u8], signature: &[u8], key: &Self::Key) -> bool {
+    type VerificationInput = [u8];
+    fn verify(msg: &Self::VerificationInput, signature: &[u8], key: &Self::Key) -> bool {
         blake2b(key.hash_len(), &key, msg) == *signature
     }
 }

@@ -48,14 +48,16 @@ impl base::Algo for Algo {
     fn key_settings<'a>(&'a self) -> &<<Self as base::Algo>::Key as base::Key>::Settings { &() }
 }
 impl sym::Algo for Algo {
-    fn sign(msg: &[u8], key: &Self::Key) -> Vec<u8> {
+    type SigningInput = [u8];
+    fn sign(input: &Self::SigningInput, key: &Self::Key) -> Vec<u8> {
         let key = &key;
-        hmac::sign(&key, msg).as_ref().to_vec()
+        hmac::sign(&key, input).as_ref().to_vec()
     }
-    fn verify(msg: &[u8], signature: &[u8], key: &Self::Key) -> bool {
+    type VerificationInput = [u8];
+    fn verify(input: &Self::VerificationInput, signature: &[u8], key: &Self::Key) -> bool {
         hmac::verify_with_own_key(
             &key,
-            msg,
+            input,
             signature,
         ).is_ok()
     }

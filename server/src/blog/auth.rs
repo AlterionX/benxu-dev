@@ -694,7 +694,7 @@ fn add_authz_tok_if_absent(cookies: &mut Cookies, tok: CredentialToken, key: &<p
 }
 /// Route handler for logging into the blog as well as creating an account.
 #[post("/login", format = "json", data = "<data>")]
-pub fn post<'req>(
+pub fn post(
     db: db::DB,
     mut cookies: Cookies,
     tok_key_store: State<Arc<KeyStore<paseto::v2::local::Algo>>>,

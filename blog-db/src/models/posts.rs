@@ -9,9 +9,18 @@ use chrono::{DateTime, Utc};
 #[table_name="posts"]
 pub struct Data {
     pub id: uuid::Uuid,
+    pub created_at: DateTime<Utc>,
+    pub created_by: uuid::Uuid,
+    pub updated_at: DateTime<Utc>,
+    pub updated_by: uuid::Uuid,
+    pub published_at: Option<DateTime<Utc>>,
+    pub published_by: Option<uuid::Uuid>,
+    pub archived_at: Option<DateTime<Utc>>,
+    pub archived_by: Option<uuid::Uuid>,
+    pub deleted_at: Option<DateTime<Utc>>,
+    pub deleted_by: Option<uuid::Uuid>,
     pub title: String,
     pub body: String,
-    pub published: bool,
 }
 
 #[derive(Identifiable, Insertable, Serialize, Deserialize)]
@@ -44,5 +53,35 @@ pub struct Changed<'a> {
     pub body: Option<&'a str>,
     #[serde(default, deserialize_with = "option_datefmt")]
     pub published_at: Option<DateTime<Utc>>,
+}
+
+#[derive(AsChangeset, Serialize, Deserialize)]
+#[table_name="posts"]
+pub struct Publishing {
+    published_at: DateTime<Utc>,
+    published_by: uuid::Uuid,
+}
+impl Publishing {
+    pub fn new(published_by: uuid::Uuid) -> Self {
+        Self {
+            published_at: Utc::now(),
+            published_by: published_by,
+        }
+    }
+}
+
+#[derive(AsChangeset, Serialize, Deserialize)]
+#[table_name="posts"]
+pub struct Archival {
+    archived_at: DateTime<Utc>,
+    archived_by: uuid::Uuid,
+}
+impl Archival {
+    pub fn new(archived_by: uuid::Uuid) -> Self {
+        Self {
+            archived_at: Utc::now(),
+            archived_by: archived_by,
+        }
+    }
 }
 

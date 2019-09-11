@@ -1,7 +1,8 @@
 pub mod users;
+pub mod credentials;
+pub mod permissions;
 pub mod posts;
 pub mod tags;
-pub mod credentials;
 pub mod post_tag_junctions;
 
 // impl for utilizing Option<DateTime<_>> in db models

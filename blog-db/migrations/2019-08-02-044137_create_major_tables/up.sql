@@ -12,6 +12,15 @@ CREATE TABLE users (
     email VARCHAR(320) -- 64 char for first part, 1 for `@`, 255 for domain, TODO uniqueness?
 );
 
+CREATE TABLE permissions (
+    id uuid NOT NULL UNIQUE PRIMARY KEY,
+    created_at timestamp with time zone NOT NULL DEFAULT (now() at time zone 'utc'),
+    created_by uuid REFERENCES users(id),
+    -- actual data
+    user_id uuid NOT NULL REFERENCES users(id),
+    permission TEXT NOT NULL -- TODO consider enum?
+);
+
 -- TODO consider images & history
 CREATE TABLE posts (
     -- management
@@ -59,9 +68,10 @@ CREATE TABLE passwords (
     created_by uuid REFERENCES users(id) NOT NULL,
     updated_at timestamp with time zone NOT NULL DEFAULT (now() at time zone 'utc'),
     updated_by uuid REFERENCES users(id) NOT NULL,
-    user_id uuid REFERENCES users(id) NOT NULL,
+    user_id uuid REFERENCES users(id) NOT NULL UNIQUE,
     -- basic info
-    hash TEXT NOT NULL
+    hash TEXT NOT NULL,
+    salt VARCHAR(16) NOT NULL
 );
 CREATE TABLE google_sso (
     -- management

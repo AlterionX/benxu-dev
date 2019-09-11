@@ -18,6 +18,17 @@ table! {
         updated_by -> Uuid,
         user_id -> Uuid,
         hash -> Text,
+        salt -> Varchar,
+    }
+}
+
+table! {
+    permissions (id) {
+        id -> Uuid,
+        created_at -> Timestamptz,
+        created_by -> Nullable<Uuid>,
+        user_id -> Uuid,
+        permission -> Text,
     }
 }
 
@@ -61,7 +72,7 @@ table! {
 table! {
     users (id) {
         id -> Uuid,
-        user_name -> Nullable<Text>,
+        user_name -> Text,
         created_at -> Timestamptz,
         created_by -> Nullable<Uuid>,
         updated_at -> Timestamptz,
@@ -80,6 +91,7 @@ joinable!(tags -> users (created_by));
 allow_tables_to_appear_in_same_query!(
     google_sso,
     passwords,
+    permissions,
     posts,
     post_tag_junctions,
     tags,

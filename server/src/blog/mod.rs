@@ -57,6 +57,7 @@ pub fn routes() -> Vec<Route> {
         accounts::account::delete,
         auth::get,
         auth::post,
+        auth::patch,
         auth::delete,
     ]
 }

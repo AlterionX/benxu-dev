@@ -1,7 +1,11 @@
 pub mod db;
 pub use db::DB;
-pub mod posts;
+pub mod accounts;
 pub mod auth;
+pub mod credentials;
+pub mod permissions;
+pub mod posts;
+pub mod login;
 
 use rocket::{
     Route,
@@ -21,32 +25,6 @@ pub mod editor {
     }
 }
 
-pub mod accounts {
-    use rocket::{response::status, http::Status};
-    #[post("/accounts")]
-    pub fn post() -> status::Custom<()> {
-        status::Custom(Status::new(501, "Not yet implemented"), ())
-    }
-    pub mod account {
-        use rocket::{response::status, http::{RawStr, Status}};
-        #[get("/accounts/<id>")]
-        pub fn get(id: &RawStr) {
-        }
-        #[patch("/accounts/<id>")]
-        pub fn patch(id: &RawStr) -> status::Custom<()> {
-            status::Custom(Status::new(501, "Not yet implemented"), ())
-        }
-        #[delete("/accounts/<id>")]
-        pub fn delete(id: &RawStr) -> status::Custom<()> {
-            status::Custom(Status::new(501, "Not yet implemented"), ())
-        }
-    }
-    pub mod credentials {
-        pub mod credential {
-        }
-    }
-}
-
 pub fn routes() -> Vec<Route> {
     routes![
         get, // blog front page
@@ -59,9 +37,16 @@ pub fn routes() -> Vec<Route> {
         accounts::account::get,
         accounts::account::patch,
         accounts::account::delete,
-        auth::get,
-        auth::post,
-        auth::delete,
+        login::get,
+        login::post,
+        login::delete,
+        credentials::pws::post,
+        credentials::pws::pw::patch,
+        credentials::pws::pw::delete,
+        permissions::post,
+        permissions::delete,
+        permissions::permission::get,
+        permissions::permission::delete,
     ]
 }
 

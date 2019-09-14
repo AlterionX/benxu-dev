@@ -1,4 +1,4 @@
-#![feature(const_str_as_bytes, proc_macro_hygiene, decl_macro, try_trait)]
+#![feature(const_str_as_bytes, proc_macro_hygiene, type_ascription, decl_macro, try_trait)]
 
 #[macro_use] extern crate rocket;
 
@@ -10,6 +10,8 @@ use dotenv::dotenv;
 use rocket::fairing::AdHoc;
 use rocket_contrib::serve::StaticFiles;
 use page_client as pages;
+
+mod uuid_conv;
 
 mod crypto;
 mod encoding;

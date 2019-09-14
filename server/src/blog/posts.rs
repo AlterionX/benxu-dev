@@ -63,7 +63,7 @@ pub mod post {
         id: RUuid,
         update: Json<posts::Changed>,
         db: DB,
-        _auth: auth::Credentials<auth::CanEdit>,
+        _auth: auth::Credentials<auth::perms::CanEdit>,
     ) -> status::Custom<()> {
         let id = if let Ok(id) = conv_ruuid(id) {
             id
@@ -85,7 +85,7 @@ pub mod post {
     pub fn delete(
         id: RUuid,
         db: DB,
-        _auth: auth::Credentials<auth::CanDelete>,
+        _auth: auth::Credentials<auth::perms::CanDelete>,
     ) -> status::Custom<()> {
         let id = if let Ok(id) = conv_ruuid(id) {
             id
@@ -103,7 +103,7 @@ pub mod post {
     pub fn publish(
         id: RUuid,
         db: DB,
-        auth: auth::Credentials<auth::CanPublish>,
+        auth: auth::Credentials<auth::perms::CanPublish>,
     ) -> status::Custom<()> {
         let id = if let Ok(id) = conv_ruuid(id) {
             id
@@ -119,7 +119,7 @@ pub mod post {
     pub fn archive(
         id: RUuid,
         db: DB,
-        auth: auth::Credentials<auth::CanArchive>,
+        auth: auth::Credentials<auth::perms::CanArchive>,
     ) -> status::Custom<()> {
         let id = if let Ok(id) = conv_ruuid(id) {
             id

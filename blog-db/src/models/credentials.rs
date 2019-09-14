@@ -86,6 +86,7 @@ pub mod pw {
     #[derive(AsChangeset, Serialize, Deserialize)]
     #[table_name="passwords"]
     pub struct Changed {
+        pub updated_by: uuid::Uuid,
         pub hash: Option<String>,
         pub salt: Option<String>,
     }

@@ -8,5 +8,7 @@ members = [
     # blog pages
     "blog-client",
     "blog-db",
+    # crypto suite extracted for convenience
+    "crypto",
 ]
 

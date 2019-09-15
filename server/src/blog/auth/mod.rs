@@ -45,7 +45,7 @@ pub struct Credentials<L> {
 }
 impl<L> Credentials<L> {
     pub fn to_user_id(self) -> uuid::Uuid {
-        self.user_id
+        self.user_id()
     }
     pub fn has_permissions(&self, req_perms: &[Permission]) -> bool {
         for req_perm in req_perms.iter() {

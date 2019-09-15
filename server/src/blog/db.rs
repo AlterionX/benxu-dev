@@ -29,8 +29,9 @@ impl DB {
             .set(update)
             .execute(self.conn())
     }
-    pub fn delete_post_with_id(&self, id: uuid::Uuid) -> Result<usize, diesel::result::Error> {
-        diesel::delete(schema::posts::table.find(id))
+    pub fn delete_post_with_id(&self, id: uuid::Uuid, deletion: &posts::Deletion) -> Result<usize, diesel::result::Error> {
+        diesel::update(schema::posts::table.find(id))
+            .set(deletion)
             .execute(self.conn())
     }
     pub fn publish_post_with_id(&self, id: uuid::Uuid, publishing: posts::Publishing) -> Result<usize, diesel::result::Error> {
@@ -126,3 +127,6 @@ impl DB {
     }
 }
 
+#[cfg(test)]
+mod test_db {
+}

@@ -22,14 +22,14 @@ impl base::SafeGenerateKey for Key {
     fn generate(_: &Self::Settings) -> Self {
         let mut generated_secret = vec![0; Algo::SECRET_LEN as usize];
         OsRng.fill_bytes(generated_secret.as_mut_slice());
-        Key::new(&generated_secret)
+        Key::new(generated_secret)
     }
 }
 impl sym::Key for Key {}
 impl Key {
-    pub fn new(secret: &Vec<u8>) -> Self {
+    pub fn new(secret: Vec<u8>) -> Self {
         Self {
-            secret_key: secret.clone(),
+            secret_key: secret,
         }
     }
 }

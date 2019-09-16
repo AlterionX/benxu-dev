@@ -1,9 +1,8 @@
+//! Handlers and functions for each of the various different ways to log into a site.
+
 pub mod data;
 
-use std::sync::Arc;
-
 use rocket::{
-    response::status,
     http::Status,
     State,
 };
@@ -13,82 +12,118 @@ use rocket_contrib::{
 };
 
 use crate::{
+    PWKeyFixture,
     uuid_conv::FromRUuid,
-    crypto::{
-        KeyStore,
-        algo::hash::argon2::d::Algo as ARGON2D,
-    },
     blog::{
-        db,
+        DB,
         auth,
         credentials::data::SavableCredential,
     },
 };
 
+/// Handlers and functions for password credentials.
 pub mod pws {
     use super::*;
 
+    /// Allows for the creation of new passwords. Only functions if attempting to create a password
+    /// for self or if the caller possesses the
+    /// [`CanEditUserCredentials`](crate::blog::auth::perms::CanEditUserCredentials) permissions.
+    ///
+    /// Can only use this to create passwords, not update them.
     #[post("/credentials/pws", format = "json", data = "<to_create>")]
     pub fn post(
-        db: db::DB,
+        db: DB,
         credentials: auth::UnverifiedPermissionsCredential,
-        pw_key_store: State<Arc<KeyStore<ARGON2D>>>,
+        pw_key_store: State<PWKeyFixture>,
         to_create: Json<data::Password>,
-    ) -> status::Custom<()> {
-        let curr_and_last = pw_key_store.curr_and_last();
+    ) -> Status {
+        let key = pw_key_store.key();
         let to_create = data::PasswordWithBackingInfo {
             db: &db,
             credentials: &credentials,
-            argon2d_key: match &curr_and_last {
-                Ok(k) => &k.curr,
-                Err(_) => return status::Custom(Status::InternalServerError, ()),
-            },
+            argon2d_key: &key,
             pw: &to_create,
         };
-        match to_create.convert_and_save_with_credentials() {
-            Ok(()) => status::Custom(Status::Ok, ()),
-            Err(()) => status::Custom(Status::InternalServerError, ()),
-        }
+        to_create
+            .convert_and_save_with_credentials()
+            .map_or_else(|_| Status::InternalServerError, |_| Status::Ok)
     }
 
+    /// Handlers for manipulating password records.
     pub mod pw {
         use super::*;
 
-        #[patch("/credentials/pws/<id>", format = "json", data = "<update>")]
+        /// Handler for changing a password. Must be chaning own credentials or have the
+        /// [`CanEditUserCredentials`](crate::blog::auth::perms::CanEditUserCredentials) permissions.
+        #[patch("/credentials/pws/<id>", format = "json", data = "<changed_pw>")]
         pub fn patch(
-            db: db::DB,
-            pw_key_store: State<Arc<KeyStore<ARGON2D>>>,
-            id: RUuid,
+            db: DB,
+            pw_key_store: State<PWKeyFixture>,
             credentials: auth::UnverifiedPermissionsCredential,
-            update: Json<data::Password>,
-        ) -> status::Custom<()> {
-            let curr_and_last = pw_key_store.curr_and_last();
-            // TODO fix this -- this utilizes a field in update, should get rid of that
+            id: RUuid,
+            changed_pw: Json<String>,
+        ) -> Result<Status, Status> {
+            let id = uuid::Uuid::from_ruuid(id);
+            let target_user_id = db.find_pw_by_id(id)
+                .map(|pw_rec| pw_rec.user_id)
+                .map_err(|e| match e {
+                    diesel::result::Error::NotFound => Status::NotFound,
+                    _ => Status::InternalServerError,
+                })?;
+            let credentials: auth::UnverifiedPermissionsCredential = credentials
+                .into_inner()
+                .change_level::<auth::perms::CanEditUserCredentials>()
+                .map(|cr| cr.back_to_any())
+                .or_else(|cr| if target_user_id == cr.user_id() {
+                    Ok(cr)
+                } else {
+                    Err(Status::Unauthorized)
+                })?
+                .into();
+            let update = data::Password {
+                user_id: credentials.user_id(),
+                password: changed_pw.into_inner(),
+            };
+            let key = pw_key_store.key();
             let to_create = data::PasswordWithBackingInfo {
                 db: &db,
                 credentials: &credentials,
-                argon2d_key: match &curr_and_last {
-                    Ok(k) => &k.curr,
-                    Err(_) => return status::Custom(Status::InternalServerError, ()),
-                },
+                argon2d_key: &key,
                 pw: &update,
             };
-            match to_create.convert_and_update_with_credentials() {
-                Ok(()) => status::Custom(Status::Ok, ()),
-                Err(()) => status::Custom(Status::InternalServerError, ()),
-            }
+            to_create.convert_and_update_with_credentials()
+                .map(|_| Status::Ok)
+                .map_err(|_| Status::InternalServerError)
         }
+        /// Handler for deleting a password. Must be chaning own credentials or have the
+        /// [`CanEditUserCredentials`](crate::blog::auth::perms::CanEditUserCredentials) permissions.
+        ///
+        /// An example use case is when you wish to utilize only FIDO or OAuth to log in.
         #[delete("/credentials/pws/<id>")]
         pub fn delete(
-            db: db::DB,
-            id: RUuid,
+            db: DB,
             credentials: auth::UnverifiedPermissionsCredential,
-        ) -> status::Custom<()> {
-            // TODO check credentials
-            match db.delete_pw_by_id(uuid::Uuid::from_ruuid(id)) {
-                Ok(_) => status::Custom(Status::Ok, ()),
-                Err(_) => status::Custom(Status::InternalServerError, ()),
-            }
+            id: RUuid,
+        ) -> Result<Status, Status> {
+            let id = uuid::Uuid::from_ruuid(id);
+            let target_user_id = db.find_pw_by_id(id)
+                .map(|pw_rec| pw_rec.user_id)
+                .map_err(|e| match e {
+                    diesel::result::Error::NotFound => Status::NotFound,
+                    _ => Status::InternalServerError,
+                })?;
+            credentials
+                .into_inner()
+                .change_level::<auth::perms::CanEditUserCredentials>()
+                .map(|_| ())
+                .or_else(|cr| if target_user_id == cr.user_id() {
+                    Ok(())
+                } else {
+                    Err(Status::Unauthorized)
+                })?;
+            db.delete_pw_by_id(id)
+                .map(|_| Status::Ok)
+                .map_err(|_| Status::InternalServerError)
         }
     }
 }

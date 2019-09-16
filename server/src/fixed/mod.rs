@@ -1,17 +1,23 @@
-use crate::pages;
+//! Groups all the static pages together.
+
+use page_client;
 use rocket::Route;
-use maud::{Markup};
+use maud::Markup;
 
 mod links;
 mod contacts;
 mod resume;
 mod projects;
 
+/// Returns the "index" page, aka the home page of the website.
+///
+/// This simply calls [`page_client::index()`] from [`page_client`].
 #[get("/")]
 fn get_index() -> Markup {
-    pages::index()
+    page_client::index()
 }
 
+/// Provides a [`Vec`] of [`Route`]s to be attached with [`rocket::Rocket::mount()`].
 pub fn routes() -> Vec<Route> {
     routes![
         get_index,

@@ -1,7 +1,12 @@
+//! Errors that can occur while using the permission endpoints.
+
 pub(super) use diesel::result::Error as Diesel;
 
+/// Represents possible errors from using the database for permissions.
 pub enum Error {
+    /// Database errors of many kinds.
     DB(Diesel),
+    /// Insufficient permissions for accessing an endpoint for permissions.
     Unauthorized,
 }
 impl From<Diesel> for Error {
@@ -9,12 +14,12 @@ impl From<Diesel> for Error {
         Self::DB(e)
     }
 }
-impl From<Error> for rocket::response::status::Custom<()> {
+impl From<Error> for rocket::http::Status {
     fn from(e: Error) -> Self {
-        Self(match e {
-            Error::DB(_) => rocket::http::Status::InternalServerError,
-            Error::Unauthorized => rocket::http::Status::Unauthorized,
-        }, ())
+        match e {
+            Error::DB(_) => Self::InternalServerError,
+            Error::Unauthorized => Self::Unauthorized,
+        }
     }
 }
 

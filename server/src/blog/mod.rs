@@ -1,3 +1,6 @@
+//! Marshalls the data between the [`blog_client`](../blog_client) and [`blog_db`](../blog_db) as well as performing
+//! authentication and authorization through the [`auth`] module.
+
 pub mod db;
 pub use db::DB;
 pub mod accounts;
@@ -9,22 +12,26 @@ pub mod login;
 
 use rocket::{
     Route,
-    response::status,
     http::Status
 };
 
+/// Handler for serving the primary web app, to be implemented.
 #[get("/")]
-pub fn get() -> status::Custom<()> {
-    status::Custom(Status::new(501, "Not yet implemented"), ())
+pub fn get() -> Status {
+    Status::NotImplemented
 }
 
+/// Handlers, functions, structs for marshalling editor data and retrieving the webpage.
 pub mod editor {
+    use rocket::http::Status;
+    /// Handler for serving the editor page, to be implemented.
     #[get("/editor")]
-    pub fn get() -> &'static str {
-        "editor, eventually"
+    pub fn get() -> Status {
+        Status::NotImplemented
     }
 }
 
+/// Provides a [`Vec`] of [`Route`]s to be attached with [`rocket::Rocket::mount()`].
 pub fn routes() -> Vec<Route> {
     routes![
         get, // blog front page
@@ -32,6 +39,8 @@ pub fn routes() -> Vec<Route> {
         posts::post::get,
         posts::post::patch,
         posts::post::delete,
+        posts::post::publish,
+        posts::post::archive,
         editor::get,
         accounts::post,
         accounts::account::get,

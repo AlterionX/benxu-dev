@@ -1,15 +1,10 @@
+//! Handlers and functions for utilizing the permissions system of the blog.
+
 pub mod error;
-pub use error::Error as Error;
+use error::Error as Error;
 pub mod data;
 
-use std::{
-    sync::Arc,
-};
-use rocket::{
-    response::status,
-    http::{Status, Cookies},
-    State,
-};
+use rocket::http::Status;
 use rocket_contrib::{
     json::Json,
     uuid::Uuid as RUuid,
@@ -22,15 +17,12 @@ use crate::{
         db,
         auth,
     },
-    crypto::{
-        KeyStore,
-        token::paseto,
-    },
 };
 
-fn create_all(db: &db::DB, to_create: Vec<permissions::New>) -> Result<Vec<permissions::Data>, error::Diesel> {
-    db.create_all_permissions(to_create)
-}
+/// Checks if credentials allows for creation of requested permissions.
+///
+/// Only allows for requested permissions to be created if the user logged in has all the requested
+/// permissions as well as [`CanGrantPermissions`](crate::blog::auth::perms::CanGrantPermission).
 pub fn validate_and_create_all(
     db: &db::DB,
     credentials: auth::Credentials<auth::perms::CanGrantPermission>,
@@ -47,53 +39,59 @@ pub fn validate_and_create_all(
             permission: p.as_str(),
         }
     }).collect();
-    Ok(create_all(db, permissions_to_create)?)
+    Ok(db.create_all_permissions(permissions_to_create)?)
 }
+/// Create a list of credentials. Requires caller to have the
+/// [`CanGrantPermission`](crate::blog::auth::perms::CanGrantPermission) permission as well as any
+/// permissions they wish to grant.
 #[post("/permissions/<target_user_id>", format = "json", data = "<permissions_to_create>")]
 pub fn post(
     db: db::DB,
-    mut cookies: Cookies,
-    tok_key_store: State<Arc<KeyStore<paseto::v2::local::Algo>>>,
     credentials: auth::Credentials<auth::perms::CanGrantPermission>,
     target_user_id: RUuid,
     permissions_to_create: Json<Vec<auth::Permission>>,
-) -> status::Custom<()> {
+) -> Status {
     let target_user_id = uuid::Uuid::from_ruuid(target_user_id);
-    match validate_and_create_all(
+    validate_and_create_all(
         &db,
         credentials,
         target_user_id,
         permissions_to_create,
-    ) {
-        Ok(_) => status::Custom(Status::Ok, ()),
-        Err(e) => e.into(),
-    }
+    )
+        .map_or_else(|e| e.into(), |_| Status::Ok)
 }
 
+/// Deletes credentials satisfying the provided [`Query`](crate::blog::permissions::data::Query).
+/// Requires caller to have the
+/// [`CanDeletePermission`](crate::blog::auth::perms::CanDeletePermission) permission.
 #[delete("/permissions", format = "json", data = "<to_delete>")]
 pub fn delete(
     db: db::DB,
+    _credentials: auth::Credentials<auth::perms::CanDeletePermission>,
     to_delete: Json<data::Query>,
-    credentials: auth::Credentials<auth::perms::CanDeletePermission>,
-) -> Result<Json<Vec<permissions::Data>>, status::Custom<()>> {
+) -> Result<Json<Vec<permissions::Data>>, Status> {
     let to_delete = to_delete.into_inner();
-    let mut permissions = if let Some(user_id) = to_delete.user_id() {
-        db.delete_permissions_by_user_id(user_id)
-            .map_err(|e| e.into(): Error)?
-    } else {
-        vec![]
-    };
-    permissions.append(&mut if let Some(permission_ids) = to_delete.permission_ids() {
-        db.delete_permissions_with_ids(permission_ids)
-            .map_err(|e| e.into(): Error)?
-    } else {
-        vec![]
-    });
+    let permissions = vec![
+        to_delete.user_id()
+            .map(|id| db.delete_permissions_by_user_id(id))
+            .transpose()
+            .map_err(Error::from)?
+            .unwrap_or(vec![]),
+        to_delete.permission_ids()
+            .map(|id| db.delete_permissions_with_ids(id))
+            .transpose()
+            .map_err(Error::from)?
+            .unwrap_or(vec![]),
+    ]
+        .into_iter()
+        .flatten()
+        .collect();
     Ok(Json(permissions))
 }
 
+/// Handlers and functions for managing individual permissions.
 pub mod permission {
-    use rocket::response::status;
+    use rocket::http::Status;
     use rocket_contrib::{
         json::Json,
         uuid::Uuid as RUuid,
@@ -109,22 +107,26 @@ pub mod permission {
         },
     };
 
+    /// Gets the permission with the requested id. Requires caller to have the
+    /// [`CanViewPermission`](crate::blog::auth::perms::CanViewPermission`) permission.
     #[get("/permissions/<id>")]
     pub fn get(
         db: db::DB,
+        _credentials: auth::Credentials<auth::perms::CanViewPermission>,
         id: RUuid,
-        credentials: auth::Credentials<auth::perms::CanViewPermission>,
-    ) -> Result<Json<permissions::Data>, status::Custom<()>> {
+    ) -> Result<Json<permissions::Data>, Status> {
         db.get_permission_with_id(uuid::Uuid::from_ruuid(id))
             .map(|p| Json(p))
             .map_err(|e| (e.into(): Error).into())
     }
+    /// Deletes the permission with the requested id. Requires caller to have the
+    /// [`CanDeletePermission`](crate::blog::auth::perms::CanDeletePermission`) permission.
     #[delete("/permissions/<id>")]
     pub fn delete(
         db: db::DB,
+        _credentials: auth::Credentials<auth::perms::CanDeletePermission>,
         id: RUuid,
-        credentials: auth::Credentials<auth::perms::CanDeletePermission>,
-    ) -> Result<Json<permissions::Data>, status::Custom<()>> {
+    ) -> Result<Json<permissions::Data>, Status> {
         db.delete_permission_with_id(uuid::Uuid::from_ruuid(id))
             .map(|p| Json(p))
             .map_err(|e| (e.into(): Error).into())

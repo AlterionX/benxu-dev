@@ -1,3 +1,5 @@
+//! Error data and conversions.
+
 use rocket::{
     response::status,
     http::Status,
@@ -12,9 +14,11 @@ pub enum Error {
     LackingPermissions,
     /// Credentials do not match user.
     BadCredentials,
+    /// Credentials are lacking.
     Unauthorized,
     /// KeyStore is poisoned.
     KeyStorePoisoned,
+    /// Did not initialize a key store. Probably forgot to [`rocket::Rocket::manage()`] it.
     KeyStoreAbsent,
 }
 impl From<diesel::result::Error> for Error {
@@ -39,6 +43,11 @@ impl From<&Error> for Status {
         }
     }
 }
+impl From<Error> for Status {
+    fn from(e: Error) -> Self {
+        Self::from(&e)
+    }
+}
 impl From<Error> for (Status, Error) {
     fn from(e: Error) -> Self {
         (Status::from(&e), e)
@@ -55,7 +64,5 @@ impl From<Error> for status::Custom<Error> {
     }
 }
 
-#[cfg(test)]
-mod unit_tests {
-}
+//TODO unit tests?
 

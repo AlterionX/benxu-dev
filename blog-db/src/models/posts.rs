@@ -124,6 +124,11 @@ impl<'a> From<(&'a NewNoMeta, uuid::Uuid)> for New<'a> {
         }
     }
 }
+impl<'a> From<(&'a NewNoMeta, uuid::Uuid)> for NewWithId<'a> {
+    fn from(conv: (&'a NewNoMeta, uuid::Uuid)) -> Self {
+        (conv.into(): New).into()
+    }
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct NewNoMeta {

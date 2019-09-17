@@ -1,5 +1,5 @@
 //! Marshalls the data between the [`blog_client`](../blog_client) and [`blog_db`](../blog_db) as well as performing
-//! authentication and authorization through the [`auth`] module.
+//! authentication and authorization through the [`auth`](crate::blog::auth) module.
 
 pub mod db;
 pub use db::DB;

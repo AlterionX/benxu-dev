@@ -24,7 +24,7 @@ pub fn post(
     post: Json<posts::NewNoMeta>,
 ) -> Result<Json<posts::Data>, Status> {
     let post = post.into_inner();
-    db.insert_post((&post, credentials.user_id()).into())
+    db.insert_post((&post, credentials.user_id()))
         .map(|p| Json(p))
         .map_err(|_e| {
             // TODO log error

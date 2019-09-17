@@ -53,26 +53,28 @@ pub struct Credentials<L> {
 impl<L> Credentials<L> {
     /// Check if a list of permissions is satisfied.
     pub fn has_permissions(&self, req_perms: &[Permission]) -> bool {
-        for req_perm in req_perms.iter() {
-            if !self.permissions.contains(req_perm) {
-                return false;
-            }
-        }
-        true
+        req_perms
+            .iter()
+            .all(|req_perm| self.permissions.contains(req_perm))
     }
     /// Gets the a copy of the id of the user this credential belongs to.
     pub fn user_id(&self) -> uuid::Uuid {
         self.user_id
     }
-    /// Gets a reference to the permissions in the credential.
+    /// Gets the a copy of the permissions of the user.
     pub fn permissions(&self) -> &[Permission] {
         self.permissions.as_slice()
     }
     /// Attempts to change the credential's level, returning the old credential on error
     /// (insufficient permissions) and the new credential on success.
     pub fn change_level<NewLevel: perms::Verifiable>(self) -> Result<Credentials<NewLevel>, Credentials<L>> {
-        // TODO make permissions list no-copy
-        Credentials::<NewLevel>::new(self.user_id, self.permissions.clone()).ok_or(self)
+        let Credentials { user_id, permissions, level } = self;
+        Credentials::new(user_id, permissions)
+            .map_err(|(user_id, permissions)| Self {
+                level: level,
+                user_id: user_id,
+                permissions: permissions,
+            })
     }
     /// Revert the credential back to an unverified state.
     pub fn back_to_any(self) -> Credentials<perms::Any> {
@@ -80,33 +82,17 @@ impl<L> Credentials<L> {
     }
 }
 impl<L: perms::Verifiable> Credentials<L> {
-    /// Extracts an unverified credential from a provided token.
-    fn extract(cookies: &Cookies, key: &TokenKeyStore) -> Result<Credentials<perms::Any>, Error> {
-        let auth_cookie = cookies.get(AUTH_COOKIE_NAME).ok_or(Error::Unauthorized)?;
-        let token = paseto::token::Packed::new(auth_cookie.value().as_bytes().to_vec());
-
-        let token: paseto::token::Data<Credentials<perms::Any>, ()> = match paseto::v2::local::Protocol::decrypt(token, &key.curr) {
-            Ok(dec) => dec,
-            Err(paseto::v2::local::error::Error::Decryption) => {
-                let token = paseto::token::Packed::new(auth_cookie.value().as_bytes().to_vec());
-                paseto::v2::local::Protocol::decrypt(token, &key.last)
-                    .map_err(|_| Error::Unauthorized)?
-            },
-            _ => return Err(Error::Unauthorized),
-        };
-        Ok(token.msg)
-    }
     /// Creates a new Credentials object from a set of permissions and validates the permissions
     /// at the level requested by `L`.
-    pub fn new(user_id: uuid::Uuid, permissions: Vec<Permission>) -> Option<Self> {
+    pub fn new(user_id: uuid::Uuid, permissions: Vec<Permission>) -> Result<Self, (uuid::Uuid, Vec<Permission>)> {
         if L::verify_slice(permissions.as_slice()) {
-            Some(Self {
+            Ok(Self {
                 level: PhantomData,
                 user_id: user_id,
                 permissions: permissions,
             })
         } else {
-            None
+            Err((user_id, permissions))
         }
     }
 }
@@ -119,6 +105,19 @@ impl Credentials<perms::Any> {
             user_id: user_id,
             permissions: permissions,
         }
+    }
+    /// Extracts an unverified credential from a provided token.
+    fn extract(cookies: &Cookies, key_store: &TokenKeyStore) -> Result<Credentials<perms::Any>, Error> {
+        let auth_cookie = cookies.get(AUTH_COOKIE_NAME).ok_or(Error::Unauthorized)?;
+
+        type TokenData = paseto::token::Data<Credentials<perms::Any>, ()>;
+        // TODO no-copy once paseto is no copy on the input
+        let token: TokenData = key_store.attempt_with_retry(&mut |key, _opt_err| {
+            let token = paseto::token::Packed::new(auth_cookie.value().as_bytes().to_vec());
+            paseto::v2::local::Protocol::decrypt(token, key)
+        })?;
+
+        Ok(token.msg)
     }
 }
 /// Custom implementation of Deserialize is due the need to forbid deserialization of credentials
@@ -239,27 +238,12 @@ impl <'de> Deserialize<'de> for Credentials<perms::Any> {
 impl<'a, 'r, L: perms::Verifiable> FromRequest<'a, 'r> for Credentials<L> {
     type Error = Error;
     fn from_request(req: &'a Request<'r>) -> Outcome<Self, Self::Error> {
-        let cookies = req.cookies();
-        let key_store = req
-            .guard::<State<TokenKeyFixture>>()
-            .map_failure(|e| Error::KeyStoreAbsent.into())?
-            .get_store()
-            .map_err(|_| Error::KeyStoreAbsent.into())
-            .into_outcome(Status::InternalServerError)?;
-
-        let cr = Self::extract(&cookies, &*key_store)
-            .map_err(|e| e.into())
-            .into_outcome(Status::Unauthorized)?;
-
-        if L::verify(&cr) {
-            Outcome::Success(Credentials {
-                level: PhantomData,
-                permissions: cr.permissions,
-                user_id: cr.user_id,
-            })
-        } else {
-            Outcome::Failure(Error::Unauthorized.into())
-        }
+        req
+            .guard::<UnverifiedPermissionsCredential>()?
+            .into_inner()
+            .change_level()
+            .map_err(|_| Error::Unauthorized)
+            .into_outcome(Status::Unauthorized)
     }
 }
 
@@ -268,10 +252,14 @@ impl<'a, 'r, L: perms::Verifiable> FromRequest<'a, 'r> for Credentials<L> {
 #[derive(Deserialize)]
 pub struct UnverifiedPermissionsCredential(Credentials<perms::Any>);
 impl UnverifiedPermissionsCredential {
+    /// Create a new struct, simply wrapping up the
+    /// [`Credentials::new()`](crate::blog::auth::Credentials::new) function with the newtype
+    /// struct.
     pub fn new(user_id: uuid::Uuid, perms: Vec<Permission>) -> Self {
         // Should not be able to error
-        Self(Credentials::new(user_id, perms).unwrap())
+        Self(Credentials::safe_new(user_id, perms))
     }
+    /// Consumes self, yielding a [`Credentials<Any>`](crate::blog::auth::Credentials) struct.
     pub fn into_inner(self) -> Credentials<perms::Any> {
         self.0
     }
@@ -283,12 +271,19 @@ impl Deref for UnverifiedPermissionsCredential {
     }
 }
 impl<'a, 'r> FromRequest<'a, 'r> for UnverifiedPermissionsCredential {
-    type Error = ();
+    type Error = Error;
     fn from_request(req: &'a Request<'r>) -> Outcome<Self, Self::Error> {
-        let cr = req
-            .guard::<Credentials<()>>()
-            .map_failure(|_| (Status::InternalServerError, ()))?;
-        Outcome::Success(Self(cr))
+        let cookies = req.cookies();
+        let key_store = req
+            .guard::<State<TokenKeyFixture>>()
+            .map_failure(|_| Error::KeyStoreAbsent.into())?
+            .get_store()
+            .map_err(|_| Error::KeyStoreAbsent.into())
+            .into_outcome(Status::InternalServerError)?;
+
+        Credentials::extract(&cookies, &*key_store)
+            .into_outcome(Status::Unauthorized)
+            .map(|cr: Credentials<perms::Any>| cr.into())
     }
 }
 impl From<Credentials<perms::Any>> for UnverifiedPermissionsCredential {
@@ -297,7 +292,7 @@ impl From<Credentials<perms::Any>> for UnverifiedPermissionsCredential {
     }
 }
 
-/// Attaches a [`CredentialToken`](crate::blog::auth::CredentialToken) to the cookies so that they
+/// Attaches a [`Credentials`](crate::blog::auth::Credentials) to the cookies so that they
 /// can be verified later.
 #[must_use]
 pub fn attach_credentials_token(
@@ -320,7 +315,7 @@ pub fn attach_credentials_token(
     cookies.add(auth_cookie);
     Ok(())
 }
-/// Detaches a [`CredentialToken`](crate::blog::auth::CredentialToken) from the cookie.
+/// Detaches a [`Credentials`](crate::blog::auth::Credentials) from the cookie.
 pub fn detach_credentials_token_if_exists(cookies: &mut Cookies) {
     let auth_cookie = cookies.get(AUTH_COOKIE_NAME);
     if auth_cookie.is_some() {

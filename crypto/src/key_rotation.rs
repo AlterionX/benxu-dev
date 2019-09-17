@@ -58,6 +58,11 @@ mod rotating {
                 curr: Arc::new(A::Key::generate(self.algo.key_settings())),
             })
         }
+        pub fn attempt_with_retry<T, E, F>(&self, attempt: &mut F) -> Result<T, E>
+            where F: FnMut(&K, Option<E>) -> Result<T, E>
+        {
+            attempt(&*self.curr, None).or_else(|e| attempt(&*self.last, Some(e)))
+        }
     }
 }
 pub use rotating::KeyStore as RotatingKeyStore;

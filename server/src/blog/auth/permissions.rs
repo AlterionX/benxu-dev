@@ -40,7 +40,7 @@ pub enum Permission {
     /// Arbitrary permission, just in case.
     Custom { name: String },
 }
-// TODO make string const and lift into enum declaration
+// TODO make string const and lift into enum declaration when const generics.
 impl Permission {
     /// Convert a [`Permission`](crate::blog::auth::permissions::Permission) to a [`&str`].
     pub fn as_str(&self) -> &str {
@@ -61,7 +61,7 @@ impl Permission {
         }
     }
 }
-// TODO make string const and lift into enum declaration
+// TODO make string const and lift into enum declaration when const generics.
 impl From<&permissions::Data> for Permission {
     fn from(perm: &permissions::Data) -> Self {
         match perm.permission.as_str() {
@@ -85,17 +85,15 @@ impl From<&permissions::Data> for Permission {
 /// Used to indicate that a type represents a permissions level.
 pub trait Verifiable {
     const REQUIRED_PERMS: &'static[Permission];
-    /// Verifies that the list of permissions passed in satisfies the constraints of the permission level.
+    /// Verifies that the credentials passed in satisfies the permission level.
     fn verify<T>(cred: &super::Credentials<T>) -> bool {
-        cred.has_permissions(Self::REQUIRED_PERMS)
+        Self::verify_slice(cred.permissions())
     }
+    /// Verifies if a provided slice of permissions satisfies the permissions level.
     fn verify_slice(perms: &[Permission]) -> bool {
-        for req_perm in Self::REQUIRED_PERMS.iter() {
-            if !perms.contains(req_perm) {
-                return false;
-            }
-        }
-        true
+        Self::REQUIRED_PERMS
+            .iter()
+            .all(|req_perm| perms.contains(req_perm))
     }
 }
 
@@ -171,23 +169,6 @@ impl Verifiable for CanViewPermission {
 pub struct CanDeletePermission;
 impl Verifiable for CanDeletePermission {
     const REQUIRED_PERMS: &'static[Permission] = &[Permission::DeletePermission];
-}
-
-/// Type to represent the Admin privlege level. This level of privlege simply represents everything
-/// in the system.
-pub struct Admin;
-impl Verifiable for Admin {
-    const REQUIRED_PERMS: &'static[Permission] = &[
-        Permission::CreateUser,
-        Permission::EditPost,
-        Permission::CreatePost,
-        Permission::DeletePost,
-        Permission::PublishPost,
-        Permission::ArchivePost,
-        Permission::GrantPermission,
-        Permission::ViewPermission,
-        Permission::DeletePermission,
-    ];
 }
 
 /// Type to allow for the verification of a Credentials allowing for arbitrary permissions. Simply

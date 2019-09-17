@@ -1,3 +1,7 @@
+//! Models used to represent specific queries in diesel.
+//!
+//! Some are not queries, but rather convenience
+
 pub mod credentials;
 pub mod permissions;
 pub mod post_tag_junctions;
@@ -9,8 +13,10 @@ pub mod users;
 use chrono::{DateTime, TimeZone, Utc};
 use serde::{Deserialize, Deserializer};
 
+/// Format for chrono to serialize from.
 const FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 
+/// A simple deserialization protocol for [`DateTime`].
 fn datefmt<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>
 where
     D: Deserializer<'de>,
@@ -20,6 +26,7 @@ where
         .map_err(serde::de::Error::custom)
 }
 
+/// A simple deserialization protocol for [`Option<DateTime>`](std::option::Option).
 fn option_datefmt<'de, D>(deserializer: D) -> Result<Option<DateTime<Utc>>, D::Error>
 where
     D: Deserializer<'de>,

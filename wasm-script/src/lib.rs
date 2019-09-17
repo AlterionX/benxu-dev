@@ -3,6 +3,9 @@
 //! The wasm functions for managing my slides. This crate should only function in a browser.
 //! Static globals are used to ensure that closures are kept in memory, while not simply forgetting
 //! them due to need for reuse at times.
+//!
+//! An associated script, `compile.sh` will call wasm-pack with the arguments used for building the
+//! server's static resources.
 
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;

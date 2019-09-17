@@ -1,39 +1,78 @@
+//! Models representing different aspects of posts.
+
 use crate::{models::option_datefmt, schema::*};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+/// Data representing a complete row in the table.
 #[derive(Identifiable, Queryable, Serialize, Deserialize)]
 #[table_name = "posts"]
 pub struct Data {
+    /// The id of the record.
     pub id: uuid::Uuid,
+    /// The time at which the record was created.
     pub created_at: DateTime<Utc>,
+    /// The id of the user who created the record.
     pub created_by: uuid::Uuid,
+    /// The time at which the record was last updated.
     pub updated_at: DateTime<Utc>,
+    /// The id of the user who last updated the record.
     pub updated_by: uuid::Uuid,
+    /// The time at which the record was published. [`None`] means that the record has not been
+    /// published.
     pub published_at: Option<DateTime<Utc>>,
+    /// The id of the user who published the record. [`None`] means that the record has not been
+    /// published.
     pub published_by: Option<uuid::Uuid>,
+    /// The time at which the record was archived. [`None`] means that the record has not been
+    /// archived.
     pub archived_at: Option<DateTime<Utc>>,
+    /// The id of the user who archived the record. [`None`] means that the record has not been
+    /// archived.
     pub archived_by: Option<uuid::Uuid>,
+    /// The time at which the record was deleted. [`None`] means that the record has not been
+    /// deleted.
     pub deleted_at: Option<DateTime<Utc>>,
+    /// The id of the user who "deleted" the record. [`None`] means that the record has not been
+    /// deleted.
     pub deleted_by: Option<uuid::Uuid>,
+    /// The title of the blog post.
     pub title: String,
+    /// The body of the blog post.
     pub body: String,
 }
 impl Data {
+    /// Strips the meta data before sending it to a client.
     pub fn strip_meta(self) -> DataNoMeta {
         self.into()
     }
 }
 
+/// Almost the same as [`Data`](crate::models::posts::Data) but without the id, created, and
+/// updated information.
 #[derive(Serialize, Deserialize)]
 pub struct DataNoMeta {
+    /// The time at which the record was published. [`None`] means that the record has not been
+    /// published.
     pub published_at: Option<DateTime<Utc>>,
+    /// The id of the user who published the record. [`None`] means that the record has not been
+    /// published.
     pub published_by: Option<uuid::Uuid>,
+    /// The time at which the record was archived. [`None`] means that the record has not been
+    /// archived.
     pub archived_at: Option<DateTime<Utc>>,
+    /// The id of the user who archived the record. [`None`] means that the record has not been
+    /// archived.
     pub archived_by: Option<uuid::Uuid>,
+    /// The time at which the record was deleted. [`None`] means that the record has not been
+    /// deleted.
     pub deleted_at: Option<DateTime<Utc>>,
+    /// The id of the user who "deleted" the record. [`None`] means that the record has not been
+    /// deleted.
     pub deleted_by: Option<uuid::Uuid>,
+    /// The title of the blog post.
     pub title: String,
+    /// The body of the blog post.
     pub body: String,
 }
 impl From<Data> for DataNoMeta {
@@ -51,21 +90,39 @@ impl From<Data> for DataNoMeta {
     }
 }
 
+/// Represents a new post.
 #[derive(Identifiable, Insertable, Serialize, Deserialize)]
 #[table_name = "posts"]
 pub struct NewWithId<'a> {
+    /// The id of the record.
     id: uuid::Uuid,
+    /// The id of the user who created the record.
     created_by: uuid::Uuid,
+    /// The id of the user who last updated the record.
     updated_by: uuid::Uuid,
 
+    /// The time at which the record was published. [`None`] means that the record has not been
+    /// published.
     published_at: Option<DateTime<Utc>>,
+    /// The id of the user who published the record. [`None`] means that the record has not been
+    /// published.
     published_by: Option<uuid::Uuid>,
+    /// The time at which the record was archived. [`None`] means that the record has not been
+    /// archived.
     archived_at: Option<DateTime<Utc>>,
+    /// The id of the user who archived the record. [`None`] means that the record has not been
+    /// archived.
     archived_by: Option<uuid::Uuid>,
+    /// The time at which the record was deleted. [`None`] means that the record has not been
+    /// deleted.
     deleted_at: Option<DateTime<Utc>>,
+    /// The id of the user who "deleted" the record. [`None`] means that the record has not been
+    /// deleted.
     deleted_by: Option<uuid::Uuid>,
 
+    /// The title of the blog post.
     title: &'a str,
+    /// The body of the blog post.
     body: &'a str,
 }
 impl<'a> From<New<'a>> for NewWithId<'a> {
@@ -88,19 +145,36 @@ impl<'a> From<New<'a>> for NewWithId<'a> {
     }
 }
 
+/// Represents a new post without an id.
 #[derive(Serialize, Deserialize)]
 pub struct New<'a> {
+    /// The id of the user who created the record.
     pub created_by: uuid::Uuid,
+    /// The id of the user who last updated the record.
     pub updated_by: uuid::Uuid,
 
+    /// The time at which the record was published. [`None`] means that the record has not been
+    /// published.
     pub published_at: Option<DateTime<Utc>>,
+    /// The id of the user who published the record. [`None`] means that the record has not been
+    /// published.
     pub published_by: Option<uuid::Uuid>,
+    /// The time at which the record was archived. [`None`] means that the record has not been
+    /// archived.
     pub archived_at: Option<DateTime<Utc>>,
+    /// The id of the user who archived the record. [`None`] means that the record has not been
+    /// archived.
     pub archived_by: Option<uuid::Uuid>,
+    /// The time at which the record was deleted. [`None`] means that the record has not been
+    /// deleted.
     pub deleted_at: Option<DateTime<Utc>>,
+    /// The id of the user who "deleted" the record. [`None`] means that the record has not been
+    /// deleted.
     pub deleted_by: Option<uuid::Uuid>,
 
+    /// The title of the blog post.
     pub title: &'a str,
+    /// The body of the blog post.
     pub body: &'a str,
 }
 impl<'a> From<(&'a NewNoMeta, uuid::Uuid)> for New<'a> {
@@ -127,19 +201,35 @@ impl<'a> From<(&'a NewNoMeta, uuid::Uuid)> for NewWithId<'a> {
     }
 }
 
+/// Represents a new post without an id as well as the created by and updated by fields.
 #[derive(Serialize, Deserialize)]
 pub struct NewNoMeta {
+    /// The time at which the record was published. [`None`] means that the record has not been
+    /// published.
     pub published_at: Option<DateTime<Utc>>,
+    /// The id of the user who published the record. [`None`] means that the record has not been
+    /// published.
     pub published_by: Option<uuid::Uuid>,
+    /// The time at which the record was archived. [`None`] means that the record has not been
+    /// archived.
     pub archived_at: Option<DateTime<Utc>>,
+    /// The id of the user who archived the record. [`None`] means that the record has not been
+    /// archived.
     pub archived_by: Option<uuid::Uuid>,
+    /// The time at which the record was deleted. [`None`] means that the record has not been
+    /// deleted.
     pub deleted_at: Option<DateTime<Utc>>,
+    /// The id of the user who "deleted" the record. [`None`] means that the record has not been
+    /// deleted.
     pub deleted_by: Option<uuid::Uuid>,
 
+    /// The title of the blog post.
     pub title: String,
+    /// The body of the blog post.
     pub body: String,
 }
 impl NewNoMeta {
+    /// Default everything other than the title and body to [`None`].
     pub fn new_with_no_flags(title: String, body: String) -> Self {
         Self {
             published_at: None,
@@ -155,21 +245,29 @@ impl NewNoMeta {
     }
 }
 
+/// Struct representing changes to the body and title of the post.
 #[derive(AsChangeset, Serialize, Deserialize)]
 #[table_name = "posts"]
 pub struct Changed<'a> {
+    /// The title of the blog post.
     pub title: Option<&'a str>,
+    /// The body of the blog post.
     pub body: Option<&'a str>,
+    /// The time at which the record was published. [`None`] means that the record has not been
+    /// published.
     #[serde(default, deserialize_with = "option_datefmt")]
     pub published_at: Option<DateTime<Utc>>,
 }
 
+/// Struct representing the editing of the blog post.
 #[derive(AsChangeset, Serialize, Deserialize)]
 #[table_name = "posts"]
 pub struct Editing {
+    /// The person who last updated the post.
     updated_by: uuid::Uuid,
 }
 impl Editing {
+    /// Constructs the struct with assumed time of editing (now).
     pub fn new(updated_by: uuid::Uuid) -> Self {
         Self {
             updated_by: updated_by,
@@ -177,27 +275,41 @@ impl Editing {
     }
 }
 
+/// Struct representing the publishing of the blog post.
 #[derive(AsChangeset, Serialize, Deserialize)]
 #[table_name = "posts"]
 pub struct Publishing {
+    /// The person who last updated the post.
     updated_by: uuid::Uuid,
+    /// The time at which the record was deleted.
+    published_at: DateTime<Utc>,
+    /// The id of the user who "deleted" the record.
+    published_by: uuid::Uuid,
 }
 impl Publishing {
-    pub fn new(updated_by: uuid::Uuid) -> Self {
+    /// Constructs the struct with assumed time of publishing (now).
+    pub fn new(published_by: uuid::Uuid) -> Self {
         Self {
-            updated_by: updated_by,
+            updated_by: published_by,
+            published_at: Utc::now(),
+            published_by: published_by,
         }
     }
 }
 
+/// Struct representing the archival of the blog post.
 #[derive(AsChangeset, Serialize, Deserialize)]
 #[table_name = "posts"]
 pub struct Archival {
+    /// The person who last updated the post.
     updated_by: uuid::Uuid,
+    /// The time at which the record was deleted.
     archived_at: DateTime<Utc>,
+    /// The id of the user who "deleted" the record.
     archived_by: uuid::Uuid,
 }
 impl Archival {
+    /// Constructs the struct with assumed time of archival (now).
     pub fn new(archived_by: uuid::Uuid) -> Self {
         Self {
             updated_by: archived_by,
@@ -207,14 +319,19 @@ impl Archival {
     }
 }
 
+/// Struct representing the deletion operation on the struct.
 #[derive(AsChangeset, Serialize, Deserialize)]
 #[table_name = "posts"]
 pub struct Deletion {
+    /// The person who last updated the post.
     updated_by: uuid::Uuid,
+    /// The time at which the record was deleted.
     deleted_at: DateTime<Utc>,
+    /// The id of the user who "deleted" the record.
     deleted_by: uuid::Uuid,
 }
 impl Deletion {
+    /// Constructs the struct with assumed time of deletion (now).
     pub fn new(deleted_by: uuid::Uuid) -> Self {
         Self {
             updated_by: deleted_by,

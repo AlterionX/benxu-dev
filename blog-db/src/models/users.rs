@@ -1,36 +1,58 @@
+//! Models used for querying user data.
 use crate::schema::*;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+/// Data representing a complete row in the table.
 #[derive(Identifiable, Queryable, Serialize, Deserialize)]
 #[table_name = "users"]
 pub struct Data {
+    /// Id of the record.
     pub id: uuid::Uuid,
+    /// User's user name.
     pub user_name: String,
+    /// Time when user was created.
     pub created_at: DateTime<Utc>,
+    /// User id of person who created the user.
     pub created_by: Option<uuid::Uuid>,
+    /// Time when user was last updated.
     pub updated_at: DateTime<Utc>,
+    /// User id of person who last updated the user.
     pub updated_by: Option<uuid::Uuid>,
+    /// Optional first name.
     pub first_name: Option<String>,
+    /// Optional last name.
     pub last_name: Option<String>,
+    /// Optional email.
     pub email: Option<String>,
 }
 impl Data {
+    /// Strip meta data from user to send back to client.
     pub fn strip_meta(self) -> DataNoMeta {
         DataNoMeta::from(self)
     }
 }
 
+/// Data representing the user building_clocks()
 #[derive(Serialize, Deserialize)]
 pub struct DataNoMeta {
+    /// Id of the record.
     pub id: uuid::Uuid,
+    /// User's user name.
     pub user_name: String,
+    /// Time when user was created.
     pub created_at: DateTime<Utc>,
+    /// User id of person who created the user.
     pub created_by: Option<uuid::Uuid>,
+    /// Time when user was last updated.
     pub updated_at: DateTime<Utc>,
+    /// User id of person who last updated the user.
     pub updated_by: Option<uuid::Uuid>,
+    /// Optional first name.
     pub first_name: Option<String>,
+    /// Optional last name.
     pub last_name: Option<String>,
+    /// Optional email.
     pub email: Option<String>,
 }
 impl From<Data> for DataNoMeta {
@@ -49,16 +71,24 @@ impl From<Data> for DataNoMeta {
     }
 }
 
+/// Represents a new user with its id.
 #[derive(Insertable, Serialize, Deserialize)]
 #[table_name = "users"]
 pub struct NewWithId<'a> {
-    id: uuid::Uuid,
-    user_name: &'a str,
-    created_by: Option<uuid::Uuid>,
-    updated_by: Option<uuid::Uuid>,
-    first_name: &'a str,
-    last_name: &'a str,
+    /// User's email.
     email: &'a str,
+    /// Id of the record.
+    id: uuid::Uuid,
+    /// User's user name.
+    user_name: &'a str,
+    /// User id of person who created the user.
+    created_by: Option<uuid::Uuid>,
+    /// User id of person who last updated the user.
+    updated_by: Option<uuid::Uuid>,
+    /// Optional first name.
+    first_name: &'a str,
+    /// Optional last name.
+    last_name: &'a str,
 }
 impl<'a> From<New<'a>> for NewWithId<'a> {
     fn from(new: New<'a>) -> Self {
@@ -74,13 +104,20 @@ impl<'a> From<New<'a>> for NewWithId<'a> {
     }
 }
 
+/// Represents a new user.
 #[derive(Serialize, Deserialize)]
 pub struct New<'a> {
+    /// User's user name.
     pub user_name: &'a str,
+    /// User id of person who created the user.
     pub created_by: Option<uuid::Uuid>,
+    /// User id of person who last updated the user.
     pub updated_by: Option<uuid::Uuid>,
+    /// Optional first name.
     pub first_name: &'a str,
+    /// Optional last name.
     pub last_name: &'a str,
+    /// User's email.
     pub email: &'a str,
 }
 impl<'a> From<(&'a NewNoMeta, Option<uuid::Uuid>)> for New<'a> {
@@ -96,21 +133,32 @@ impl<'a> From<(&'a NewNoMeta, Option<uuid::Uuid>)> for New<'a> {
     }
 }
 
+/// Represents a new user without meta info.
 #[derive(Serialize, Deserialize)]
 pub struct NewNoMeta {
+    /// User's user name.
     pub user_name: String,
+    /// Optional first name.
     pub first_name: String,
+    /// Optional last name.
     pub last_name: String,
+    /// User's email.
     pub email: String,
 }
 
+/// Represents updates to the data structure.
 #[derive(AsChangeset, Serialize, Deserialize)]
 #[table_name = "users"]
 pub struct Changed<'a> {
+    /// The users's user name.
     pub user_name: Option<&'a str>,
+    /// The user who most recently retired.
     pub updated_by: Option<uuid::Uuid>,
+    /// The first name of the user.
     pub first_name: Option<&'a str>,
+    /// The last name of the user.
     pub last_name: Option<&'a str>,
+    /// The email of the user.
     pub email: Option<&'a str>,
 }
 impl<'a> From<(&'a ChangedNoMeta, Option<uuid::Uuid>)> for Changed<'a> {
@@ -125,10 +173,15 @@ impl<'a> From<(&'a ChangedNoMeta, Option<uuid::Uuid>)> for Changed<'a> {
     }
 }
 
+/// A list of changes without meta information.
 #[derive(Serialize, Deserialize)]
 pub struct ChangedNoMeta {
+    /// The users's user name.
     pub user_name: Option<String>,
+    /// The first name of the user.
     pub first_name: Option<String>,
+    /// The last name of the user.
     pub last_name: Option<String>,
+    /// The email of the user.
     pub email: Option<String>,
 }

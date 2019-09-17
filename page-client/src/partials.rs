@@ -1,6 +1,8 @@
+//! A series of components used across the site.
 use crate::data::*;
 use maud::{html, Markup, DOCTYPE};
 
+/// The `<head>` portion of the webpage.
 fn head(meta: &MetaData) -> Markup {
     html! {
         head {
@@ -18,6 +20,7 @@ fn head(meta: &MetaData) -> Markup {
         }
     }
 }
+/// The `<header>` portion of the webpage. Displays logos and menus.
 fn header(meta: &MetaData) -> Markup {
     html! {
         header.site-header {
@@ -30,6 +33,7 @@ fn header(meta: &MetaData) -> Markup {
         }
     }
 }
+/// The `<footer>` portion of the webpage. Displays copyright and contact information.
 fn footer(meta: &MetaData) -> Markup {
     html! {
         footer.site-footer {
@@ -40,6 +44,8 @@ fn footer(meta: &MetaData) -> Markup {
         }
     }
 }
+/// The `<body>` portion of the webpage. Wraps the main content and offsets it from the header and
+/// footer.
 fn body(m: Markup, meta: &MetaData) -> Markup {
     html! {
         body {
@@ -52,6 +58,7 @@ fn body(m: Markup, meta: &MetaData) -> Markup {
         }
     }
 }
+/// A template of the page with its `<DOCTYPE>` and `<html>` tags.
 fn page(m: Markup, meta: &MetaData) -> Markup {
     html! {
         (DOCTYPE)
@@ -61,6 +68,7 @@ fn page(m: Markup, meta: &MetaData) -> Markup {
         }
     }
 }
+/// A template of a page. Uses default [`MetaData`](crate::data::MetaData) if not provided.
 pub fn basic_page(m: Markup, meta_data: Option<&MetaData>) -> Markup {
     let store;
     let meta;

@@ -1,5 +1,9 @@
 #![feature(type_ascription)]
 
+//! The wasm functions for managing my slides. This crate should only function in a browser.
+//! Static globals are used to ensure that closures are kept in memory, while not simply forgetting
+//! them due to need for reuse at times.
+
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
@@ -7,21 +11,28 @@ use std::cmp::max;
 
 #[wasm_bindgen]
 extern "C" {
+    /// Binding to javascript's `console.log()`.
     #[wasm_bindgen(js_namespace = console)]
     fn log(a: &str);
 }
 
+/// Casts a [`Node`](web_sys::Node) to an [`HtmlElement`](web_sys::HtmlElement).
 fn cast_node_to_html_ele(node: web_sys::Node) -> Result<web_sys::HtmlElement, web_sys::Node> {
     node.dyn_into()
 }
+/// Casts an [`Element`](web_sys::Element) to an [`HtmlElement`](web_sys::HtmlElement).
 fn cast_ele_to_html_ele(node: web_sys::Element) -> Result<web_sys::HtmlElement, web_sys::Element> {
     node.dyn_into()
 }
+/// Implements the [`Iterator`] interface for a [`NodeList`](web_sys::NodeList).
 struct NodeListIter<'a> {
+    /// A reference to the [`NodeList`](web_sys::NodeList) being iterated over.
     nodes: &'a web_sys::NodeList,
+    /// The index of the next element for the iterator to go over.
     next_idx: u32,
 }
 impl<'a> NodeListIter<'a> {
+    /// Creates a new [`NodeListIter`] from a [`NodeList`](web_sys::NodeList).
     fn new(nodes: &'a web_sys::NodeList) -> Self {
         NodeListIter { nodes, next_idx: 0 }
     }
@@ -38,6 +49,8 @@ impl<'a> Iterator for NodeListIter<'a> {
         }
     }
 }
+
+/// Extracts the nodes for the slides' container, slides, and slide markers, in that order.
 fn get_slide_and_markers(
 ) -> Result<(web_sys::Element, web_sys::NodeList, web_sys::NodeList), JsValue> {
     let window = web_sys::window().expect("no global `window` exists");
@@ -51,15 +64,20 @@ fn get_slide_and_markers(
     Ok((slide_container, slides, slide_markers))
 }
 
+/// Sets the height of an [`HtmlElement`](web_sys::HtmlElement).
 fn set_height(e: &web_sys::HtmlElement, height: &str) -> Result<(), JsValue> {
     e.style().set_property("height", height)
 }
+/// Unsets the height of an [`HtmlElement`](web_sys::HtmlElement).
 fn unset_height(e: &web_sys::HtmlElement) -> Result<(), JsValue> {
     e.style().set_property("height", "")
 }
+/// Formats a number into a pixel string.
 fn to_px_string(num: i32) -> String {
-    num.to_string() + "px"
+    format!("{}{}", num, "px")
 }
+/// Set the sizing so that the next element will appear to sit directly behind the current element,
+/// flush to the top of the element.
 fn set_sizing(e: &web_sys::HtmlElement, height: i32) -> Result<(), JsValue> {
     let needed_e_size = to_px_string(height); // need to set height to integral value
     let needed_margin_size = to_px_string(-height);
@@ -69,6 +87,8 @@ fn set_sizing(e: &web_sys::HtmlElement, height: i32) -> Result<(), JsValue> {
     Ok(())
 }
 
+/// Aligns slides so that all slides match the top of the slide deck. This way, they appear to be
+/// all in the same location.
 fn align_slides() -> Result<(), JsValue> {
     let (slide_container, slides, _) = get_slide_and_markers()?;
 
@@ -91,6 +111,7 @@ fn align_slides() -> Result<(), JsValue> {
     Ok(())
 }
 
+/// Get the slide indices of all slides with the `active-slide` css class.
 fn find_active_slides(slides: &[(web_sys::HtmlElement, web_sys::HtmlElement)]) -> Vec<usize> {
     slides
         .iter()
@@ -102,6 +123,7 @@ fn find_active_slides(slides: &[(web_sys::HtmlElement, web_sys::HtmlElement)]) -
         .map(|(idx, _)| idx)
         .collect()
 }
+/// Sets a slide and marker to the active state.
 fn set_active(
     &(ref slide, ref marker): &(web_sys::HtmlElement, web_sys::HtmlElement),
 ) -> Result<(), JsValue> {
@@ -109,6 +131,7 @@ fn set_active(
     marker.class_list().add_1("active-slide-marker")?;
     Ok(())
 }
+/// Sets a slide and marker to the inactive state.
 fn unset_active(
     &(ref slide, ref marker): &(web_sys::HtmlElement, web_sys::HtmlElement),
 ) -> Result<(), JsValue> {
@@ -116,14 +139,16 @@ fn unset_active(
     marker.class_list().remove_1("active-slide-marker")?;
     Ok(())
 }
-fn shift_active_slide<
+/// Change the active slides from one to another. `determine_active_slide` returns a single (slide,
+/// slide_marker) pair denoting the next active slides while consuming a list of all slide and
+/// marker pairs as well as the indices of all active slides.
+fn shift_active_slide<F>(determine_active_slide: F) -> Result<(), JsValue>
+where
     F: for<'a> Fn(
         &'a [(web_sys::HtmlElement, web_sys::HtmlElement)],
         &[usize],
     ) -> &'a (web_sys::HtmlElement, web_sys::HtmlElement),
->(
-    determine_active_slide: F,
-) -> Result<(), JsValue> {
+{
     let (_, slides, slide_markers) = get_slide_and_markers()?;
 
     let slides = NodeListIter::new(&slides)
@@ -150,6 +175,7 @@ fn shift_active_slide<
     set_active(next_active_slide_and_marker)
 }
 
+/// A function to find the slide after the current active slides.
 fn find_next_slide<'a>(
     slides: &'a [(web_sys::HtmlElement, web_sys::HtmlElement)],
     active_slide_indices: &[usize],
@@ -164,10 +190,13 @@ fn find_next_slide<'a>(
         unreachable!("Should never reach here. {:?}", active_slide_indices);
     }
 }
+/// A function to change the active slide to the next slide, wrapping around once it hits the end
+/// of the slide deck.
 fn next_slide() -> Result<(), JsValue> {
     shift_active_slide(find_next_slide)
 }
 
+/// A function to find the slide before the current active slides.
 fn find_prev_slide<'a>(
     slides: &'a [(web_sys::HtmlElement, web_sys::HtmlElement)],
     active_slide_indices: &[usize],
@@ -182,10 +211,13 @@ fn find_prev_slide<'a>(
         unreachable!("Should never reach here. {:?}", active_slide_indices);
     }
 }
+/// A function to change the active slide to the pervious slide, wrapping around once it hits the
+/// beginning of the slide deck.
 fn prev_slide() -> Result<(), JsValue> {
     shift_active_slide(find_prev_slide)
 }
 
+/// Sets a slide to active, deactivating all other slides.
 #[wasm_bindgen]
 pub fn set_slide(idx: usize) -> Result<(), JsValue> {
     shift_active_slide(
@@ -199,15 +231,24 @@ pub fn set_slide(idx: usize) -> Result<(), JsValue> {
     )
 }
 
+/// Converts seconds to milliseconds. Does not handle overflow.
 fn sec_to_ms(seconds: i32) -> i32 {
     seconds * 1_000
 }
 
+/// A type for late-init globals that are also closures.
 type OptionalClosure<T> = Option<Closure<T>>;
+
+/// Static global to keep memory around for the `collapse` closure. Collapses slides into a sane
+/// slide-deck like structure.
 static mut OPT_SLIDE_COLLAPSE: OptionalClosure<dyn Fn(web_sys::UiEvent) -> ()> = None;
 
+/// Static global to keep memory around for the timed slide auto-progression closure.
 static mut OPT_SLIDE_TIMED_ADVANCE: OptionalClosure<dyn Fn(i8)> = None;
+/// Static global to keep the timer id for debouncing the auto-progression.
 static mut OPT_SLIDE_TIMED_ADVANCE_ID: Option<i32> = None;
+/// Sets the timer for auto-progression of slides. 50 seconds are given to read each slide. This
+/// also sets the globals [`OPT_SLIDE_TIMED_ADVANCE`] and [`OPT_SLIDE_TIMED_ADVANCE_ID`].
 fn set_slide_progression_timer(window: &web_sys::Window) -> Result<(), JsValue> {
     let interval_handler = unsafe { OPT_SLIDE_TIMED_ADVANCE.as_ref().unwrap() };
     let timer_id = window.set_interval_with_callback_and_timeout_and_arguments_0(
@@ -221,6 +262,8 @@ fn set_slide_progression_timer(window: &web_sys::Window) -> Result<(), JsValue> 
 
     Ok(())
 }
+/// Debounces the slide auto-progression after the active slide changes. Calls
+/// [`set_slide_progression_timer`] in the process.
 fn reset_slide_progression_timer() -> Result<(), JsValue> {
     let window = web_sys::window().expect("no global `window` exists");
     let handle = unsafe { OPT_SLIDE_TIMED_ADVANCE_ID };
@@ -232,8 +275,12 @@ fn reset_slide_progression_timer() -> Result<(), JsValue> {
 
     Ok(())
 }
+/// Static global to keep closures that jump to specific slides. There are seven slides, so there
+/// are seven of these closures.
 static mut OPT_SLIDE_SELECT: [OptionalClosure<dyn Fn(i8)>; 7] =
     [None, None, None, None, None, None, None]; // TODO fix when enum variants become types
+/// Initializes and binds a member of [`OPT_SLIDE_SELECT`] for a specific slide to the slide's
+/// marker (round circle things at the bottom of the slides.
 fn bind_per_marker_listener(document: &web_sys::Document, slide_idx: usize) -> Result<(), JsValue> {
     let listener = unsafe {
         OPT_SLIDE_SELECT[slide_idx] = Some(Closure::wrap(Box::new(move |_: i8| {
@@ -250,7 +297,9 @@ fn bind_per_marker_listener(document: &web_sys::Document, slide_idx: usize) -> R
     marker.add_event_listener_with_callback("click", listener.as_ref().unchecked_ref())?;
     Ok(())
 }
+/// Static global to keep the closure responsible for the "next" button.
 static mut OPT_SLIDE_NEXT: OptionalClosure<dyn Fn(i8)> = None;
+/// Initializes and binds the [`OPT_SLIDE_NEXT`] to the "next" button.
 fn bind_next_slide_button(document: &web_sys::Document) -> Result<(), JsValue> {
     let listener = unsafe {
         OPT_SLIDE_NEXT = Some(Closure::wrap(Box::new(|_: i8| {
@@ -265,7 +314,9 @@ fn bind_next_slide_button(document: &web_sys::Document) -> Result<(), JsValue> {
     button.add_event_listener_with_callback("click", listener.as_ref().unchecked_ref())?;
     Ok(())
 }
+/// Static global to keep the closure responsible for the "prev" button.
 static mut OPT_SLIDE_PREV: OptionalClosure<dyn Fn(i8)> = None;
+/// Initializes and binds the [`OPT_SLIDE_NEXT`] to the "prev" button.
 fn bind_prev_slide_button(document: &web_sys::Document) -> Result<(), JsValue> {
     let listener = unsafe {
         OPT_SLIDE_PREV = Some(Closure::wrap(Box::new(|_: i8| {
@@ -281,6 +332,8 @@ fn bind_prev_slide_button(document: &web_sys::Document) -> Result<(), JsValue> {
     Ok(())
 }
 
+/// Binds all relevant callbacks and listeners in the home page. Triggered when the wasm module is
+/// loaded.
 #[wasm_bindgen(start)]
 pub fn init() -> Result<(), JsValue> {
     unsafe {

@@ -14,7 +14,7 @@ mod resume;
 /// This simply calls [`page_client::index()`] from [`page_client`].
 #[get("/")]
 fn get_index() -> Markup {
-    page_client::index()
+    page_client::home::index()
 }
 
 /// Provides a [`Vec`] of [`Route`]s to be attached with [`rocket::Rocket::mount()`].

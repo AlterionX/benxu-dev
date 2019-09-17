@@ -1,8 +1,5 @@
 use crate::schema::*;
-use serde::{
-    Serialize,
-    Deserialize,
-};
+use serde::{Deserialize, Serialize};
 
 #[derive(Identifiable, Queryable, Associations)]
 #[belongs_to(super::posts::Post)]
@@ -16,10 +13,9 @@ pub struct PostTagJunction {
 }
 
 #[derive(Insertable, Serialize, Deserialize)]
-#[table_name="post_tag_junctions"]
+#[table_name = "post_tag_junctions"]
 pub struct NewPostTagJunction {
     pub post_id: uuid::Uuid,
     pub tag_id: uuid::Uuid,
     pub created_by: uuid::Uuid,
 }
-

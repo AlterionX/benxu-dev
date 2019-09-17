@@ -1,8 +1,6 @@
+use crate::algo::cipher::symmetric as symm;
 use serde_json as json;
 use std::str::Utf8Error;
-use crate::algo::{
-    cipher::symmetric as symm,
-};
 #[derive(Debug)]
 pub enum UnpackError {
     ExtraSections,
@@ -71,4 +69,3 @@ impl From<symm::DecryptError> for Error {
         Self::SymmDecryption(e)
     }
 }
-

@@ -1,13 +1,7 @@
+use crate::algo::{self as base, hash::symmetric as sym};
+use blake2_rfc::blake2b::blake2b;
+use rand::{rngs::OsRng, RngCore};
 use std::ops::Deref;
-use rand::{
-    rngs::OsRng,
-    RngCore,
-};
-use blake2_rfc::blake2b::{blake2b};
-use crate::algo::{
-    hash::symmetric as sym,
-    self as base,
-};
 
 #[derive(Clone)]
 pub struct Key(Vec<u8>, usize);
@@ -38,7 +32,9 @@ impl Key {
 pub struct Algo(usize);
 impl base::Algo for Algo {
     type Key = Key;
-    fn key_settings<'a>(&'a self) -> &<<Self as base::Algo>::Key as base::Key>::Settings { &self.0 }
+    fn key_settings<'a>(&'a self) -> &<<Self as base::Algo>::Key as base::Key>::Settings {
+        &self.0
+    }
 }
 impl sym::Algo for Algo {
     type SigningInput = [u8];
@@ -51,4 +47,3 @@ impl sym::Algo for Algo {
         blake2b(key.hash_len(), &key, msg) == *signature
     }
 }
-

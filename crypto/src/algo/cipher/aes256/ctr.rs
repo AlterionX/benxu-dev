@@ -1,19 +1,7 @@
-use crate::algo::{
-    self as base,
-    cipher::symmetric as symm,
-};
+use crate::algo::{self as base, cipher::symmetric as symm};
 
-use rand::{
-    rngs::OsRng,
-    RngCore,
-};
-use openssl::{
-    symm::{
-        Cipher,
-        encrypt,
-        decrypt,
-    },
-};
+use openssl::symm::{decrypt, encrypt, Cipher};
+use rand::{rngs::OsRng, RngCore};
 
 #[derive(Clone)]
 pub struct Key {
@@ -38,10 +26,10 @@ impl Key {
             nonce: nonce.to_vec(),
         }
     }
-    fn as_key<'a>(&'a self) -> &'a[u8] {
+    fn as_key<'a>(&'a self) -> &'a [u8] {
         self.key.as_slice()
     }
-    fn as_nonce<'a>(&'a self) -> &'a[u8] {
+    fn as_nonce<'a>(&'a self) -> &'a [u8] {
         self.nonce.as_slice()
     }
 }
@@ -49,16 +37,31 @@ impl Key {
 pub struct Algo(Cipher);
 impl base::Algo for Algo {
     type Key = Key;
-    fn key_settings<'a>(&'a self) -> &'a <<Self as base::Algo>::Key as base::SafeGenerateKey>::Settings { &() }
+    fn key_settings<'a>(
+        &'a self,
+    ) -> &'a <<Self as base::Algo>::Key as base::SafeGenerateKey>::Settings {
+        &()
+    }
 }
 impl symm::Algo for Algo {
     type EncryptArgs = [u8];
     type DecryptArgs = [u8];
     fn encrypt(key: &Key, msg: &[u8]) -> Result<Vec<u8>, symm::EncryptError> {
-        encrypt(Cipher::aes_256_ctr(), key.as_key(), Some(key.as_nonce()), msg).map_err(|_| symm::EncryptError::Base)
+        encrypt(
+            Cipher::aes_256_ctr(),
+            key.as_key(),
+            Some(key.as_nonce()),
+            msg,
+        )
+        .map_err(|_| symm::EncryptError::Base)
     }
     fn decrypt(key: &Key, msg: &[u8]) -> Result<Vec<u8>, symm::DecryptError> {
-        decrypt(Cipher::aes_256_ctr(), key.as_key(), Some(key.as_nonce()), msg).map_err(|_| symm::DecryptError::Base)
+        decrypt(
+            Cipher::aes_256_ctr(),
+            key.as_key(),
+            Some(key.as_nonce()),
+            msg,
+        )
+        .map_err(|_| symm::DecryptError::Base)
     }
 }
-

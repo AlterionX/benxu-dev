@@ -1,8 +1,5 @@
 pub mod sso {
-    use serde::{
-        Serialize,
-        Deserialize,
-    };
+    use serde::{Deserialize, Serialize};
     #[derive(Serialize, Deserialize)]
     pub enum Credentials {
         Google(google::Data),
@@ -15,13 +12,10 @@ pub mod sso {
 
     pub mod google {
         use crate::schema::*;
-        use serde::{
-            Serialize,
-            Deserialize,
-        };
+        use serde::{Deserialize, Serialize};
 
         #[derive(Identifiable, Queryable, Serialize, Deserialize)]
-        #[table_name="google_sso"]
+        #[table_name = "google_sso"]
         pub struct Data {
             pub id: uuid::Uuid,
             pub user_id: uuid::Uuid,
@@ -30,16 +24,13 @@ pub mod sso {
 }
 
 pub mod pw {
-    use crate::{schema::*, models};
-    use serde::{
-        Serialize,
-        Deserialize,
-    };
+    use crate::{models, schema::*};
     use chrono::{DateTime, Utc};
+    use serde::{Deserialize, Serialize};
 
     #[derive(Identifiable, Associations, Queryable, Serialize, Deserialize)]
     #[belongs_to(parent = "models::users::Data", foreign_key = "user_id")]
-    #[table_name="passwords"]
+    #[table_name = "passwords"]
     pub struct Data {
         pub id: uuid::Uuid,
         pub created_at: DateTime<Utc>,
@@ -52,7 +43,7 @@ pub mod pw {
     }
 
     #[derive(Insertable, Serialize, Deserialize)]
-    #[table_name="passwords"]
+    #[table_name = "passwords"]
     pub struct NewWithId<'a> {
         id: uuid::Uuid,
         created_by: uuid::Uuid,
@@ -84,7 +75,7 @@ pub mod pw {
     }
 
     #[derive(AsChangeset, Serialize, Deserialize)]
-    #[table_name="passwords"]
+    #[table_name = "passwords"]
     pub struct Changed {
         pub updated_by: uuid::Uuid,
         pub hash: Option<String>,
@@ -92,8 +83,7 @@ pub mod pw {
     }
 }
 
-pub mod fido {
-}
+pub mod fido {}
 
 /// Represents one of many types of credentials stored in database.
 pub enum Data {
@@ -110,4 +100,3 @@ impl Data {
         result_data.map(|data| Self::from(data))
     }
 }
-

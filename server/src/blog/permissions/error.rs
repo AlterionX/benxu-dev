@@ -22,4 +22,3 @@ impl From<Error> for rocket::http::Status {
         }
     }
 }
-

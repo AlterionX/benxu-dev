@@ -3,7 +3,7 @@ use super::local_prelude::*;
 // type exists for disambiguation purposes between different protocol versions
 pub(super) struct VerifiedToken {
     msg: Vec<u8>,
-    footer: Option<Vec<u8>>
+    footer: Option<Vec<u8>>,
 }
 
 impl VerifiedToken {
@@ -30,13 +30,12 @@ impl TryFrom<(token::Unpacked, &RSAKey)> for VerifiedToken {
             HEADER.to_combined().as_slice(),
             msg.as_slice(),
             tok.footer.as_ref().map_or(&[], |f| f.as_slice()),
-        ]).map_err(|_| Error::Signing)?;
+        ])
+        .map_err(|_| Error::Signing)?;
 
-        let is_valid_signature = RSA::verify_public(
-            signed.as_slice(),
-            sig.as_slice(),
-            key.public_key(),
-        ).map_err(|_| Error::Verifying)?;
+        let is_valid_signature =
+            RSA::verify_public(signed.as_slice(), sig.as_slice(), key.public_key())
+                .map_err(|_| Error::Verifying)?;
 
         if !is_valid_signature {
             return Err(Error::BadSignature).unwrap();
@@ -56,6 +55,3 @@ impl From<VerifiedToken> for token::SerializedData {
         }
     }
 }
-
-
-

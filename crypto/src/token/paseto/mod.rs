@@ -9,7 +9,10 @@ enum Version {
     V2(v2::Type),
 }
 
-fn append_u64_to_little_endian_byte_array(to_encode: u64, byte_array: &mut [u8]) -> Result<(), &'static str> {
+fn append_u64_to_little_endian_byte_array(
+    to_encode: u64,
+    byte_array: &mut [u8],
+) -> Result<(), &'static str> {
     const U64_BYTE_WIDTH: usize = 8;
     const BYTE_BIT_WIDTH: usize = 8;
     const U64_BIT_WIDTH: usize = U64_BYTE_WIDTH * BYTE_BIT_WIDTH;
@@ -32,7 +35,6 @@ fn append_u64_to_little_endian_byte_array(to_encode: u64, byte_array: &mut [u8])
     Ok(())
 }
 pub fn multi_part_pre_auth_encoding(pieces: &[&[u8]]) -> Result<Vec<u8>, &'static str> {
-
     // precalc size
     const HEADER_SIZE: usize = 8;
     let mut total_size = 0;
@@ -46,19 +48,23 @@ pub fn multi_part_pre_auth_encoding(pieces: &[&[u8]]) -> Result<Vec<u8>, &'stati
     let mut current_position = 0;
 
     let next_position = current_position + HEADER_SIZE;
-    append_u64_to_little_endian_byte_array(pieces.len() as u64, &mut buffer[current_position..next_position])?;
+    append_u64_to_little_endian_byte_array(
+        pieces.len() as u64,
+        &mut buffer[current_position..next_position],
+    )?;
     current_position = next_position;
 
     for piece in pieces.iter() {
-
         let next_position = current_position + HEADER_SIZE;
-        append_u64_to_little_endian_byte_array(piece.len() as u64, &mut buffer[current_position..next_position])?;
+        append_u64_to_little_endian_byte_array(
+            piece.len() as u64,
+            &mut buffer[current_position..next_position],
+        )?;
         current_position = next_position;
 
         let next_position = current_position + piece.len();
         buffer[current_position..next_position].copy_from_slice(piece);
         current_position = next_position;
-
     }
 
     Ok(buffer)
@@ -78,10 +84,7 @@ mod unit_test {
     fn test_le64() {
         let mut buffer = [0u8; 8];
         append_u64_to_little_endian_byte_array(0, &mut buffer).unwrap();
-        assert_eq!(
-            vec![0, 0, 0, 0, 0, 0, 0, 0],
-            buffer,
-        );
+        assert_eq!(vec![0, 0, 0, 0, 0, 0, 0, 0], buffer,);
         append_u64_to_little_endian_byte_array(!0u64, &mut buffer).unwrap();
         assert_eq!(
             vec![0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0b01111111],
@@ -92,18 +95,12 @@ mod unit_test {
     fn as_u8_vec(hex_str: &str) -> Result<Vec<u8>, ()> {
         let digits = (hex_str
             .chars()
-            .map(|hex_char|
-                 hex_char.to_digit(16)
-                    .map(|i| i as u8)
-                    .ok_or(())
-            )
+            .map(|hex_char| hex_char.to_digit(16).map(|i| i as u8).ok_or(()))
             .collect::<Result<Vec<_>, _>>())?;
         let starting_idx = digits.len() % 2;
         let mut bytes: Vec<u8> = (starting_idx..digits.len())
             .step_by(2)
-            .map(|idx| {
-                ((digits[idx] << 4) + digits[idx + 1]) as u8
-            })
+            .map(|idx| ((digits[idx] << 4) + digits[idx + 1]) as u8)
             .collect();
         if starting_idx == 1 {
             bytes.insert(0, digits[0]);
@@ -132,4 +129,3 @@ mod unit_test {
         }
     }
 }
-

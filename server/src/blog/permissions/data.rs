@@ -1,6 +1,6 @@
 //! Data structures representing specific transactions.
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// Represents a query for looking up permissions in the database. TODO this is really bad, so it
 /// would be nice if we make it a kind of permission instead of a permission id.
@@ -31,4 +31,3 @@ impl Query {
         self.permission_ids.as_ref().map(|pp| pp.as_slice())
     }
 }
-

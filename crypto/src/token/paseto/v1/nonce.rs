@@ -1,14 +1,8 @@
 use crate::algo::{
+    hash::{hmac::sha384::Algo as HMAC_SHA384, symmetric::Algo as HashA},
     Algo as A,
-    hash::{
-        symmetric::Algo as HashA,
-        hmac::sha384::Algo as HMAC_SHA384,
-    },
 };
-use rand::{
-    rngs::OsRng,
-    RngCore,
-};
+use rand::{rngs::OsRng, RngCore};
 
 #[derive(Clone)]
 pub struct Randomness([u8; 32]);
@@ -49,7 +43,7 @@ impl Nonce {
     pub fn get_crypt_nonce<'a>(&'a self) -> &'a [u8] {
         &self.0[16..32]
     }
-    pub fn as_slice<'a>(&'a self) -> &'a[u8] {
+    pub fn as_slice<'a>(&'a self) -> &'a [u8] {
         &self.0
     }
 }
@@ -63,7 +57,10 @@ mod unit_tests {
         // Constants copied directly from paseto source.
         let msg_a = String::from("The quick brown fox jumped over the lazy dog.");
         let msg_b = String::from("The quick brown fox jumped over the lazy dof.");
-        let nonce = hex::decode(String::from("808182838485868788898a8b8c8d8e8f00000000000000000000000000000000")).expect("Failed to decode nonce!");
+        let nonce = hex::decode(String::from(
+            "808182838485868788898a8b8c8d8e8f00000000000000000000000000000000",
+        ))
+        .expect("Failed to decode nonce!");
         let mut nonce_arr = [0u8; 32];
         println!("{:?}", nonce.len());
         debug_assert!(nonce.len() == 32, "Original nonce has incorrect length.");
@@ -71,8 +68,10 @@ mod unit_tests {
             nonce_arr[i] = *b;
         }
 
-        let calculated_nonce_a = Nonce::create_from(Randomness::precomputed(nonce_arr.clone()), msg_a.as_bytes());
-        let calculated_nonce_b = Nonce::create_from(Randomness::precomputed(nonce_arr), msg_b.as_bytes());
+        let calculated_nonce_a =
+            Nonce::create_from(Randomness::precomputed(nonce_arr.clone()), msg_a.as_bytes());
+        let calculated_nonce_b =
+            Nonce::create_from(Randomness::precomputed(nonce_arr), msg_b.as_bytes());
 
         assert_eq!(
             "5e13b4f0fc111bf0cf9de4e97310b687858b51547e125790513cc1eaaef173cc".to_owned(),
@@ -84,4 +83,3 @@ mod unit_tests {
         )
     }
 }
-

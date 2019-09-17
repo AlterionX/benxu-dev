@@ -6,14 +6,11 @@ pub use db::DB;
 pub mod accounts;
 pub mod auth;
 pub mod credentials;
+pub mod login;
 pub mod permissions;
 pub mod posts;
-pub mod login;
 
-use rocket::{
-    Route,
-    http::Status
-};
+use rocket::{http::Status, Route};
 
 /// Handler for serving the primary web app, to be implemented.
 #[get("/")]
@@ -58,4 +55,3 @@ pub fn routes() -> Vec<Route> {
         permissions::permission::delete,
     ]
 }
-

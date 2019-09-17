@@ -1,11 +1,11 @@
-use std::{
-    option::NoneError,
+use sodiumoxide::crypto::sign::ed25519::{
+    gen_keypair, keypair_from_seed, sign_detached as ed25519_sign,
+    verify_detached as ed25519_verify, PublicKey, SecretKey, Seed, Signature,
 };
-use sodiumoxide::crypto::sign::ed25519::{Signature, Seed, SecretKey, PublicKey, gen_keypair, keypair_from_seed, sign_detached as ed25519_sign, verify_detached as ed25519_verify};
+use std::option::NoneError;
 
 use crate::algo as base;
 use base::hash::asymmetric as asymm;
-
 
 pub struct KeyPair {
     private: Option<SecretKey>,
@@ -60,8 +60,7 @@ impl From<NoneError> for AlgoError {
     }
 }
 
-pub struct Algo {
-}
+pub struct Algo {}
 impl base::Algo for Algo {
     type Key = KeyPair;
     fn key_settings<'a>(&'a self) -> &'a <<Self as base::Algo>::Key as base::Key>::Settings {
@@ -84,7 +83,8 @@ impl asymm::Algo for Algo {
         signature: &[u8],
         key: &<Self::Key as asymm::KeyPair>::Public,
     ) -> Result<bool, Self::VerifyError> {
-        let signature = Signature::from_slice(signature).ok_or(Self::VerifyError::MismatchedSignatureLength)?;
+        let signature =
+            Signature::from_slice(signature).ok_or(Self::VerifyError::MismatchedSignatureLength)?;
         Ok(ed25519_verify(&signature, msg, key))
     }
     fn sign_private(
@@ -102,4 +102,3 @@ impl asymm::Algo for Algo {
         unimplemented!("Unimplemented by ring");
     }
 }
-

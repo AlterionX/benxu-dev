@@ -45,12 +45,9 @@ impl TryFrom<(SeparatedToken, &<ED25519 as A>::Key)> for VerifiedToken {
             HEADER.to_combined().as_slice(),
             tok.msg(),
             tok.footer.as_ref().map_or(b"", |f| f.as_slice()),
-        ]).map_err(|_| Error::Signing)?;
-        <ED25519 as HashA>::verify_public(
-            signed_plaintext.as_slice(),
-            tok.sig(),
-            key.public_key()
-        )
+        ])
+        .map_err(|_| Error::Signing)?;
+        <ED25519 as HashA>::verify_public(signed_plaintext.as_slice(), tok.sig(), key.public_key())
             .map_err(|_| Error::Signing)?
             .ok_or(Error::BadSignature)?;
         Ok(Self {
@@ -68,4 +65,3 @@ impl From<VerifiedToken> for token::SerializedData {
         }
     }
 }
-

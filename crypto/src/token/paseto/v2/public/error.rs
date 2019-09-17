@@ -1,7 +1,4 @@
-use crate::{
-    // algo::hash::ecc::ed25519::AlgoError,
-    token::paseto::token::{UnpackingError, DeserializeError},
-};
+use crate::token::paseto::token::{DeserializeError, UnpackingError};
 
 #[derive(Debug)]
 pub enum Error {
@@ -29,4 +26,3 @@ impl From<DeserializeError> for Error {
         Error::Deserialize
     }
 }
-

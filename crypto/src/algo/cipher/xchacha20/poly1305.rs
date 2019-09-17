@@ -1,10 +1,9 @@
-use sodiumoxide::crypto::aead::xchacha20poly1305_ietf::{Key as UnderlyingKey, open, seal, gen_key, gen_nonce};
 pub use sodiumoxide::crypto::aead::xchacha20poly1305_ietf::Nonce;
-
-use crate::algo::{
-    self as base,
-    cipher::symmetric as symm,
+use sodiumoxide::crypto::aead::xchacha20poly1305_ietf::{
+    gen_key, gen_nonce, open, seal, Key as UnderlyingKey,
 };
+
+use crate::algo::{self as base, cipher::symmetric as symm};
 
 #[derive(Clone)]
 pub struct Key {
@@ -45,7 +44,11 @@ pub struct DecryptArgs {
 pub struct Algo;
 impl base::Algo for Algo {
     type Key = Key;
-    fn key_settings<'a>(&'a self) -> &'a <<Self as base::Algo>::Key as base::SafeGenerateKey>::Settings { &() }
+    fn key_settings<'a>(
+        &'a self,
+    ) -> &'a <<Self as base::Algo>::Key as base::SafeGenerateKey>::Settings {
+        &()
+    }
 }
 impl symm::Algo for Algo {
     type EncryptArgs = EncryptArgs;
@@ -56,10 +59,20 @@ impl symm::Algo for Algo {
         } else {
             gen_nonce()
         };
-        Ok(seal(msg.plaintext.as_slice(), msg.aad.as_ref().map(|aad| aad.as_slice()), &nonce, key.underlying()))
+        Ok(seal(
+            msg.plaintext.as_slice(),
+            msg.aad.as_ref().map(|aad| aad.as_slice()),
+            &nonce,
+            key.underlying(),
+        ))
     }
     fn decrypt(key: &Self::Key, msg: &Self::DecryptArgs) -> Result<Vec<u8>, symm::DecryptError> {
-        open(msg.ciphertext.as_slice(), msg.aad.as_ref().map(|aad| aad.as_slice()), &msg.nonce, key.underlying()).map_err(|_| symm::DecryptError::Base)
+        open(
+            msg.ciphertext.as_slice(),
+            msg.aad.as_ref().map(|aad| aad.as_slice()),
+            &msg.nonce,
+            key.underlying(),
+        )
+        .map_err(|_| symm::DecryptError::Base)
     }
 }
-

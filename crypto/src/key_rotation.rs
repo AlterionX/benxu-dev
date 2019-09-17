@@ -1,20 +1,12 @@
+use crate::algo::{Algo, SafeGenerateKey};
 use std::{
-    time::{
-        Duration,
-        Instant,
+    sync::{
+        mpsc::{channel, RecvTimeoutError, Sender},
+        Arc, RwLock,
     },
     thread,
-    sync::{
-        Arc,
-        RwLock,
-        mpsc::{
-            Sender,
-            channel,
-            RecvTimeoutError,
-        },
-    },
+    time::{Duration, Instant},
 };
-use crate::algo::{Algo, SafeGenerateKey};
 
 mod stable {
     use crate::algo::Algo;
@@ -34,8 +26,8 @@ mod stable {
 pub use stable::KeyStore as StableKeyStore;
 
 mod rotating {
-    use std::sync::Arc;
     use crate::algo::{Algo, SafeGenerateKey};
+    use std::sync::Arc;
 
     pub struct KeyStore<A: Algo> {
         pub algo: Arc<A>,
@@ -59,7 +51,8 @@ mod rotating {
             })
         }
         pub fn attempt_with_retry<T, E, F>(&self, attempt: &mut F) -> Result<T, E>
-            where F: FnMut(&K, Option<E>) -> Result<T, E>
+        where
+            F: FnMut(&K, Option<E>) -> Result<T, E>,
         {
             attempt(&*self.curr, None).or_else(|e| attempt(&*self.last, Some(e)))
         }
@@ -74,11 +67,14 @@ pub trait Generational {
     fn advance_generation(&self) -> Result<&Self, Self::Error>;
     fn get_store(&self) -> Result<Self::Datum, Self::Error>;
 }
-impl<K: SafeGenerateKey + Clone + Send + Sync, A: Algo<Key = K> + Send + Sync + 'static> Generational for RotatingKeyFixture<A> {
+impl<K: SafeGenerateKey + Clone + Send + Sync, A: Algo<Key = K> + Send + Sync + 'static>
+    Generational for RotatingKeyFixture<A>
+{
     type Error = Arc<RotatingKeyStore<A>>;
     type Datum = Arc<RotatingKeyStore<A>>;
     fn advance_generation(&self) -> Result<&Self, Self::Error> {
-        let mut key_store = self.write()
+        let mut key_store = self
+            .write()
             .map_err(|rwlg| Arc::clone(&*rwlg.into_inner()))?;
         *key_store = key_store.involute();
         Ok(self)
@@ -96,14 +92,17 @@ pub struct KeyRotator<A: Algo> {
     kill_handle: Option<(Sender<()>, thread::JoinHandle<()>)>,
 }
 
-impl<K: SafeGenerateKey + Clone + Send + Sync, A: Algo<Key = K> + Send + Sync + 'static> KeyRotator<A> {
+impl<K: SafeGenerateKey + Clone + Send + Sync, A: Algo<Key = K> + Send + Sync + 'static>
+    KeyRotator<A>
+{
     pub fn init(alg: A, period_between_rotation: Option<Duration>) -> Self {
         let local_copy = Arc::new(RwLock::new(Arc::new(RotatingKeyStore::new(alg))));
         let remote_copy = Arc::clone(&local_copy);
 
         let (tx, rx) = channel();
         const TWO_HOURS_IN_SECONDS: u64 = 2 * 60 * 60;
-        let period_between_rotation = period_between_rotation.unwrap_or(Duration::from_secs(TWO_HOURS_IN_SECONDS));
+        let period_between_rotation =
+            period_between_rotation.unwrap_or(Duration::from_secs(TWO_HOURS_IN_SECONDS));
 
         let handle = thread::spawn(move || {
             let key_store_fixture = remote_copy;
@@ -117,7 +116,7 @@ impl<K: SafeGenerateKey + Clone + Send + Sync, A: Algo<Key = K> + Send + Sync + 
                 }
                 match rx.recv_timeout(Instant::now() - deadline) {
                     Err(RecvTimeoutError::Disconnected) => break,
-                    _ => ()// continue if nothing
+                    _ => (), // continue if nothing
                 }
             }
             ()
@@ -158,4 +157,3 @@ impl<A: Algo> KeyRotator<A> {
         Arc::clone(&self.key_store)
     }
 }
-

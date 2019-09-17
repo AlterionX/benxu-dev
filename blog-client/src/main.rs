@@ -14,14 +14,12 @@ impl Component for Model {
     type Message = Msg;
     type Properties = ();
     fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
-        Self {
-            value: 0,
-        }
+        Self { value: 0 }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
-            Msg::DoIt => self.value = self.value + 1
+            Msg::DoIt => self.value = self.value + 1,
         }
         true
     }

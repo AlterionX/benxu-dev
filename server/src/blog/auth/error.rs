@@ -1,10 +1,7 @@
 //! Error data and conversions.
 
-use rocket::{
-    response::status,
-    http::Status,
-};
 use diesel::result::Error as DieselError;
+use rocket::{http::Status, response::status};
 
 use crypto::token::paseto::v2::local::error::Error as DecryptError;
 
@@ -74,4 +71,3 @@ impl From<Error> for status::Custom<Error> {
 }
 
 //TODO unit tests?
-

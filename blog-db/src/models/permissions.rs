@@ -1,13 +1,10 @@
-use crate::{schema::*, models};
-use serde::{
-    Serialize,
-    Deserialize,
-};
+use crate::{models, schema::*};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Identifiable, Associations, Queryable, Serialize, Deserialize)]
 #[belongs_to(parent = "models::users::Data", foreign_key = "user_id")]
-#[table_name="permissions"]
+#[table_name = "permissions"]
 pub struct Data {
     pub id: uuid::Uuid,
     pub created_at: DateTime<Utc>,
@@ -17,7 +14,7 @@ pub struct Data {
 }
 
 #[derive(Insertable, Serialize, Deserialize)]
-#[table_name="permissions"]
+#[table_name = "permissions"]
 pub struct NewWithId<'a> {
     id: uuid::Uuid,
     created_by: uuid::Uuid,
@@ -41,4 +38,3 @@ pub struct New<'a> {
     pub user_id: uuid::Uuid,
     pub permission: &'a str,
 }
-

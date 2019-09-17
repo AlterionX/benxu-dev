@@ -1,16 +1,7 @@
-use rand::{
-    RngCore,
-    rngs::OsRng,
-};
-use argon2rs::{
-    Argon2,
-    Variant,
-};
+use argon2rs::{Argon2, Variant};
+use rand::{rngs::OsRng, RngCore};
 
-use crate::algo::{
-    hash::symmetric as sym,
-    self as base,
-};
+use crate::algo::{self as base, hash::symmetric as sym};
 
 #[derive(Clone)]
 pub struct Key {
@@ -28,9 +19,7 @@ impl base::SafeGenerateKey for Key {
 impl sym::Key for Key {}
 impl Key {
     pub fn new(secret: Vec<u8>) -> Self {
-        Self {
-            secret_key: secret,
-        }
+        Self { secret_key: secret }
     }
 }
 
@@ -42,7 +31,11 @@ pub struct SigningData {
     hash_len: u32,
 }
 impl SigningData {
-    pub fn new(msg: Vec<u8>, salt: Option<[u8; Algo::SALT_LEN as usize]>, hash_len: Option<u32>) -> Result<Self, ()> {
+    pub fn new(
+        msg: Vec<u8>,
+        salt: Option<[u8; Algo::SALT_LEN as usize]>,
+        hash_len: Option<u32>,
+    ) -> Result<Self, ()> {
         let salt = salt.unwrap_or_else(|| {
             let mut generated_salt = [0; Algo::SALT_LEN as usize];
             OsRng.fill_bytes(&mut generated_salt);
@@ -109,4 +102,3 @@ impl sym::Algo for Algo {
         buffer.as_slice() == signature
     }
 }
-

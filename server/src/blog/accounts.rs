@@ -1,24 +1,18 @@
 //! Handlers and functions for account management.
 
 use rocket::{
-    http::{Status, Cookies},
+    http::{Cookies, Status},
     State,
 };
-use rocket_contrib::{
-    json::Json,
-    uuid::Uuid as RUuid,
-};
+use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
+use crate::{
+    blog::{auth, db},
+    uuid_conv::FromRUuid,
+    TokenKeyFixture,
+};
 use blog_db::models::*;
 use crypto::Generational;
-use crate::{
-    TokenKeyFixture,
-    uuid_conv::FromRUuid,
-    blog::{
-        db,
-        auth,
-    },
-};
 
 /// Handler for creating an account.
 ///
@@ -42,11 +36,8 @@ pub fn post(
         .transpose()
         .map_err(|_| Status::Unauthorized)?
         .map(|cr| cr.user_id());
-    let created = create_account(
-        &db,
-        creator,
-        user_to_create,
-    ).map_err(|_| Status::InternalServerError)?;
+    let created =
+        create_account(&db, creator, user_to_create).map_err(|_| Status::InternalServerError)?;
     // Add token if not already logged in to facilitate credential creation.
     // If a credential is not created in the first session, they will currently need to contact the
     // site admin to log in again.
@@ -70,9 +61,7 @@ pub fn create_account(
     creator: Option<uuid::Uuid>,
     user_to_create: users::NewNoMeta,
 ) -> Result<users::Data, diesel::result::Error> {
-    Ok(db.create_user(
-        users::New::from((&user_to_create, creator))
-    )?)
+    Ok(db.create_user(users::New::from((&user_to_create, creator)))?)
 }
 
 /// Handlers and functions for managing individual accounts.
@@ -92,7 +81,8 @@ pub mod account {
             return Err(Status::Unauthorized);
         }
         db.find_user_by_id(id)
-            .map(users::Data::strip_meta).map(Json)
+            .map(users::Data::strip_meta)
+            .map(Json)
             .map_err(|_| Status::InternalServerError)
     }
     /// Handler to allow editing of user information if logged in as same user or has permissions
@@ -110,14 +100,17 @@ pub mod account {
             .into_inner()
             .change_level::<auth::perms::CanEditUser>()
             .map(|cr| cr.user_id())
-            .or_else(|cr| if id == cr.user_id() {
-                Ok(cr.user_id())
-            } else {
-                Err(Status::Unauthorized)
+            .or_else(|cr| {
+                if id == cr.user_id() {
+                    Ok(cr.user_id())
+                } else {
+                    Err(Status::Unauthorized)
+                }
             })?;
         let changes = (&changes, Some(updater)).into();
         db.update_user_by_id(id, changes)
-            .map(users::Data::strip_meta).map(Json)
+            .map(users::Data::strip_meta)
+            .map(Json)
             .map_err(|_| Status::InternalServerError)
     }
     /// Handler to allow for the deletion of accounts if logged in as same user or has permissions
@@ -133,14 +126,15 @@ pub mod account {
             .into_inner()
             .change_level::<auth::perms::CanDeleteUser>()
             .map(|cr| cr.user_id())
-            .or_else(|cr| if id == cr.user_id() {
-                Ok(cr.user_id())
-            } else {
-                Err(Status::Unauthorized)
+            .or_else(|cr| {
+                if id == cr.user_id() {
+                    Ok(cr.user_id())
+                } else {
+                    Err(Status::Unauthorized)
+                }
             })?;
         db.delete_user_by_id(id)
             .map(|_| Status::Ok)
             .map_err(|_| Status::InternalServerError)
     }
 }
-

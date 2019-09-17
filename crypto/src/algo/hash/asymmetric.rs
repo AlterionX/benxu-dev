@@ -7,7 +7,8 @@ pub trait KeyPair: base::Key {
     fn private_key(&self) -> Option<&Self::Private>;
 }
 pub trait Algo: base::Algo
-    where <Self as base::Algo>::Key: KeyPair
+where
+    <Self as base::Algo>::Key: KeyPair,
 {
     type SigningError;
     type VerifyError;

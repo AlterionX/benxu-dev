@@ -1,7 +1,7 @@
+use chrono::{Datelike, Utc};
+use maud::{html, Markup, PreEscaped, Render};
 use std::fs;
-use maud::{Markup, html, Render, PreEscaped};
 use typed_builder::TypedBuilder;
-use chrono::{Utc, Datelike};
 
 pub struct LogoLink<'a> {
     pub url: &'a str,
@@ -21,19 +21,19 @@ impl<'a> Render for LogoLink<'a> {
 
 #[derive(TypedBuilder)]
 pub struct MetaData<'a> {
-    #[builder(default="en-US")]
+    #[builder(default = "en-US")]
     pub lang: &'a str,
-    #[builder(default="UTF-8")]
+    #[builder(default = "UTF-8")]
     pub charset: &'a str,
-    #[builder(default_code="&[]")]
+    #[builder(default_code = "&[]")]
     pub scripts: &'a [Script<'a>],
     #[builder(default=&[])]
     pub css: &'a [Css<'a>],
-    #[builder(default="Benjamin Xu")]
+    #[builder(default = "Benjamin Xu")]
     pub title: &'a str,
-    #[builder(default="Benjamin Xu's personal site.")]
+    #[builder(default = "Benjamin Xu's personal site.")]
     pub description: &'a str,
-    #[builder(default_code=r#"Copyright {
+    #[builder(default_code = r#"Copyright {
         name: &Name {
             first: "Benjamin",
             middle: Some("Peiyan"),
@@ -50,10 +50,10 @@ pub struct MetaData<'a> {
     pub contact: Option<&'a Contact<'a>>,
     #[builder(default)]
     pub logo: Option<&'a Logo<'a>>,
-    #[builder(default="#00003f")]
+    #[builder(default = "#00003f")]
     pub theme_color: &'a str,
 }
-impl <'a> Default for MetaData<'a> {
+impl<'a> Default for MetaData<'a> {
     fn default() -> Self {
         Self::builder().build()
     }
@@ -83,17 +83,20 @@ impl<'a> Render for Script<'a> {
 impl<'a> Script<'a> {
     pub fn wasm_bindgen_loader(name: &str) -> (String, String) {
         let glue = format!("wasm-bindgen-glue/{}.js", name);
-        let load = format!("\
-            document.addEventListener(\
-                \"DOMContentLoaded\",\
-                function(){{\
-                    var mod = wasm_bindgen(\"/public/wasm/{}_bg.wasm\");\
-                    if (mod.load_listeners) {{\
-                        var listeners = mod.load_listeners();\
-                    }}\
-                }}\
-            );\
-        ", name);
+        let load = format!(
+            "\
+             document.addEventListener(\
+             \"DOMContentLoaded\",\
+             function(){{\
+             var mod = wasm_bindgen(\"/public/wasm/{}_bg.wasm\");\
+             if (mod.load_listeners) {{\
+             var listeners = mod.load_listeners();\
+             }}\
+             }}\
+             );\
+             ",
+            name
+        );
         (glue, load)
     }
 }
@@ -108,13 +111,10 @@ impl<'a> Render for Css<'a> {
                 "/public/css/"(src)".css"
             }{} },
             Css::Critical { src } => {
-                let style = fs::read_to_string(
-                    format!("./public/css/{}.css", src).as_str()
-                ).expect(
-                    format!("./public/css/{}.css is missing", src).as_str()
-                );
+                let style = fs::read_to_string(format!("./public/css/{}.css", src).as_str())
+                    .expect(format!("./public/css/{}.css is missing", src).as_str());
                 html! { style { (PreEscaped(style)) } }
-            },
+            }
         }
     }
 }
@@ -135,22 +135,25 @@ pub enum PhoneNumber<'a> {
         prefix: u16,
         line_number: u16,
         icon: &'a str,
-    }
+    },
 }
 impl<'a> Render for PhoneNumber<'a> {
     fn render(&self) -> Markup {
         match self {
             PhoneNumber::US {
-                icon, area_code, prefix, line_number
+                icon,
+                area_code,
+                prefix,
+                line_number,
             } => html! {
                 (icon)": ("(area_code)") "(prefix)"-"(line_number)
-            }
+            },
         }
     }
 }
 pub struct Contact<'a> {
-    pub email: &'a[Email<'a>],
-    pub phone: &'a[PhoneNumber<'a>],
+    pub email: &'a [Email<'a>],
+    pub phone: &'a [PhoneNumber<'a>],
 }
 impl<'a> Render for Contact<'a> {
     fn render(&self) -> Markup {
@@ -168,7 +171,7 @@ pub struct Name<'a> {
     pub first: &'a str,
     pub middle: Option<&'a str>,
     pub last: &'a str,
-    pub nicknames: &'a[&'a str],
+    pub nicknames: &'a [&'a str],
 }
 impl<'a> Render for Name<'a> {
     fn render(&self) -> Markup {
@@ -212,7 +215,7 @@ impl<'a> MenuItem<'a> {
         }
     }
 }
-impl <'a> Render for MenuItem<'a> {
+impl<'a> Render for MenuItem<'a> {
     fn render(&self) -> Markup {
         html! {
             li {
@@ -224,8 +227,8 @@ impl <'a> Render for MenuItem<'a> {
         }
     }
 }
-pub struct Menu<'a>(pub &'a[MenuItem<'a>]);
-impl <'a> Render for Menu<'a> {
+pub struct Menu<'a>(pub &'a [MenuItem<'a>]);
+impl<'a> Render for Menu<'a> {
     fn render(&self) -> Markup {
         html! {
             ul.menu {
@@ -236,9 +239,8 @@ impl <'a> Render for Menu<'a> {
         }
     }
 }
-impl <'a> Render for &Menu<'a> {
+impl<'a> Render for &Menu<'a> {
     fn render(&self) -> Markup {
         (*self).render()
     }
 }
-

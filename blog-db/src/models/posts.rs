@@ -1,12 +1,9 @@
-use crate::{schema::*, models::option_datefmt};
-use serde::{
-    Serialize,
-    Deserialize,
-};
+use crate::{models::option_datefmt, schema::*};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize)]
-#[table_name="posts"]
+#[table_name = "posts"]
 pub struct Data {
     pub id: uuid::Uuid,
     pub created_at: DateTime<Utc>,
@@ -55,7 +52,7 @@ impl From<Data> for DataNoMeta {
 }
 
 #[derive(Identifiable, Insertable, Serialize, Deserialize)]
-#[table_name="posts"]
+#[table_name = "posts"]
 pub struct NewWithId<'a> {
     id: uuid::Uuid,
     created_by: uuid::Uuid,
@@ -159,7 +156,7 @@ impl NewNoMeta {
 }
 
 #[derive(AsChangeset, Serialize, Deserialize)]
-#[table_name="posts"]
+#[table_name = "posts"]
 pub struct Changed<'a> {
     pub title: Option<&'a str>,
     pub body: Option<&'a str>,
@@ -168,7 +165,7 @@ pub struct Changed<'a> {
 }
 
 #[derive(AsChangeset, Serialize, Deserialize)]
-#[table_name="posts"]
+#[table_name = "posts"]
 pub struct Editing {
     updated_by: uuid::Uuid,
 }
@@ -181,7 +178,7 @@ impl Editing {
 }
 
 #[derive(AsChangeset, Serialize, Deserialize)]
-#[table_name="posts"]
+#[table_name = "posts"]
 pub struct Publishing {
     updated_by: uuid::Uuid,
 }
@@ -194,7 +191,7 @@ impl Publishing {
 }
 
 #[derive(AsChangeset, Serialize, Deserialize)]
-#[table_name="posts"]
+#[table_name = "posts"]
 pub struct Archival {
     updated_by: uuid::Uuid,
     archived_at: DateTime<Utc>,
@@ -211,7 +208,7 @@ impl Archival {
 }
 
 #[derive(AsChangeset, Serialize, Deserialize)]
-#[table_name="posts"]
+#[table_name = "posts"]
 pub struct Deletion {
     updated_by: uuid::Uuid,
     deleted_at: DateTime<Utc>,

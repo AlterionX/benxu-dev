@@ -1,13 +1,7 @@
+use rand::{rngs::OsRng, RngCore};
 use std::ops::Deref;
-use rand::{
-    RngCore,
-    rngs::OsRng,
-};
 
-use crate::algo::{
-    hash::symmetric as sym,
-    self as base,
-};
+use crate::algo::{self as base, hash::symmetric as sym};
 
 #[derive(Clone)]
 pub struct Key(u8);
@@ -67,7 +61,9 @@ impl Algo {
 }
 impl base::Algo for Algo {
     type Key = Key;
-    fn key_settings<'a>(&'a self) -> &<<Self as base::Algo>::Key as base::Key>::Settings { &(bcrypt::DEFAULT_COST as u8) }
+    fn key_settings<'a>(&'a self) -> &<<Self as base::Algo>::Key as base::Key>::Settings {
+        &(bcrypt::DEFAULT_COST as u8)
+    }
 }
 impl sym::Algo for Algo {
     type SigningInput = SigningData;
@@ -84,4 +80,3 @@ impl sym::Algo for Algo {
         Self::sign(msg, key).as_slice() == signature
     }
 }
-

@@ -31,7 +31,7 @@ impl SerializedRandToken {
         Self {
             msg: msg,
             footer: footer,
-            randomness: rand
+            randomness: rand,
         }
     }
     pub(super) fn preprocess(self, key: &[u8]) -> PrimedToken {
@@ -65,14 +65,13 @@ impl From<(SerializedRandToken, &[u8])> for PrimedToken {
 }
 impl EncryptedToken {
     pub(super) fn sign(self) -> Result<SignedEncryptedToken, Error> {
-        let pre_auth_encoding = multi_part_pre_auth_encoding(
-            &[
-                HEADER.to_combined().as_slice(),
-                self.nonce.as_slice(),
-                self.msg.as_slice(),
-                self.footer.as_ref().map_or(&[], |f| f.as_slice()),
-            ]
-        ).map_err(|_| Error::Sign)?;
+        let pre_auth_encoding = multi_part_pre_auth_encoding(&[
+            HEADER.to_combined().as_slice(),
+            self.nonce.as_slice(),
+            self.msg.as_slice(),
+            self.footer.as_ref().map_or(&[], |f| f.as_slice()),
+        ])
+        .map_err(|_| Error::Sign)?;
         let signing_key = <HMAC_SHA384 as A>::Key::new(&self.auth_key);
         let sig = <HMAC_SHA384 as SymmHashAlgo>::sign(&pre_auth_encoding, &signing_key);
         Ok(SignedEncryptedToken {
@@ -93,7 +92,7 @@ impl TryFrom<PrimedToken> for EncryptedToken {
             msg: encrypted_msg,
             footer: tok.footer,
             auth_key: tok.auth_key,
-            nonce: tok.nonce
+            nonce: tok.nonce,
         })
     }
 }
@@ -134,7 +133,7 @@ mod unit_tests {
         let token = SerializedRandToken::init_with_rand(
             b"hello".to_vec(),
             Some(b"world".to_vec()),
-            Randomness::new()
+            Randomness::new(),
         );
         // TODO validate
         let token = token.preprocess(KEY);
@@ -168,4 +167,3 @@ mod unit_tests {
         // TODO validate
     }
 }
-

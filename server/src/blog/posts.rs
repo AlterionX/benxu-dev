@@ -1,19 +1,13 @@
 //! Handlers and functions for managing posts.
 
 use rocket::http::Status;
-use rocket_contrib::{
-    json::Json,
-    uuid::Uuid as RUuid,
-};
+use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
-use blog_db::models::*;
 use crate::{
-    blog::{
-        DB,
-        auth,
-    },
+    blog::{auth, DB},
     uuid_conv::FromRUuid,
 };
+use blog_db::models::*;
 
 /// Handler for posting a post to the database. Requires user to be logged in and have the
 /// [`CanPost`](crate::blog::auth::perms::CanPost) permission.
@@ -76,11 +70,7 @@ pub mod post {
     /// Handler for deleting a post with a specific id. Requires user to be logged in and have
     /// the [`CanDelete`](crate::blog::auth::perms::CanDelete) permission.
     #[delete("/posts/<id>")]
-    pub fn delete(
-        id: RUuid,
-        db: DB,
-        deleter: auth::Credentials<auth::perms::CanDelete>,
-    ) -> Status {
+    pub fn delete(id: RUuid, db: DB, deleter: auth::Credentials<auth::perms::CanDelete>) -> Status {
         let id = uuid::Uuid::from_ruuid(id);
         map_to_status(db.delete_post_with_id(id, &posts::Deletion::new(deleter.user_id())))
     }
@@ -108,4 +98,3 @@ pub mod post {
         map_to_status(db.archive_post_with_id(id, posts::Archival::new(archiver.user_id())))
     }
 }
-

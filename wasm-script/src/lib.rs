@@ -23,10 +23,7 @@ struct NodeListIter<'a> {
 }
 impl<'a> NodeListIter<'a> {
     fn new(nodes: &'a web_sys::NodeList) -> Self {
-        NodeListIter {
-            nodes,
-            next_idx: 0,
-        }
+        NodeListIter { nodes, next_idx: 0 }
     }
 }
 impl<'a> Iterator for NodeListIter<'a> {
@@ -41,11 +38,14 @@ impl<'a> Iterator for NodeListIter<'a> {
         }
     }
 }
-fn get_slide_and_markers() -> Result<(web_sys::Element, web_sys::NodeList, web_sys::NodeList), JsValue> {
+fn get_slide_and_markers(
+) -> Result<(web_sys::Element, web_sys::NodeList, web_sys::NodeList), JsValue> {
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
 
-    let slide_container = document.query_selector(".slides")?.expect("No slide container.");
+    let slide_container = document
+        .query_selector(".slides")?
+        .expect("No slide container.");
     let slides = document.query_selector_all(".slide")?;
     let slide_markers = document.query_selector_all(".slide-marker")?;
     Ok((slide_container, slides, slide_markers))
@@ -63,8 +63,9 @@ fn to_px_string(num: i32) -> String {
 fn set_sizing(e: &web_sys::HtmlElement, height: i32) -> Result<(), JsValue> {
     let needed_e_size = to_px_string(height); // need to set height to integral value
     let needed_margin_size = to_px_string(-height);
-    e.style().set_property("margin-bottom", needed_margin_size.as_str())?;
-    e.style().set_property("height",  needed_e_size.as_str())?;
+    e.style()
+        .set_property("margin-bottom", needed_margin_size.as_str())?;
+    e.style().set_property("height", needed_e_size.as_str())?;
     Ok(())
 }
 
@@ -91,25 +92,37 @@ fn align_slides() -> Result<(), JsValue> {
 }
 
 fn find_active_slides(slides: &[(web_sys::HtmlElement, web_sys::HtmlElement)]) -> Vec<usize> {
-    slides.iter().enumerate()
-        .filter(|(_, (ref slide, ref marker))| slide.class_list().contains("active-slide") || marker.class_list().contains("active-slide-marker"))
+    slides
+        .iter()
+        .enumerate()
+        .filter(|(_, (ref slide, ref marker))| {
+            slide.class_list().contains("active-slide")
+                || marker.class_list().contains("active-slide-marker")
+        })
         .map(|(idx, _)| idx)
         .collect()
 }
-fn set_active(&(ref slide, ref marker): &(web_sys::HtmlElement, web_sys::HtmlElement)) -> Result<(), JsValue> {
+fn set_active(
+    &(ref slide, ref marker): &(web_sys::HtmlElement, web_sys::HtmlElement),
+) -> Result<(), JsValue> {
     slide.class_list().add_1("active-slide")?;
     marker.class_list().add_1("active-slide-marker")?;
     Ok(())
 }
-fn unset_active(&(ref slide, ref marker): &(web_sys::HtmlElement, web_sys::HtmlElement)) -> Result<(), JsValue> {
+fn unset_active(
+    &(ref slide, ref marker): &(web_sys::HtmlElement, web_sys::HtmlElement),
+) -> Result<(), JsValue> {
     slide.class_list().remove_1("active-slide")?;
     marker.class_list().remove_1("active-slide-marker")?;
     Ok(())
 }
 fn shift_active_slide<
-    F: for <'a> Fn(&'a [(web_sys::HtmlElement, web_sys::HtmlElement)], &[usize]) -> &'a (web_sys::HtmlElement, web_sys::HtmlElement)
+    F: for<'a> Fn(
+        &'a [(web_sys::HtmlElement, web_sys::HtmlElement)],
+        &[usize],
+    ) -> &'a (web_sys::HtmlElement, web_sys::HtmlElement),
 >(
-    determine_active_slide: F
+    determine_active_slide: F,
 ) -> Result<(), JsValue> {
     let (_, slides, slide_markers) = get_slide_and_markers()?;
 
@@ -120,16 +133,27 @@ fn shift_active_slide<
         .map(cast_node_to_html_ele)
         .collect::<Result<Vec<_>, _>>()?;
 
-    let slides_and_markers = slides.into_iter().zip(slide_markers.into_iter()).collect::<Vec<_>>();
+    let slides_and_markers = slides
+        .into_iter()
+        .zip(slide_markers.into_iter())
+        .collect::<Vec<_>>();
 
     let curr_active_slide_indices = find_active_slides(&slides_and_markers);
-    let next_active_slide_and_marker = determine_active_slide(&slides_and_markers, &curr_active_slide_indices);
+    let next_active_slide_and_marker =
+        determine_active_slide(&slides_and_markers, &curr_active_slide_indices);
 
-    (curr_active_slide_indices.iter().map(|&idx| &slides_and_markers[idx]).map(unset_active).collect(): Result<(), JsValue>)?;
+    (curr_active_slide_indices
+        .iter()
+        .map(|&idx| &slides_and_markers[idx])
+        .map(unset_active)
+        .collect(): Result<(), JsValue>)?;
     set_active(next_active_slide_and_marker)
 }
 
-fn find_next_slide<'a>(slides: &'a [(web_sys::HtmlElement, web_sys::HtmlElement)], active_slide_indices: &[usize]) -> &'a (web_sys::HtmlElement, web_sys::HtmlElement) {
+fn find_next_slide<'a>(
+    slides: &'a [(web_sys::HtmlElement, web_sys::HtmlElement)],
+    active_slide_indices: &[usize],
+) -> &'a (web_sys::HtmlElement, web_sys::HtmlElement) {
     if active_slide_indices.len() == 0 {
         &slides[0]
     } else if active_slide_indices.len() == 1 {
@@ -144,7 +168,10 @@ fn next_slide() -> Result<(), JsValue> {
     shift_active_slide(find_next_slide)
 }
 
-fn find_prev_slide<'a>(slides: &'a [(web_sys::HtmlElement, web_sys::HtmlElement)], active_slide_indices: &[usize]) -> &'a (web_sys::HtmlElement, web_sys::HtmlElement) {
+fn find_prev_slide<'a>(
+    slides: &'a [(web_sys::HtmlElement, web_sys::HtmlElement)],
+    active_slide_indices: &[usize],
+) -> &'a (web_sys::HtmlElement, web_sys::HtmlElement) {
     if active_slide_indices.len() == 0 {
         &slides[0]
     } else if active_slide_indices.len() == 1 {
@@ -161,13 +188,15 @@ fn prev_slide() -> Result<(), JsValue> {
 
 #[wasm_bindgen]
 pub fn set_slide(idx: usize) -> Result<(), JsValue> {
-    shift_active_slide(|slides: &[(web_sys::HtmlElement, web_sys::HtmlElement)], _| {
-        if idx < slides.len() {
-            &slides[idx]
-        } else {
-            &slides[0]
-        }
-    })
+    shift_active_slide(
+        |slides: &[(web_sys::HtmlElement, web_sys::HtmlElement)], _| {
+            if idx < slides.len() {
+                &slides[idx]
+            } else {
+                &slides[0]
+            }
+        },
+    )
 }
 
 fn sec_to_ms(seconds: i32) -> i32 {
@@ -181,7 +210,10 @@ static mut OPT_SLIDE_TIMED_ADVANCE: OptionalClosure<dyn Fn(i8)> = None;
 static mut OPT_SLIDE_TIMED_ADVANCE_ID: Option<i32> = None;
 fn set_slide_progression_timer(window: &web_sys::Window) -> Result<(), JsValue> {
     let interval_handler = unsafe { OPT_SLIDE_TIMED_ADVANCE.as_ref().unwrap() };
-    let timer_id = window.set_interval_with_callback_and_timeout_and_arguments_0(interval_handler.as_ref().unchecked_ref(), sec_to_ms(50))?;
+    let timer_id = window.set_interval_with_callback_and_timeout_and_arguments_0(
+        interval_handler.as_ref().unchecked_ref(),
+        sec_to_ms(50),
+    )?;
 
     unsafe {
         OPT_SLIDE_TIMED_ADVANCE_ID = Some(timer_id);
@@ -200,7 +232,8 @@ fn reset_slide_progression_timer() -> Result<(), JsValue> {
 
     Ok(())
 }
-static mut OPT_SLIDE_SELECT: [OptionalClosure<dyn Fn(i8)>; 7] = [None, None, None, None, None, None, None]; // TODO fix when enum variants become types
+static mut OPT_SLIDE_SELECT: [OptionalClosure<dyn Fn(i8)>; 7] =
+    [None, None, None, None, None, None, None]; // TODO fix when enum variants become types
 fn bind_per_marker_listener(document: &web_sys::Document, slide_idx: usize) -> Result<(), JsValue> {
     let listener = unsafe {
         OPT_SLIDE_SELECT[slide_idx] = Some(Closure::wrap(Box::new(move |_: i8| {
@@ -210,7 +243,9 @@ fn bind_per_marker_listener(document: &web_sys::Document, slide_idx: usize) -> R
         OPT_SLIDE_SELECT[slide_idx].as_ref().unwrap()
     };
     let selector = format!("#slide-marker-{}", slide_idx);
-    let marker = document.query_selector(selector.as_str())?.expect("Has a marker.");
+    let marker = document
+        .query_selector(selector.as_str())?
+        .expect("Has a marker.");
     let marker = cast_ele_to_html_ele(marker)?;
     marker.add_event_listener_with_callback("click", listener.as_ref().unchecked_ref())?;
     Ok(())
@@ -223,7 +258,9 @@ fn bind_next_slide_button(document: &web_sys::Document) -> Result<(), JsValue> {
         }) as Box<dyn Fn(_)>));
         OPT_SLIDE_NEXT.as_ref().unwrap()
     };
-    let button = document.query_selector("#slide-next")?.expect("Has a marker.");
+    let button = document
+        .query_selector("#slide-next")?
+        .expect("Has a marker.");
     let button = cast_ele_to_html_ele(button)?;
     button.add_event_listener_with_callback("click", listener.as_ref().unchecked_ref())?;
     Ok(())
@@ -236,7 +273,9 @@ fn bind_prev_slide_button(document: &web_sys::Document) -> Result<(), JsValue> {
         }) as Box<dyn Fn(_)>));
         OPT_SLIDE_PREV.as_ref().unwrap()
     };
-    let button = document.query_selector("#slide-prev")?.expect("Has a marker.");
+    let button = document
+        .query_selector("#slide-prev")?
+        .expect("Has a marker.");
     let button = cast_ele_to_html_ele(button)?;
     button.add_event_listener_with_callback("click", listener.as_ref().unchecked_ref())?;
     Ok(())
@@ -245,8 +284,12 @@ fn bind_prev_slide_button(document: &web_sys::Document) -> Result<(), JsValue> {
 #[wasm_bindgen(start)]
 pub fn init() -> Result<(), JsValue> {
     unsafe {
-        OPT_SLIDE_COLLAPSE = Some(Closure::wrap(Box::new(|_: web_sys::UiEvent| { let _ = align_slides(); }) as Box<dyn Fn(_)>));
-        OPT_SLIDE_TIMED_ADVANCE = Some(Closure::wrap(Box::new(|_: i8| { next_slide().expect("no issues"); }) as Box<dyn Fn(_)>));
+        OPT_SLIDE_COLLAPSE = Some(Closure::wrap(Box::new(|_: web_sys::UiEvent| {
+            let _ = align_slides();
+        }) as Box<dyn Fn(_)>));
+        OPT_SLIDE_TIMED_ADVANCE = Some(Closure::wrap(Box::new(|_: i8| {
+            next_slide().expect("no issues");
+        }) as Box<dyn Fn(_)>));
     }
 
     let window = web_sys::window().expect("no global `window` exists");
@@ -257,7 +300,10 @@ pub fn init() -> Result<(), JsValue> {
     if window.document().expect("Document present").ready_state() != "loading" {
         align_slides()?;
     } else {
-        window.add_event_listener_with_callback("DOMContentLoaded", resize_handler.as_ref().unchecked_ref())?;
+        window.add_event_listener_with_callback(
+            "DOMContentLoaded",
+            resize_handler.as_ref().unchecked_ref(),
+        )?;
     }
     window.add_event_listener_with_callback("resize", resize_handler.as_ref().unchecked_ref())?;
 
@@ -271,4 +317,3 @@ pub fn init() -> Result<(), JsValue> {
 
     Ok(())
 }
-

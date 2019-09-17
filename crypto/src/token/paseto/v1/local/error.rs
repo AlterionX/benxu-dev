@@ -1,6 +1,6 @@
 use crate::{
-    token::paseto::token::{UnpackingError, DeserializeError},
-    algo::cipher::symmetric::{EncryptError, DecryptError},
+    algo::cipher::symmetric::{DecryptError, EncryptError},
+    token::paseto::token::{DeserializeError, UnpackingError},
 };
 
 #[derive(Debug)]
@@ -40,4 +40,3 @@ impl From<DeserializeError> for Error {
         Error::Deserialize
     }
 }
-

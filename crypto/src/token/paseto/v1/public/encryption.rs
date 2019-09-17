@@ -18,12 +18,11 @@ impl TryFrom<(token::SerializedData, &RSAKey)> for SignedToken {
             HEADER.to_combined().as_slice(),
             tok.msg.as_slice(),
             tok.footer.as_ref().map_or(&[], |f| f.as_slice()),
-        ]).map_err(|_| Error::Signing)?;
+        ])
+        .map_err(|_| Error::Signing)?;
 
-        let signature = RSA::sign_private(
-            to_sign.as_slice(),
-            key.private_key(),
-        ).map_err(|_| Error::Signing)?;
+        let signature =
+            RSA::sign_private(to_sign.as_slice(), key.private_key()).map_err(|_| Error::Signing)?;
 
         Ok(SignedToken {
             msg: tok.msg,
@@ -34,11 +33,7 @@ impl TryFrom<(token::SerializedData, &RSAKey)> for SignedToken {
 }
 impl From<SignedToken> for token::Unpacked {
     fn from(tok: SignedToken) -> Self {
-        let msg_with_sig = collapse_to_vec(&[
-            tok.msg.as_slice(),
-            tok.signature.as_slice(),
-        ]);
+        let msg_with_sig = collapse_to_vec(&[tok.msg.as_slice(), tok.signature.as_slice()]);
         token::Unpacked::new(HEADER, msg_with_sig, tok.footer)
     }
 }
-

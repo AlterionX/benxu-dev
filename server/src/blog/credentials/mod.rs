@@ -2,23 +2,13 @@
 
 pub mod data;
 
-use rocket::{
-    http::Status,
-    State,
-};
-use rocket_contrib::{
-    json::Json,
-    uuid::Uuid as RUuid,
-};
+use rocket::{http::Status, State};
+use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
 use crate::{
-    PWKeyFixture,
+    blog::{auth, credentials::data::SavableCredential, DB},
     uuid_conv::FromRUuid,
-    blog::{
-        DB,
-        auth,
-        credentials::data::SavableCredential,
-    },
+    PWKeyFixture,
 };
 
 /// Handlers and functions for password credentials.
@@ -64,20 +54,23 @@ pub mod pws {
             changed_pw: Json<String>,
         ) -> Result<Status, Status> {
             let id = uuid::Uuid::from_ruuid(id);
-            let target_user_id = db.find_pw_by_id(id)
-                .map(|pw_rec| pw_rec.user_id)
-                .map_err(|e| match e {
-                    diesel::result::Error::NotFound => Status::NotFound,
-                    _ => Status::InternalServerError,
-                })?;
+            let target_user_id =
+                db.find_pw_by_id(id)
+                    .map(|pw_rec| pw_rec.user_id)
+                    .map_err(|e| match e {
+                        diesel::result::Error::NotFound => Status::NotFound,
+                        _ => Status::InternalServerError,
+                    })?;
             let credentials: auth::UnverifiedPermissionsCredential = credentials
                 .into_inner()
                 .change_level::<auth::perms::CanEditUserCredentials>()
                 .map(|cr| cr.back_to_any())
-                .or_else(|cr| if target_user_id == cr.user_id() {
-                    Ok(cr)
-                } else {
-                    Err(Status::Unauthorized)
+                .or_else(|cr| {
+                    if target_user_id == cr.user_id() {
+                        Ok(cr)
+                    } else {
+                        Err(Status::Unauthorized)
+                    }
                 })?
                 .into();
             let update = data::Password {
@@ -91,7 +84,8 @@ pub mod pws {
                 argon2d_key: &key,
                 pw: &update,
             };
-            to_create.convert_and_update_with_credentials()
+            to_create
+                .convert_and_update_with_credentials()
                 .map(|_| Status::Ok)
                 .map_err(|_| Status::InternalServerError)
         }
@@ -106,20 +100,23 @@ pub mod pws {
             id: RUuid,
         ) -> Result<Status, Status> {
             let id = uuid::Uuid::from_ruuid(id);
-            let target_user_id = db.find_pw_by_id(id)
-                .map(|pw_rec| pw_rec.user_id)
-                .map_err(|e| match e {
-                    diesel::result::Error::NotFound => Status::NotFound,
-                    _ => Status::InternalServerError,
-                })?;
+            let target_user_id =
+                db.find_pw_by_id(id)
+                    .map(|pw_rec| pw_rec.user_id)
+                    .map_err(|e| match e {
+                        diesel::result::Error::NotFound => Status::NotFound,
+                        _ => Status::InternalServerError,
+                    })?;
             credentials
                 .into_inner()
                 .change_level::<auth::perms::CanEditUserCredentials>()
                 .map(|_| ())
-                .or_else(|cr| if target_user_id == cr.user_id() {
-                    Ok(())
-                } else {
-                    Err(Status::Unauthorized)
+                .or_else(|cr| {
+                    if target_user_id == cr.user_id() {
+                        Ok(())
+                    } else {
+                        Err(Status::Unauthorized)
+                    }
                 })?;
             db.delete_pw_by_id(id)
                 .map(|_| Status::Ok)
@@ -127,4 +124,3 @@ pub mod pws {
         }
     }
 }
-

@@ -1,4 +1,4 @@
-pub use base64::DecodeError as DecodeError;
+pub use base64::DecodeError;
 
 fn div_and_round_up(dividend: usize, divisor: usize) -> usize {
     (dividend + (divisor - 1)) / divisor
@@ -28,4 +28,3 @@ pub fn decode_no_padding(data: &[u8]) -> Result<Vec<u8>, base64::DecodeError> {
     decoded.resize(bytes_written, 0);
     Ok(decoded)
 }
-

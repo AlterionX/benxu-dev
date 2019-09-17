@@ -1,4 +1,4 @@
-use std::{ fs, path::Path, process::Command };
+use std::{fs, path::Path, process::Command};
 
 fn build_dirs(root: &Path) {
     let needed_dirs = [
@@ -20,7 +20,7 @@ fn move_wasm_and_loader(root: &Path) {
     for entry in fs::read_dir(root.join("wasm-pack")).unwrap() {
         let entry = entry.unwrap();
         let file = entry.file_name();
-        if let Some(name) = file.to_str(){
+        if let Some(name) = file.to_str() {
             let path = entry.path();
             if name.ends_with(".js") {
                 fs::copy(&path, root.join("js/wasm-bindgen-glue").join(name)).unwrap();
@@ -42,4 +42,3 @@ fn main() {
     build_dirs(&static_file_dir);
     move_wasm_and_loader(&static_file_dir);
 }
-

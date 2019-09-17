@@ -28,4 +28,3 @@ impl From<token::DeserializeError> for Error {
         Error::Deserialization
     }
 }
-

@@ -3,24 +3,17 @@
 pub mod data;
 
 use rocket::{
+    http::{Cookies, Status},
     response::Redirect,
-    http::{
-        Status,
-        Cookies,
-    },
     State,
 };
 use rocket_contrib::json::Json;
 
-use crypto::Generational;
 use crate::{
-    PWKeyFixture,
-    TokenKeyFixture,
-    blog::{
-        db,
-        auth,
-    },
+    blog::{auth, db},
+    PWKeyFixture, TokenKeyFixture,
 };
+use crypto::Generational;
 
 /// Route handler for the log in page. Not yet implemented.
 #[get("/login")]
@@ -41,15 +34,16 @@ pub fn post(
     if cookies.get(auth::AUTH_COOKIE_NAME).is_some() {
         Ok(None) // TODO create a landing page + replace
     } else {
-        let (user, perms) = auth_data.authenticate(
-            &db,
-            &pw_key_store,
-        )?;
+        let (user, perms) = auth_data.authenticate(&db, &pw_key_store)?;
         auth::attach_credentials_token(
-            &tok_key_store.get_store().map_err(|_| Status::InternalServerError)?.curr,
+            &tok_key_store
+                .get_store()
+                .map_err(|_| Status::InternalServerError)?
+                .curr,
             auth::UnverifiedPermissionsCredential::new(user.id, perms).into_inner(),
             &mut cookies,
-        ).map_err(|_| Status::InternalServerError)?;
+        )
+        .map_err(|_| Status::InternalServerError)?;
         Ok(Some(Redirect::to("/"))) // TODO create a landing page + replace
     }
 }
@@ -60,4 +54,3 @@ pub fn post(
 pub fn delete(mut cookies: Cookies) {
     auth::detach_credentials_token_if_exists(&mut cookies);
 }
-

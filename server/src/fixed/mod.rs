@@ -1,13 +1,13 @@
 //! Groups all the static pages together.
 
+use maud::Markup;
 use page_client;
 use rocket::Route;
-use maud::Markup;
 
-mod links;
 mod contacts;
-mod resume;
+mod links;
 mod projects;
+mod resume;
 
 /// Returns the "index" page, aka the home page of the website.
 ///
@@ -28,4 +28,3 @@ pub fn routes() -> Vec<Route> {
         projects::project::get,
     ]
 }
-

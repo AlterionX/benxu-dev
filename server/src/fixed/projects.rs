@@ -2,8 +2,11 @@
 //!
 //!
 
+use rocket::{
+    http::{RawStr, Status},
+    request::FromParam,
+};
 use std::fmt::{self, Display, Formatter};
-use rocket::{request::FromParam, http::{RawStr, Status}};
 
 /// Returns the "projects" page, which will have brief demos or videos (eventually). Not yet
 /// implemented.
@@ -73,4 +76,3 @@ pub mod project {
         Status::NotImplemented
     }
 }
-

@@ -1,4 +1,11 @@
-#![feature(const_str_as_bytes, proc_macro_hygiene, type_ascription, decl_macro, try_trait, result_map_or_else)]
+#![feature(
+    const_str_as_bytes,
+    proc_macro_hygiene,
+    type_ascription,
+    decl_macro,
+    try_trait,
+    result_map_or_else
+)]
 
 //! Server crate for marshalling and unmarshalling information between the blog-db and blog-client
 //! crates as well as serving a set of static pages.
@@ -9,21 +16,19 @@
 //! - `/public/*` -> All static resources for the site. These are served from `./public/` using the
 //!   [`StaticFiles`] module.
 
-#[macro_use] extern crate rocket;
+#[macro_use]
+extern crate rocket;
 
-use std::{
-    path::Path,
-    sync::Arc,
-};
-use rocket_contrib::serve::StaticFiles;
-use tap::*;
 use crypto;
 use log::*;
+use rocket_contrib::serve::StaticFiles;
+use std::{path::Path, sync::Arc};
+use tap::*;
 
 mod uuid_conv;
 
-mod fixed;
 mod blog;
+mod fixed;
 
 /// Algorithm utilized for hashing passwords
 type PWAlgo = crypto::algo::hash::argon2::d::Algo;
@@ -89,17 +94,20 @@ impl Server {
             .canonicalize()
             .tap_err(|e| match e.kind() {
                 std::io::ErrorKind::NotFound => {
-                    error!("Could not find the secret key file \"{}\" for password hashing!", pw_file);
-                },
-                _ => error!("Unknown error encountered when attempting to file \"{}\"\n{:?}", pw_file, e),
+                    error!(
+                        "Could not find the secret key file \"{}\" for password hashing!",
+                        pw_file
+                    );
+                }
+                _ => error!(
+                    "Unknown error encountered when attempting to file \"{}\"\n{:?}",
+                    pw_file, e
+                ),
             })
     }
     /// Initializes the key rotation system for the token's secret key.
     fn init_token_key() -> crypto::KeyRotator<TokenAlgo> {
-        crypto::KeyRotator::init(
-            TokenAlgo {},
-            None,
-        )
+        crypto::KeyRotator::init(TokenAlgo {}, None)
     }
     /// Initializes the key store for the password's hashing secret key.
     fn init_pw_secret<'a, S: AsRef<Path>>(secret_path: &S) -> crypto::StableKeyStore<PWAlgo> {
@@ -153,7 +161,7 @@ impl Server {
         use crypto::algo::Algo as A;
         crypto::key_rotation::StableKeyStore::new(
             PWAlgo::default(),
-            <PWAlgo as A>::Key::new(secret)
+            <PWAlgo as A>::Key::new(secret),
         )
     }
     /// Initializes and launches all required components that manage state in the server.
@@ -174,9 +182,11 @@ impl Server {
                 .tap(|r| match r {
                     Ok(p) => info!("Serving static files from `{}`.", p.display()),
                     Err(e) => match e.kind() {
-                        std::io::ErrorKind::NotFound => error!("Could not find path `{}` in file system", path_str),
+                        std::io::ErrorKind::NotFound => {
+                            error!("Could not find path `{}` in file system", path_str)
+                        }
                         _ => error!("Unhandled IO error for path `{}`:\n{:?}", path_str, e),
-                    }
+                    },
                 })
                 .expect("a proper path.");
             info!("Crypto crate initialized.");
@@ -184,8 +194,7 @@ impl Server {
         };
         let pw_secret_path = {
             info!("Locating password hashing secret...");
-            let path = Self::pw_secret()
-                .expect("A proper path to a proper file.");
+            let path = Self::pw_secret().expect("A proper path to a proper file.");
             info!("Password secret located.");
             path // TODO unwrap + actually load this file
         };
@@ -250,9 +259,11 @@ fn main() {
     info!("Launching rocket into the ether (aka, passing control to Rocket)...");
     match server.start() {
         None => warn!("Rocket has already been launched somehow!"),
-        Some(e) => error!("Rocket has terminated with error {:?}. Server will now shutdown.", e),
+        Some(e) => error!(
+            "Rocket has terminated with error {:?}. Server will now shutdown.",
+            e
+        ),
     }
 }
 
 // TODO tests?
-

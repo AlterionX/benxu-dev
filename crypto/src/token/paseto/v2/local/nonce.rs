@@ -1,14 +1,8 @@
 use crate::algo::{
+    hash::{blake::two_b::Algo as BLAKE2B, symmetric::Algo as HashA},
     Algo as A,
-    hash::{
-        symmetric::Algo as HashA,
-        blake::two_b::Algo as BLAKE2B,
-    },
 };
-use rand::{
-    rngs::OsRng,
-    RngCore,
-};
+use rand::{rngs::OsRng, RngCore};
 
 pub struct Randomness([u8; 24]);
 
@@ -43,8 +37,7 @@ impl Nonce {
         free_buffer[0..24].copy_from_slice(&hash[0..24]);
         Nonce(free_buffer)
     }
-    pub fn as_slice<'a>(&'a self) -> &'a[u8] {
+    pub fn as_slice<'a>(&'a self) -> &'a [u8] {
         &self.0
     }
 }
-

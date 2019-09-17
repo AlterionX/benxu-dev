@@ -1,12 +1,9 @@
 use crate::schema::*;
-use serde::{
-    Serialize,
-    Deserialize,
-};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize)]
-#[table_name="users"]
+#[table_name = "users"]
 pub struct Data {
     pub id: uuid::Uuid,
     pub user_name: String,
@@ -53,7 +50,7 @@ impl From<Data> for DataNoMeta {
 }
 
 #[derive(Insertable, Serialize, Deserialize)]
-#[table_name="users"]
+#[table_name = "users"]
 pub struct NewWithId<'a> {
     id: uuid::Uuid,
     user_name: &'a str,
@@ -108,7 +105,7 @@ pub struct NewNoMeta {
 }
 
 #[derive(AsChangeset, Serialize, Deserialize)]
-#[table_name="users"]
+#[table_name = "users"]
 pub struct Changed<'a> {
     pub user_name: Option<&'a str>,
     pub updated_by: Option<uuid::Uuid>,
@@ -135,4 +132,3 @@ pub struct ChangedNoMeta {
     pub last_name: Option<String>,
     pub email: Option<String>,
 }
-

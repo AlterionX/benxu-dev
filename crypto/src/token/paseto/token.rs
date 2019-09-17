@@ -1,16 +1,11 @@
-use std::{
-    ops::{Deref, Bound},
-    convert::TryFrom,
-    str,
-};
 use crate::{
-    token::paseto::{
-        collapse_to_vec,
-    },
-    encoding::base64::{
-        decode_no_padding as b64_decode,
-        encode_no_padding as b64_encode,
-    },
+    encoding::base64::{decode_no_padding as b64_decode, encode_no_padding as b64_encode},
+    token::paseto::collapse_to_vec,
+};
+use std::{
+    convert::TryFrom,
+    ops::{Bound, Deref},
+    str,
 };
 
 const MINIMUM_SECTION_COUNT: usize = 3;
@@ -40,11 +35,9 @@ impl ThreeOrFourPeriods {
     }
     fn from_slice(period_indices: &[usize]) -> Result<Self, UnexpectedNumberOfPeriods> {
         match period_indices.len() {
-            MINIMUM_SECTION_COUNT =>
-                Ok(Self::ThreePeriods(Self::copy_to_3_array(period_indices))),
-            MAXIMUM_SECTION_COUNT =>
-                Ok(Self::FourPeriods(Self::copy_to_4_array(period_indices))),
-            _ => Err(UnexpectedNumberOfPeriods::new(period_indices.len()))
+            MINIMUM_SECTION_COUNT => Ok(Self::ThreePeriods(Self::copy_to_3_array(period_indices))),
+            MAXIMUM_SECTION_COUNT => Ok(Self::FourPeriods(Self::copy_to_4_array(period_indices))),
+            _ => Err(UnexpectedNumberOfPeriods::new(period_indices.len())),
         }
     }
     fn period_cnt(&self) -> usize {
@@ -88,20 +81,24 @@ impl ThreeOrFourPeriods {
     fn body_range(&self) -> (Bound<usize>, Bound<usize>) {
         let start = self.val_at(1);
         let end = self.opt_val_at(2);
-        (Bound::Excluded(start), end.map_or(Bound::Unbounded, |e| Bound::Excluded(e)))
+        (
+            Bound::Excluded(start),
+            end.map_or(Bound::Unbounded, |e| Bound::Excluded(e)),
+        )
     }
     fn footer_range(&self) -> Option<(Bound<usize>, Bound<usize>)> {
         let start = self.opt_val_at(2)?;
-        Some(
-            (Bound::Excluded(start), Bound::Unbounded)
-        )
+        Some((Bound::Excluded(start), Bound::Unbounded))
     }
 }
 struct UnexpectedNumberOfPeriods(usize);
 impl UnexpectedNumberOfPeriods {
     fn new(periods_cnt: usize) -> Self {
-        if periods_cnt < MINIMUM_SECTION_COUNT ||  periods_cnt > MAXIMUM_SECTION_COUNT {
-            panic!("Expected illegal number of periods, instead was provided {}.", periods_cnt);
+        if periods_cnt < MINIMUM_SECTION_COUNT || periods_cnt > MAXIMUM_SECTION_COUNT {
+            panic!(
+                "Expected illegal number of periods, instead was provided {}.",
+                periods_cnt
+            );
         }
         Self(periods_cnt)
     }
@@ -141,11 +138,11 @@ impl From<str::Utf8Error> for DeserializeError {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Header<'a> {
-    version: &'a[u8],
-    purpose: &'a[u8],
+    version: &'a [u8],
+    purpose: &'a [u8],
 }
 impl<'a> Header<'a> {
-    pub const fn new(version: &'a[u8], purpose: &'a[u8]) -> Self {
+    pub const fn new(version: &'a [u8], purpose: &'a [u8]) -> Self {
         Header {
             version: version,
             purpose: purpose,
@@ -153,12 +150,7 @@ impl<'a> Header<'a> {
     }
     pub fn to_combined(&self) -> Vec<u8> {
         // TODO cache + custom PartialEq if needed
-        collapse_to_vec(&[
-            self.version,
-            b".",
-            self.purpose,
-            b".",
-        ])
+        collapse_to_vec(&[self.version, b".", self.purpose, b"."])
     }
 }
 
@@ -173,10 +165,14 @@ impl<M: serde::Serialize, F: serde::Serialize> Data<M, F> {
     }
 }
 impl<M: serde::de::DeserializeOwned, F: serde::de::DeserializeOwned> Data<M, F> {
-    fn deserialize_component<T: serde::de::DeserializeOwned>(target: &Vec<u8>) -> Result<T, DeserializeError> {
+    fn deserialize_component<T: serde::de::DeserializeOwned>(
+        target: &Vec<u8>,
+    ) -> Result<T, DeserializeError> {
         Ok(serde_json::from_str(str::from_utf8(target.as_slice())?)?)
     }
-    fn opt_deserialize_component<T: serde::de::DeserializeOwned>(target: &Option<Vec<u8>>) -> Option<Result<T, DeserializeError>> {
+    fn opt_deserialize_component<T: serde::de::DeserializeOwned>(
+        target: &Option<Vec<u8>>,
+    ) -> Option<Result<T, DeserializeError>> {
         let target = target.as_ref()?;
         Some(Self::deserialize_component(target))
     }
@@ -187,7 +183,9 @@ impl<M: serde::de::DeserializeOwned, F: serde::de::DeserializeOwned> Data<M, F> 
         })
     }
 }
-impl<M: serde::de::DeserializeOwned, F: serde::de::DeserializeOwned> TryFrom<SerializedData> for Data<M, F> {
+impl<M: serde::de::DeserializeOwned, F: serde::de::DeserializeOwned> TryFrom<SerializedData>
+    for Data<M, F>
+{
     type Error = DeserializeError;
     fn try_from(tok: SerializedData) -> Result<Self, Self::Error> {
         Self::deserialize(tok)
@@ -202,17 +200,23 @@ impl SerializedData {
     fn serialize_component<T: serde::Serialize>(target: &T) -> Result<Vec<u8>, serde_json::Error> {
         Ok(serde_json::to_string(target)?.as_bytes().to_vec())
     }
-    fn opt_serialize_component<T: serde::Serialize>(target: &Option<T>) -> Option<Result<Vec<u8>, serde_json::Error>> {
+    fn opt_serialize_component<T: serde::Serialize>(
+        target: &Option<T>,
+    ) -> Option<Result<Vec<u8>, serde_json::Error>> {
         let target = target.as_ref()?;
         Some(Self::serialize_component(target))
     }
-    fn serialize<M: serde::Serialize, F: serde::Serialize>(tok: Data<M, F>) -> Result<Self, serde_json::Error> {
+    fn serialize<M: serde::Serialize, F: serde::Serialize>(
+        tok: Data<M, F>,
+    ) -> Result<Self, serde_json::Error> {
         Ok(Self {
             msg: Self::serialize_component(&tok.msg)?,
             footer: Self::opt_serialize_component(&tok.footer).transpose()?,
         })
     }
-    pub fn deserialize<M: serde::de::DeserializeOwned, F: serde::de::DeserializeOwned>(self) -> Result<Data<M, F>, DeserializeError> {
+    pub fn deserialize<M: serde::de::DeserializeOwned, F: serde::de::DeserializeOwned>(
+        self,
+    ) -> Result<Data<M, F>, DeserializeError> {
         Data::try_from(self)
     }
 }
@@ -233,7 +237,10 @@ impl Packed {
         Unpacked::unpack(self)
     }
     fn pack(tok: Unpacked) -> Packed {
-        let possible_footer = tok.footer.as_ref().map_or(b"".to_vec(), |f| b64_encode(f.as_slice()));
+        let possible_footer = tok
+            .footer
+            .as_ref()
+            .map_or(b"".to_vec(), |f| b64_encode(f.as_slice()));
         Packed(collapse_to_vec(&[
             tok.version.as_slice(),
             b".",
@@ -274,7 +281,9 @@ impl Unpacked {
         }
     }
     // marshalling from Packed
-    fn find_first_four_periods(buf: &[u8]) -> Result<ThreeOrFourPeriods, UnexpectedNumberOfPeriods> {
+    fn find_first_four_periods(
+        buf: &[u8],
+    ) -> Result<ThreeOrFourPeriods, UnexpectedNumberOfPeriods> {
         let mut indices = Vec::with_capacity(5);
         for (idx, c) in buf.iter().enumerate() {
             if *c == b'.' {
@@ -283,7 +292,7 @@ impl Unpacked {
         }
         Ok(ThreeOrFourPeriods::from_slice(indices.as_slice())?)
     }
-    fn extract_bounds<'a>(slice: &'a[u8], (start, end): (Bound<usize>, Bound<usize>)) -> &'a[u8] {
+    fn extract_bounds<'a>(slice: &'a [u8], (start, end): (Bound<usize>, Bound<usize>)) -> &'a [u8] {
         let start = match start {
             Bound::Included(i) => i,
             Bound::Excluded(i) => i + 1,
@@ -302,16 +311,11 @@ impl Unpacked {
         Ok(Self {
             version: Self::extract_bounds(packed, period_indices.version_range()).to_vec(),
             purpose: Self::extract_bounds(packed, period_indices.purpose_range()).to_vec(),
-            body: b64_decode(Self::extract_bounds(
-                packed,
-                period_indices.body_range(),
-            ))?,
-            footer: period_indices.footer_range().map(|r|
-                b64_decode(Self::extract_bounds(
-                    packed,
-                    r,
-                ))
-            ).transpose()?,
+            body: b64_decode(Self::extract_bounds(packed, period_indices.body_range()))?,
+            footer: period_indices
+                .footer_range()
+                .map(|r| b64_decode(Self::extract_bounds(packed, r)))
+                .transpose()?,
         })
     }
     // marshalling to Packed
@@ -332,4 +336,3 @@ impl TryFrom<Packed> for Unpacked {
         Self::unpack(token)
     }
 }
-

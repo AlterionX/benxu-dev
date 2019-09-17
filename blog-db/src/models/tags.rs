@@ -1,11 +1,8 @@
 use crate::schema::*;
-use serde::{
-    Serialize,
-    Deserialize,
-};
+use serde::{Deserialize, Serialize};
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize)]
-#[table_name="tags"]
+#[table_name = "tags"]
 pub struct Tag {
     pub id: uuid::Uuid,
     pub name: String,
@@ -13,7 +10,7 @@ pub struct Tag {
 }
 
 #[derive(Identifiable, Insertable, Serialize, Deserialize)]
-#[table_name="tags"]
+#[table_name = "tags"]
 pub struct NewTagWithId<'a> {
     id: uuid::Uuid,
     name: &'a str,
@@ -39,9 +36,8 @@ pub struct NewTag<'a> {
 }
 
 #[derive(AsChangeset, Serialize, Deserialize)]
-#[table_name="tags"]
+#[table_name = "tags"]
 pub struct UpdateTag {
     pub name: Option<String>,
     pub description: Option<String>,
 }
-

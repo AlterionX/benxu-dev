@@ -1,25 +1,16 @@
 //! Data structures holding pertinent login information per request.
 
-use boolinator::Boolinator;
-use serde::{
-    Serialize,
-    Deserialize,
+use crate::{
+    blog::{
+        auth::{self, perms::Verifiable},
+        db,
+    },
+    PWAlgo,
 };
 use blog_db::models::*;
-use crypto::algo::{
-    Algo as A,
-    hash::symmetric::Algo as HashA,
-};
-use crate::{
-    PWAlgo,
-    blog::{
-        db,
-        auth::{
-            self,
-            perms::Verifiable,
-        },
-    },
-};
+use boolinator::Boolinator;
+use crypto::algo::{hash::symmetric::Algo as HashA, Algo as A};
+use serde::{Deserialize, Serialize};
 
 /// Used to mark structs that can be converted into a database record and saved or used to update a
 /// preexisting row in the table.
@@ -62,12 +53,15 @@ impl<'a> PasswordWithBackingInfo<'a> {
     /// [`CanEditUserCredentials`](crate::blog::auth::perms::CanEditUserCredentials) permissions or
     /// that the credentials belong to the (assumed) owner of the password.
     fn verify_requester(&self) -> bool {
-        self.credentials.user_id() == self.pw.user_id || auth::perms::CanEditUserCredentials::verify(self.credentials)
+        self.credentials.user_id() == self.pw.user_id
+            || auth::perms::CanEditUserCredentials::verify(self.credentials)
     }
     /// Checks if there are duplicate password entries, aka multiple passwords per user. This
     /// should not be allowed, and this helps detecting such situations.
     fn verify_duplicates(&self, target_count: usize) -> Result<bool, diesel::result::Error> {
-        let instances = self.db.count_pw_by_user(&self.db.find_user_by_id(self.pw.user_id)?)?;
+        let instances = self
+            .db
+            .count_pw_by_user(&self.db.find_user_by_id(self.pw.user_id)?)?;
         Ok(instances == target_count)
     }
     /// Verifies the requester and the duplicate count as mentioned in
@@ -85,10 +79,7 @@ impl<'a> PasswordWithBackingInfo<'a> {
             None,
         );
         let generated_salt = msg.salt();
-        let pw_hash = <PWAlgo as HashA>::sign(
-            msg,
-            self.argon2d_key,
-        );
+        let pw_hash = <PWAlgo as HashA>::sign(msg, self.argon2d_key);
         (generated_salt.to_vec(), pw_hash)
     }
 }
@@ -100,28 +91,32 @@ impl<'a> SavableCredential for PasswordWithBackingInfo<'a> {
             .map_err(|_| ())
             .and_then(|b| b.as_result((), ()))?;
         let (generated_salt, pw_hash) = self.hash();
-        self.db.create_pw_hash(credentials::pw::New {
-            created_by: self.credentials.user_id(),
-            updated_by: self.credentials.user_id(),
-            user_id: self.pw.user_id,
-            hash: base64::encode(pw_hash.as_slice()).as_str(),
-            salt: base64::encode(generated_salt.as_slice()).as_str(),
-        })
-        .map(|_| ())
-        .map_err(|_| ())
+        self.db
+            .create_pw_hash(credentials::pw::New {
+                created_by: self.credentials.user_id(),
+                updated_by: self.credentials.user_id(),
+                user_id: self.pw.user_id,
+                hash: base64::encode(pw_hash.as_slice()).as_str(),
+                salt: base64::encode(generated_salt.as_slice()).as_str(),
+            })
+            .map(|_| ())
+            .map_err(|_| ())
     }
     fn convert_and_update_with_credentials(self) -> Result<Self::Success, Self::Error> {
         self.verify(1)
             .map_err(|_| ())
             .and_then(|b| b.as_result((), ()))?;
         let (generated_salt, pw_hash) = self.hash();
-        self.db.update_pw_hash_for_user_id(self.pw.user_id, credentials::pw::Changed {
-            updated_by: self.credentials.user_id(),
-            hash: Some(base64::encode(pw_hash.as_slice())),
-            salt: Some(base64::encode(generated_salt.as_slice())),
-        })
-        .map(|_| ())
-        .map_err(|_| ())
+        self.db
+            .update_pw_hash_for_user_id(
+                self.pw.user_id,
+                credentials::pw::Changed {
+                    updated_by: self.credentials.user_id(),
+                    hash: Some(base64::encode(pw_hash.as_slice())),
+                    salt: Some(base64::encode(generated_salt.as_slice())),
+                },
+            )
+            .map(|_| ())
+            .map_err(|_| ())
     }
 }
-

@@ -20,18 +20,24 @@ impl From<token::SerializedData> for PrimedToken {
     }
 }
 impl PrimedToken {
-    pub(super) fn encrypt(self, key: &<XCHACHA20_POLY1305 as A>::Key) -> Result<EncryptedToken, Error> {
+    pub(super) fn encrypt(
+        self,
+        key: &<XCHACHA20_POLY1305 as A>::Key,
+    ) -> Result<EncryptedToken, Error> {
         EncryptedToken::try_from((self, key)).map_err(|_| Error::Encryption)
     }
 }
 impl TryFrom<(PrimedToken, &<XCHACHA20_POLY1305 as A>::Key)> for EncryptedToken {
     type Error = Error;
-    fn try_from((tok, key): (PrimedToken, &<XCHACHA20_POLY1305 as A>::Key)) -> Result<Self, Self::Error> {
+    fn try_from(
+        (tok, key): (PrimedToken, &<XCHACHA20_POLY1305 as A>::Key),
+    ) -> Result<Self, Self::Error> {
         let aad = multi_part_pre_auth_encoding(&[
             HEADER.to_combined().as_slice(),
             tok.nonce.as_slice(),
             tok.footer.as_ref().map(|f| f.as_slice()).unwrap_or(b""),
-        ]).map_err(|_| Error::Encryption)?;
+        ])
+        .map_err(|_| Error::Encryption)?;
         let encryption_args = ChaChaEncryptArgs {
             plaintext: tok.msg,
             aad: Some(aad),
@@ -54,4 +60,3 @@ impl EncryptedToken {
         token::Unpacked::from(self)
     }
 }
-

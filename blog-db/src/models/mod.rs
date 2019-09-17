@@ -1,9 +1,9 @@
-pub mod users;
 pub mod credentials;
 pub mod permissions;
+pub mod post_tag_junctions;
 pub mod posts;
 pub mod tags;
-pub mod post_tag_junctions;
+pub mod users;
 
 // impl for utilizing Option<DateTime<_>> in db models
 use chrono::{DateTime, TimeZone, Utc};
@@ -30,4 +30,3 @@ where
     let v = Option::deserialize(deserializer)?;
     Ok(v.map(|Wrapper(a)| a))
 }
-

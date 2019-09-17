@@ -1,5 +1,5 @@
 use crate::data::*;
-use maud::{Markup, html, DOCTYPE};
+use maud::{html, Markup, DOCTYPE};
 
 fn head(meta: &MetaData) -> Markup {
     html! {
@@ -72,4 +72,3 @@ pub fn basic_page(m: Markup, meta_data: Option<&MetaData>) -> Markup {
     }
     page(m, meta)
 }
-

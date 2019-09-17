@@ -7,4 +7,3 @@ pub enum Type {
     Local(local::Protocol),
     Public(public::Protocol),
 }
-

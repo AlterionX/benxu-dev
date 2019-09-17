@@ -22,4 +22,3 @@ impl FromRUuid for uuid::Uuid {
         uuid::Uuid::from_uuid_bytes(*ruuid.into_inner().as_bytes())
     }
 }
-

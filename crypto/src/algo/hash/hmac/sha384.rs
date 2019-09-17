@@ -1,19 +1,7 @@
-use std::{
-    ops::Deref,
-    sync::Arc,
-};
-use ring::{
-    hmac,
-    digest,
-};
-use rand::{
-    rngs::OsRng,
-    RngCore,
-};
-use crate::algo::{
-    hash::symmetric as sym,
-    self as base,
-};
+use crate::algo::{self as base, hash::symmetric as sym};
+use rand::{rngs::OsRng, RngCore};
+use ring::{digest, hmac};
+use std::{ops::Deref, sync::Arc};
 
 #[derive(Clone)]
 pub struct Key(Arc<hmac::SigningKey>);
@@ -34,18 +22,16 @@ impl Deref for Key {
 }
 impl Key {
     pub fn new(randomness: &[u8]) -> Self {
-        Self(Arc::new(
-            hmac::SigningKey::new(
-                &digest::SHA384, randomness
-            )
-        ))
+        Self(Arc::new(hmac::SigningKey::new(&digest::SHA384, randomness)))
     }
 }
 
 pub struct Algo;
 impl base::Algo for Algo {
     type Key = Key;
-    fn key_settings<'a>(&'a self) -> &<<Self as base::Algo>::Key as base::Key>::Settings { &() }
+    fn key_settings<'a>(&'a self) -> &<<Self as base::Algo>::Key as base::Key>::Settings {
+        &()
+    }
 }
 impl sym::Algo for Algo {
     type SigningInput = [u8];
@@ -55,11 +41,6 @@ impl sym::Algo for Algo {
     }
     type VerificationInput = [u8];
     fn verify(input: &Self::VerificationInput, signature: &[u8], key: &Self::Key) -> bool {
-        hmac::verify_with_own_key(
-            &key,
-            input,
-            signature,
-        ).is_ok()
+        hmac::verify_with_own_key(&key, input, signature).is_ok()
     }
 }
-

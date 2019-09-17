@@ -1,16 +1,7 @@
-use crate::algo::{
-    self as base,
-};
+use crate::algo::{self as base};
 
-use std::{
-    ops::{ Deref },
-    sync::Arc,
-};
-use ring::{
-    hmac::SigningKey,
-    digest::SHA384,
-    hkdf,
-};
+use ring::{digest::SHA384, hkdf, hmac::SigningKey};
+use std::{ops::Deref, sync::Arc};
 
 pub struct KeySettings {
     salt: Vec<u8>,
@@ -50,15 +41,16 @@ impl Algo {
             settings: KeySettings {
                 salt: salt,
                 extracted: extracted,
-            }
+            },
         }
     }
     pub fn generate(key: <Self as base::Algo>::Key, data: &[&[u8]], size: usize) -> Vec<Vec<u8>> {
-        data.iter().map(|d| {
-            let mut out_buffer = vec![0; size];
-            hkdf::expand(&key, d, out_buffer.as_mut_slice());
-            out_buffer
-        }).collect()
+        data.iter()
+            .map(|d| {
+                let mut out_buffer = vec![0; size];
+                hkdf::expand(&key, d, out_buffer.as_mut_slice());
+                out_buffer
+            })
+            .collect()
     }
 }
-

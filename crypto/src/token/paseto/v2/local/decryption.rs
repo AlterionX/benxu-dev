@@ -7,14 +7,17 @@ pub(super) struct BasicToken {
 }
 pub(super) struct DecryptedToken {
     msg: Vec<u8>,
-    footer: Option<Vec<u8>>
+    footer: Option<Vec<u8>>,
 }
 
 impl BasicToken {
     const NONCE_LENGTH: usize = 24;
     const NONCE_RANGE: RangeTo<usize> = (..24);
     const MSG_RANGE: RangeFrom<usize> = (24..);
-    pub(super) fn decrypt(self, key: &<XCHACHA20_POLY1305 as A>::Key) -> Result<DecryptedToken, Error> {
+    pub(super) fn decrypt(
+        self,
+        key: &<XCHACHA20_POLY1305 as A>::Key,
+    ) -> Result<DecryptedToken, Error> {
         DecryptedToken::try_from((self, key))
     }
 
@@ -44,12 +47,15 @@ impl DecryptedToken {
 }
 impl TryFrom<(BasicToken, &<XCHACHA20_POLY1305 as A>::Key)> for DecryptedToken {
     type Error = Error;
-    fn try_from((tok, key): (BasicToken, &<XCHACHA20_POLY1305 as A>::Key)) -> Result<Self, Self::Error> {
+    fn try_from(
+        (tok, key): (BasicToken, &<XCHACHA20_POLY1305 as A>::Key),
+    ) -> Result<Self, Self::Error> {
         let aad = multi_part_pre_auth_encoding(&[
             HEADER.to_combined().as_slice(),
             tok.nonce.as_slice(),
             tok.footer.as_ref().map(|f| f.as_slice()).unwrap_or(b""),
-        ]).map_err(|_| Error::Encryption)?;
+        ])
+        .map_err(|_| Error::Encryption)?;
         let decryption_args = ChaChaDecryptArgs {
             ciphertext: tok.msg().to_vec(),
             aad: Some(aad),
@@ -67,8 +73,7 @@ impl From<DecryptedToken> for token::SerializedData {
     fn from(tok: DecryptedToken) -> Self {
         Self {
             msg: tok.msg,
-            footer: tok.footer
+            footer: tok.footer,
         }
     }
 }
-

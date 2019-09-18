@@ -79,7 +79,7 @@ impl<'a> PasswordWithBackingInfo<'a> {
             None,
         );
         let generated_salt = msg.salt();
-        let pw_hash = <PWAlgo as HashA>::sign(msg, self.argon2d_key);
+        let pw_hash = PWAlgo::new(None).sign(msg, self.argon2d_key);
         (generated_salt.to_vec(), pw_hash)
     }
 }

@@ -1,3 +1,5 @@
+//! A collection of traits and specific algorithms.
+
 pub mod asymmetric;
 pub mod symmetric;
 

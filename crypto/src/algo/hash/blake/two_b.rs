@@ -1,3 +1,5 @@
+//! Blake2b implementation.
+
 use crate::algo::{self as base, hash::symmetric as sym};
 use blake2_rfc::blake2b::blake2b;
 use rand::{rngs::OsRng, RngCore};
@@ -7,7 +9,7 @@ use std::ops::Deref;
 pub struct Key(Vec<u8>, usize);
 impl base::SafeGenerateKey for Key {
     type Settings = usize;
-    fn generate(hash_len: &usize) -> Self {
+    fn safe_generate(hash_len: &usize) -> Self {
         let mut nonce = vec![0; *hash_len];
         OsRng.fill_bytes(nonce.as_mut_slice());
         Key::new(nonce, *hash_len)
@@ -32,18 +34,22 @@ impl Key {
 pub struct Algo(usize);
 impl base::Algo for Algo {
     type Key = Key;
+    type ConstructionData = usize;
     fn key_settings<'a>(&'a self) -> &<<Self as base::Algo>::Key as base::Key>::Settings {
         &self.0
+    }
+    fn new(hash_len: usize) -> Self {
+        Self(hash_len)
     }
 }
 impl sym::Algo for Algo {
     type SigningInput = [u8];
-    fn sign(msg: &Self::SigningInput, key: &Self::Key) -> Vec<u8> {
+    fn sign(&self, msg: &Self::SigningInput, key: &Self::Key) -> Vec<u8> {
         let key = &key;
         blake2b(key.hash_len(), &key, msg).as_bytes().to_vec()
     }
     type VerificationInput = [u8];
-    fn verify(msg: &Self::VerificationInput, signature: &[u8], key: &Self::Key) -> bool {
+    fn verify(&self, msg: &Self::VerificationInput, signature: &[u8], key: &Self::Key) -> bool {
         blake2b(key.hash_len(), &key, msg) == *signature
     }
 }

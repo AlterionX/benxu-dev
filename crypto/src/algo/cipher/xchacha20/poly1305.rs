@@ -12,7 +12,7 @@ pub struct Key {
 }
 impl base::SafeGenerateKey for Key {
     type Settings = ();
-    fn generate(_: &Self::Settings) -> Self {
+    fn safe_generate(_: &Self::Settings) -> Self {
         let key = gen_key();
         Self::new(key)
     }
@@ -44,16 +44,22 @@ pub struct DecryptArgs {
 pub struct Algo;
 impl base::Algo for Algo {
     type Key = Key;
+    type ConstructionData = ();
     fn key_settings<'a>(
         &'a self,
     ) -> &'a <<Self as base::Algo>::Key as base::SafeGenerateKey>::Settings {
         &()
     }
+    fn new(_: ()) -> Self {
+        Self
+    }
 }
-impl symm::Algo for Algo {
-    type EncryptArgs = EncryptArgs;
-    type DecryptArgs = DecryptArgs;
-    fn encrypt(key: &Self::Key, msg: &Self::EncryptArgs) -> Result<Vec<u8>, symm::EncryptError> {
+impl symm::Algo for Algo {}
+impl symm::CanEncrypt for Algo {
+    type EKey = Key;
+    type Input = EncryptArgs;
+    type Error = symm::EncryptError;
+    fn encrypt(&self, key: &Self::EKey, msg: &Self::Input) -> Result<Vec<u8>, Self::Error> {
         let nonce = if let Some(n) = msg.nonce {
             n
         } else {
@@ -66,7 +72,12 @@ impl symm::Algo for Algo {
             key.underlying(),
         ))
     }
-    fn decrypt(key: &Self::Key, msg: &Self::DecryptArgs) -> Result<Vec<u8>, symm::DecryptError> {
+}
+impl symm::CanDecrypt for Algo {
+    type DKey = Key;
+    type Input = DecryptArgs;
+    type Error = symm::DecryptError;
+    fn decrypt(&self, key: &Self::DKey, msg: &Self::Input) -> Result<Vec<u8>, Self::Error> {
         open(
             msg.ciphertext.as_slice(),
             msg.aad.as_ref().map(|aad| aad.as_slice()),

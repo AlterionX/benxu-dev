@@ -6,7 +6,7 @@ where
     <Self as base::Algo>::Key: Key,
 {
     type SigningInput: ?Sized;
-    fn sign(input: &Self::SigningInput, key: &Self::Key) -> Vec<u8>;
+    fn sign(&self, input: &Self::SigningInput, key: &Self::Key) -> Vec<u8>;
     type VerificationInput: ?Sized;
-    fn verify(input: &Self::VerificationInput, signature: &[u8], key: &Self::Key) -> bool;
+    fn verify(&self, input: &Self::VerificationInput, signature: &[u8], key: &Self::Key) -> bool;
 }

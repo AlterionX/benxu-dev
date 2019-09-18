@@ -114,10 +114,10 @@ mod unit_tests {
             footer: Some("weird thing".to_owned()),
         };
         let beginning = orig.clone();
-        let key = RSAKey::generate_with_err(&()).unwrap();
+        let key = RSAKey::generate(&()).unwrap();
         let encrypted_tok = Protocol::type_encrypt(beginning, &key).unwrap();
         let decrypted_tok: token::Data<String, String> =
             Protocol::type_decrypt(encrypted_tok, &key).unwrap();
-        assert!(orig == decrypted_tok);
+        assert_eq!(orig, decrypted_tok);
     }
 }

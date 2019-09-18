@@ -36,7 +36,7 @@ mod rotating {
     }
     impl<K: SafeGenerateKey + Clone + Send + Sync, A: Algo<Key = K>> KeyStore<A> {
         pub(super) fn new(alg: A) -> Self {
-            let key = Arc::new(A::Key::generate(alg.key_settings()));
+            let key = Arc::new(A::Key::safe_generate(alg.key_settings()));
             Self {
                 algo: Arc::new(alg),
                 last: Arc::clone(&key),
@@ -47,7 +47,7 @@ mod rotating {
             Arc::new(Self {
                 algo: Arc::clone(&self.algo),
                 last: Arc::clone(&self.curr),
-                curr: Arc::new(A::Key::generate(self.algo.key_settings())),
+                curr: Arc::new(A::Key::safe_generate(self.algo.key_settings())),
             })
         }
         pub fn attempt_with_retry<T, E, F>(&self, attempt: &mut F) -> Result<T, E>

@@ -160,7 +160,7 @@ impl Server {
             .expect("Located secret key file.");
         use crypto::algo::Algo as A;
         crypto::key_rotation::StableKeyStore::new(
-            PWAlgo::default(),
+            PWAlgo::new(None),
             <PWAlgo as A>::Key::new(secret),
         )
     }

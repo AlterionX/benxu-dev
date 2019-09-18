@@ -1,3 +1,5 @@
+//! ECC implementation for curve ED25519.
+
 use sodiumoxide::crypto::sign::ed25519::{
     gen_keypair, keypair_from_seed, sign_detached as ed25519_sign,
     verify_detached as ed25519_verify, PublicKey, SecretKey, Seed, Signature,
@@ -28,7 +30,7 @@ impl Clone for KeyPair {
 }
 impl base::SafeGenerateKey for KeyPair {
     type Settings = Option<Seed>;
-    fn generate(seed: &Self::Settings) -> Self {
+    fn safe_generate(seed: &Self::Settings) -> Self {
         // rust openssl as of 0.10.24 automatically uses required 65537 for exponent
         let (public, private) = if let Some(seed) = seed.as_ref() {
             keypair_from_seed(seed) // TODO probably a bad idea
@@ -60,11 +62,14 @@ impl From<NoneError> for AlgoError {
     }
 }
 
-pub struct Algo {}
+pub struct Algo;
 impl base::Algo for Algo {
     type Key = KeyPair;
     fn key_settings<'a>(&'a self) -> &'a <<Self as base::Algo>::Key as base::Key>::Settings {
         &None
+    }
+    fn new(_: Self::ConstructionData) -> Self {
+        Self
     }
 }
 impl asymm::Algo for Algo {

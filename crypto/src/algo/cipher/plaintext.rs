@@ -1,70 +1,198 @@
+//! A basic "cipher" that simply returns what was provided.
+
 use crate::algo::{
     self as base,
     cipher::{asymmetric as asymm, symmetric as symm},
 };
 
-pub struct PlainTextAlgo;
+pub struct Algo;
 
 impl base::SafeGenerateKey for () {
     type Settings = ();
-    fn generate(_: &()) -> Self {
+    fn safe_generate(_: &()) -> Self {
         ()
     }
 }
-impl base::cipher::symmetric::Key for () {}
 
-impl base::Algo for PlainTextAlgo {
+impl base::Algo for Algo {
     type Key = ();
+    type ConstructionData = ();
     fn key_settings<'a>(
         &'a self,
     ) -> &'a <<Self as base::Algo>::Key as base::SafeGenerateKey>::Settings {
         &()
     }
+    fn new(_: ()) -> Self {
+        Self
+    }
 }
-impl symm::Algo for PlainTextAlgo {
-    type EncryptArgs = [u8];
-    type DecryptArgs = [u8];
-    fn decrypt(key: &Self::Key, data: &[u8]) -> Result<Vec<u8>, super::symmetric::DecryptError> {
+
+impl symm::Key for () {}
+impl symm::Algo for Algo {}
+impl symm::CanDecrypt for Algo {
+    type Input = [u8];
+    type Error = symm::EncryptError;
+    type DKey = ();
+    fn decrypt(&self, _: &Self::DKey, data: &Self::Input) -> Result<Vec<u8>, Self::Error> {
         Ok(data.to_vec())
     }
-    fn encrypt(key: &Self::Key, data: &[u8]) -> Result<Vec<u8>, super::symmetric::EncryptError> {
+}
+impl symm::CanEncrypt for Algo {
+    type Input = [u8];
+    type Error = symm::EncryptError;
+    type EKey = ();
+    fn encrypt(&self, _: &Self::EKey, data: &Self::Input) -> Result<Vec<u8>, Self::Error> {
         Ok(data.to_vec())
     }
 }
 
-impl super::asymmetric::Key for () {
+impl asymm::Key for () {}
+impl asymm::HasPublic for () {
     type PublicKey = ();
-    type PrivateKey = ();
     fn public_key<'a>(&'a self) -> &'a Self::PublicKey {
         self
     }
+}
+impl asymm::HasPrivate for () {
+    type PrivateKey = ();
     fn private_key<'a>(&'a self) -> &'a Self::PrivateKey {
         self
     }
 }
-impl super::asymmetric::Algo for PlainTextAlgo {
-    fn public_decrypt(
-        key: &<Self::Key as asymm::Key>::PublicKey,
-        data: &[u8],
-    ) -> Result<Vec<u8>, asymm::DecryptError> {
+
+impl asymm::Algo for Algo {}
+impl asymm::CanDecryptPublic for Algo {
+    type Error = !;
+    type Input = [u8];
+    type PublicKey = ();
+    fn public_decrypt(_: &Self::PublicKey, data: &Self::Input) -> Result<Vec<u8>, Self::Error> {
         Ok(data.to_vec())
     }
-    fn public_encrypt(
-        key: &<Self::Key as asymm::Key>::PublicKey,
-        data: &[u8],
-    ) -> Result<Vec<u8>, asymm::EncryptError> {
+}
+impl asymm::CanEncryptPublic for Algo {
+    type Error = !;
+    type Input = [u8];
+    type PublicKey = ();
+    fn public_encrypt(_: &Self::PublicKey, data: &Self::Input) -> Result<Vec<u8>, Self::Error> {
         Ok(data.to_vec())
     }
-    fn private_decrypt(
-        key: &<Self::Key as asymm::Key>::PrivateKey,
-        data: &[u8],
-    ) -> Result<Vec<u8>, asymm::DecryptError> {
+}
+impl asymm::CanDecryptPrivate for Algo {
+    type Error = !;
+    type Input = [u8];
+    type PrivateKey = ();
+    fn private_decrypt(_: &Self::PrivateKey, data: &Self::Input) -> Result<Vec<u8>, Self::Error> {
         Ok(data.to_vec())
     }
-    fn private_encrypt(
-        key: &<Self::Key as asymm::Key>::PrivateKey,
-        data: &[u8],
-    ) -> Result<Vec<u8>, asymm::EncryptError> {
+}
+impl asymm::CanEncryptPrivate for Algo {
+    type Error = !;
+    type Input = [u8];
+    type PrivateKey = ();
+    fn private_encrypt(_: &Self::PrivateKey, data: &Self::Input) -> Result<Vec<u8>, Self::Error> {
         Ok(data.to_vec())
+    }
+}
+
+#[cfg(test)]
+mod unit_test {
+    use super::Algo;
+
+    mod key_gen {
+        use crate::algo::{
+            SafeGenerateKey,
+            Algo as BaseAlgo,
+            cipher::{
+                symmetric::Algo as SymmAlgo,
+                plaintext::Algo,
+            },
+        };
+        #[test]
+        fn key_generation() {
+            let alg = Algo;
+            let settings = alg.key_settings();
+            assert_eq!(settings, &());
+            let key = <Algo as BaseAlgo>::Key::safe_generate(settings);
+            assert_eq!(key, ());
+        }
+    }
+    mod symm {
+        use crate::algo::{
+            SafeGenerateKey,
+            Algo as BaseAlgo,
+            cipher::{
+                symmetric::{
+                    Algo as SymmAlgo,
+                    CanDecrypt,
+                    CanEncrypt,
+                },
+                plaintext::Algo,
+            },
+        };
+        const KEY: () = ();
+        #[test]
+        fn encrypt() {
+            const TO_ENCRYPT: &'static[u8] = b"Hello World";
+            let encrypted = Algo::new(()).encrypt(&(), TO_ENCRYPT).expect("No error when encrypting.");
+            assert_eq!(encrypted, TO_ENCRYPT)
+        }
+        #[test]
+        fn decrypt() {
+            const TO_DECRYPT: &'static[u8] = b"Hello World";
+            let decrypted = Algo::new(()).decrypt(&(), TO_DECRYPT).expect("No error when decrypting.");
+            assert_eq!(decrypted, TO_DECRYPT)
+        }
+    }
+    mod asymm_public {
+        use crate::algo::{
+            SafeGenerateKey,
+            Algo as BaseAlgo,
+            cipher::{
+                symmetric::{
+                    Algo as SymmAlgo,
+                    CanDecrypt,
+                    CanEncrypt,
+                },
+                plaintext::Algo,
+            },
+        };
+        #[test]
+        fn encrypt() {
+            const TO_ENCRYPT: &'static[u8] = b"Hello World";
+            let encrypted = Algo::new(()).encrypt(&(), TO_ENCRYPT).expect("No error when encrypting.");
+            assert_eq!(encrypted, TO_ENCRYPT)
+        }
+        #[test]
+        fn decrypt() {
+            const TO_DECRYPT: &'static[u8] = b"Hello World";
+            let decrypted = Algo::new(()).decrypt(&(), TO_DECRYPT).expect("No error when decrypting.");
+            assert_eq!(decrypted, TO_DECRYPT)
+        }
+    }
+    mod asymm_private {
+        use crate::algo::{
+            SafeGenerateKey,
+            Algo as BaseAlgo,
+            cipher::{
+                symmetric::{
+                    Algo as SymmAlgo,
+                    CanDecrypt,
+                    CanEncrypt,
+                },
+                plaintext::Algo,
+            },
+        };
+        #[test]
+        fn encrypt() {
+            const TO_ENCRYPT: &'static[u8] = b"Hello World";
+            let encrypted = Algo::new(()).encrypt(&(), TO_ENCRYPT).expect("No error when encrypting.");
+            assert_eq!(encrypted, TO_ENCRYPT)
+        }
+        #[test]
+        fn decrypt() {
+            const TO_DECRYPT: &'static[u8] = b"Hello World";
+            let decrypted = Algo::new(()).decrypt(&(), TO_DECRYPT).expect("No error when decrypting.");
+            assert_eq!(decrypted, TO_DECRYPT)
+        }
     }
 }

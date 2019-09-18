@@ -4,8 +4,16 @@
     type_ascription,
     decl_macro,
     try_trait,
-    associated_type_defaults
+    associated_type_defaults,
+    never_type,
 )]
+
+//! A crate gathering various algorithms from different crypto libraries and attempting to unify
+//! their apis. Built to manage key rotations. Implements the PASETO token standard for standard
+//! web cookie/token-based authorization. Repackages some encoding libraries as well.
+//!
+//! Mainly serves as a higher level crate reshipping other crates under an relatively cohesive,
+//! easy to use api.
 
 pub mod algo;
 pub mod encoding;

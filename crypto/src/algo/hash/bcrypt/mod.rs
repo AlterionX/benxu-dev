@@ -1,5 +1,4 @@
-use rand::{rngs::OsRng, RngCore};
-use std::ops::Deref;
+//! Bcrypt implementation.
 
 use crate::algo::{self as base, hash::symmetric as sym};
 
@@ -8,12 +7,12 @@ pub struct Key(u8);
 impl base::Key for Key {
     type Settings = u8;
     type Error = ();
-    fn generate_with_err(cost: &Self::Settings) -> Result<Self, Self::Error> {
+    fn generate(cost: &Self::Settings) -> Result<Self, Self::Error> {
         Key::new(*cost)
     }
 }
 impl sym::Key for Key {}
-impl Deref for Key {
+impl std::ops::Deref for Key {
     type Target = u8;
     fn deref(&self) -> &Self::Target {
         &(bcrypt::DEFAULT_COST as u8)
@@ -37,6 +36,7 @@ pub struct SigningData {
 impl SigningData {
     fn new(&self, msg: Vec<u8>, salt: Option<[u8; Algo::SALT_LEN as usize]>) -> Self {
         let salt = salt.unwrap_or_else(|| {
+            use rand::{rngs::OsRng, RngCore};
             let mut generated_salt = [0; Algo::SALT_LEN as usize];
             OsRng.fill_bytes(&mut generated_salt);
             generated_salt
@@ -64,10 +64,13 @@ impl base::Algo for Algo {
     fn key_settings<'a>(&'a self) -> &<<Self as base::Algo>::Key as base::Key>::Settings {
         &(bcrypt::DEFAULT_COST as u8)
     }
+    fn new(_: Self::ConstructionData) -> Self {
+        Self
+    }
 }
 impl sym::Algo for Algo {
     type SigningInput = SigningData;
-    fn sign(msg: &Self::SigningInput, key: &Self::Key) -> Vec<u8> {
+    fn sign(&self, msg: &Self::SigningInput, key: &Self::Key) -> Vec<u8> {
         let cost = **key;
         let salt = &msg.salt[..];
         let trunc = msg.truncated_msg();
@@ -76,7 +79,7 @@ impl sym::Algo for Algo {
         buffer
     }
     type VerificationInput = SigningData;
-    fn verify(msg: &Self::VerificationInput, signature: &[u8], key: &Self::Key) -> bool {
-        Self::sign(msg, key).as_slice() == signature
+    fn verify(&self, msg: &Self::VerificationInput, signature: &[u8], key: &Self::Key) -> bool {
+        self.sign(msg, key).as_slice() == signature
     }
 }

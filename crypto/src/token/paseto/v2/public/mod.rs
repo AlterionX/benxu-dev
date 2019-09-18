@@ -87,7 +87,7 @@ mod unit_tests {
             footer: Some("weird thing".to_owned()),
         };
         let beginning = orig.clone();
-        let key = <ED25519 as A>::Key::generate(&None);
+        let key = <ED25519 as A>::Key::safe_generate(&None);
         let encrypted_tok = Protocol::type_encrypt(beginning, &key).unwrap();
         let decrypted_tok: token::Data<String, String> =
             Protocol::type_decrypt(encrypted_tok, &key).unwrap();

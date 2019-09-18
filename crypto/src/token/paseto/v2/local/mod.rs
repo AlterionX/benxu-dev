@@ -2,10 +2,18 @@ mod local_prelude {
     pub use crate::{
         algo::{
             cipher::{
-                symmetric::{self as symm, Algo as CipherA},
+                symmetric::{
+                    self as symm,
+                    Algo as CipherA,
+                    CanDecrypt,
+                    CanEncrypt,
+                },
                 xchacha20::poly1305::{
-                    Algo as XCHACHA20_POLY1305, DecryptArgs as ChaChaDecryptArgs,
-                    EncryptArgs as ChaChaEncryptArgs, Nonce as ChaChaNonce,
+                    Algo as ENC_ALGO,
+                    Key as ENC_KEY,
+                    DecryptArgs as DArgs,
+                    EncryptArgs as EArgs,
+                    Nonce as ChaChaNonce,
                 },
             },
             Algo as A, Key as K,
@@ -62,13 +70,13 @@ impl Protocol {
     pub fn encrypt<T: Serialize, F: Serialize>(
         self,
         tok: token::Data<T, F>,
-        key: &<XCHACHA20_POLY1305 as A>::Key,
+        key: &ENC_KEY,
     ) -> Result<token::Packed, error::Error> {
         Self::type_encrypt(tok, key)
     }
     fn type_encrypt<T: Serialize, F: Serialize>(
         tok: token::Data<T, F>,
-        key: &<XCHACHA20_POLY1305 as A>::Key,
+        key: &ENC_KEY,
     ) -> Result<token::Packed, Error> {
         Ok(tok
             .serialize()?
@@ -79,13 +87,13 @@ impl Protocol {
     }
     pub fn decrypt<T: DeserializeOwned, F: DeserializeOwned>(
         tok: token::Packed,
-        key: &<XCHACHA20_POLY1305 as A>::Key,
+        key: &ENC_KEY,
     ) -> Result<token::Data<T, F>, error::Error> {
         Self::type_decrypt(tok, key)
     }
     fn type_decrypt<T: DeserializeOwned, F: DeserializeOwned>(
         tok: token::Packed,
-        key: &<XCHACHA20_POLY1305 as A>::Key,
+        key: &ENC_KEY,
     ) -> Result<token::Data<T, F>, error::Error> {
         Ok(tok
             .unpack()?
@@ -108,7 +116,7 @@ mod unit_tests {
             footer: Some("weird thing".to_owned()),
         };
         let beginning = orig.clone();
-        let key = <XCHACHA20_POLY1305 as A>::Key::generate(&());
+        let key = ENC_KEY::safe_generate(&());
         let encrypted_tok = Protocol::type_encrypt(beginning, &key).unwrap();
         let decrypted_tok: token::Data<String, String> =
             Protocol::type_decrypt(encrypted_tok, &key).unwrap();

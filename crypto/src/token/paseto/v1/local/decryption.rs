@@ -85,7 +85,7 @@ impl PrimedToken {
         .map_err(|_| Error::BadSignature {})?;
 
         let signing_key = <HMAC_SHA384 as A>::Key::new(&self.auth_key);
-        if <HMAC_SHA384 as SymmHashAlgo>::verify(
+        if HMAC_SHA384::new(()).verify(
             encoded.as_slice(),
             signature.as_slice(),
             &signing_key,
@@ -116,8 +116,8 @@ impl VerifiedToken {
         }
     }
     pub(super) fn decrypt(self) -> Result<token::SerializedData, symm::DecryptError> {
-        let decrypted_msg = <AES256_CTR as symm::Algo>::decrypt(
-            &<AES256_CTR as A>::Key::new(&self.encryption_key, self.nonce.get_crypt_nonce()),
+        let decrypted_msg = ENC_ALGO::new(()).decrypt(
+            &ENC_KEY::new(&self.encryption_key, self.nonce.get_crypt_nonce()),
             self.encrypted_message.as_slice(),
         )?;
         Ok(token::SerializedData {

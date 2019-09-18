@@ -22,15 +22,15 @@ impl From<token::SerializedData> for PrimedToken {
 impl PrimedToken {
     pub(super) fn encrypt(
         self,
-        key: &<XCHACHA20_POLY1305 as A>::Key,
+        key: &ENC_KEY,
     ) -> Result<EncryptedToken, Error> {
         EncryptedToken::try_from((self, key)).map_err(|_| Error::Encryption)
     }
 }
-impl TryFrom<(PrimedToken, &<XCHACHA20_POLY1305 as A>::Key)> for EncryptedToken {
+impl TryFrom<(PrimedToken, &ENC_KEY)> for EncryptedToken {
     type Error = Error;
     fn try_from(
-        (tok, key): (PrimedToken, &<XCHACHA20_POLY1305 as A>::Key),
+        (tok, key): (PrimedToken, &ENC_KEY),
     ) -> Result<Self, Self::Error> {
         let aad = multi_part_pre_auth_encoding(&[
             HEADER.to_combined().as_slice(),
@@ -38,12 +38,12 @@ impl TryFrom<(PrimedToken, &<XCHACHA20_POLY1305 as A>::Key)> for EncryptedToken 
             tok.footer.as_ref().map(|f| f.as_slice()).unwrap_or(b""),
         ])
         .map_err(|_| Error::Encryption)?;
-        let encryption_args = ChaChaEncryptArgs {
+        let encryption_args = EArgs {
             plaintext: tok.msg,
             aad: Some(aad),
             nonce: Some(ChaChaNonce::from_slice(tok.nonce.as_slice()).ok_or(Error::Encryption)?),
         };
-        let ciphertext = <XCHACHA20_POLY1305 as CipherA>::encrypt(key, &encryption_args)?;
+        let ciphertext = ENC_ALGO::new(()).encrypt(key, &encryption_args)?;
         Ok(Self {
             msg: collapse_to_vec(&[tok.nonce.as_slice(), ciphertext.as_slice()]),
             footer: tok.footer,

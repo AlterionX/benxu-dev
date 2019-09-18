@@ -1,5 +1,5 @@
 use crate::algo::{
-    hash::{blake::two_b::Algo as BLAKE2B, symmetric::Algo as HashA},
+    hash::{blake::two_b::{Algo as BLAKE2B, Key as BLAKE2B_KEY}, symmetric::Algo as HashA},
     Algo as A,
 };
 use rand::{rngs::OsRng, RngCore};
@@ -31,8 +31,8 @@ impl Nonce {
     }
     pub fn create_from(randomness: Randomness, msg: &[u8]) -> Nonce {
         let randomness = randomness.0;
-        let key = <BLAKE2B as A>::Key::new(randomness.to_vec(), 24);
-        let hash = <BLAKE2B as HashA>::sign(msg, &key);
+        let key = BLAKE2B_KEY::new(randomness.to_vec(), 24);
+        let hash = BLAKE2B::new(24).sign(msg, &key);
         let mut free_buffer = randomness; // should I just alloc another one...? Oh well.
         free_buffer[0..24].copy_from_slice(&hash[0..24]);
         Nonce(free_buffer)

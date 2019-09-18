@@ -1,5 +1,5 @@
 use crate::algo::{
-    hash::{hmac::sha384::Algo as HMAC_SHA384, symmetric::Algo as HashA},
+    hash::{hmac::sha384::{Algo as HMAC_SHA384, Key as HMAC_SHA384_KEY}, symmetric::Algo as HashA},
     Algo as A,
 };
 use rand::{rngs::OsRng, RngCore};
@@ -31,8 +31,8 @@ impl Nonce {
     }
     pub fn create_from(randomness: Randomness, msg: &[u8]) -> Nonce {
         let randomness = randomness.0;
-        let key = <HMAC_SHA384 as A>::Key::new(&randomness);
-        let hash = <HMAC_SHA384 as HashA>::sign(msg, &key);
+        let key = HMAC_SHA384_KEY::new(&randomness);
+        let hash = HMAC_SHA384::new(()).sign(msg, &key);
         let mut free_buffer = randomness; // should I just alloc another one...? Oh well.
         free_buffer[0..32].copy_from_slice(&hash[0..32]);
         Nonce(free_buffer)

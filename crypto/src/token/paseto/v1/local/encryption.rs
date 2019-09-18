@@ -73,7 +73,7 @@ impl EncryptedToken {
         ])
         .map_err(|_| Error::Sign)?;
         let signing_key = <HMAC_SHA384 as A>::Key::new(&self.auth_key);
-        let sig = <HMAC_SHA384 as SymmHashAlgo>::sign(&pre_auth_encoding, &signing_key);
+        let sig = HMAC_SHA384::new(()).sign(&pre_auth_encoding, &signing_key);
         Ok(SignedEncryptedToken {
             msg: self.msg,
             footer: self.footer,
@@ -85,8 +85,8 @@ impl EncryptedToken {
 impl TryFrom<PrimedToken> for EncryptedToken {
     type Error = symm::EncryptError;
     fn try_from(tok: PrimedToken) -> Result<Self, Self::Error> {
-        let key = <AES256_CTR as A>::Key::new(&tok.encryption_key, tok.nonce.get_crypt_nonce());
-        let encrypted_msg = <AES256_CTR as symm::Algo>::encrypt(&key, tok.msg.as_slice())?;
+        let key = ENC_KEY::new(&tok.encryption_key, tok.nonce.get_crypt_nonce());
+        let encrypted_msg = ENC_ALGO::new(()).encrypt(&key, tok.msg.as_slice())?;
 
         Ok(EncryptedToken {
             msg: encrypted_msg,

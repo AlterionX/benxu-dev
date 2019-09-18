@@ -1,3 +1,5 @@
+//! Argon2d implementation.
+
 use argon2rs::{Argon2, Variant};
 use rand::{rngs::OsRng, RngCore};
 
@@ -10,7 +12,7 @@ pub struct Key {
 }
 impl base::SafeGenerateKey for Key {
     type Settings = ();
-    fn generate(_: &Self::Settings) -> Self {
+    fn safe_generate(_: &Self::Settings) -> Self {
         let mut generated_secret = vec![0; Algo::SECRET_LEN as usize];
         OsRng.fill_bytes(generated_secret.as_mut_slice());
         Key::new(generated_secret)
@@ -59,28 +61,31 @@ impl SigningData {
     }
 }
 
-#[derive(Default)]
-pub struct Algo(Option<Vec<u8>>);
+const SECRET_LEN: u8 = 32;
+pub struct Algo(Argon2, Option<Vec<u8>>);
 impl Algo {
     pub const SALT_LEN: u8 = 16;
-    pub const SECRET_LEN: u8 = 32;
+    pub const SECRET_LEN: u8 = SECRET_LEN;
     pub const HASH_LEN: u8 = 32;
-
-    pub fn new<S: AsRef<[u8; Self::SECRET_LEN as usize]>>(secret: S) -> Self {
-        Self(Some(secret.as_ref().to_vec()))
-    }
 }
 impl base::Algo for Algo {
     type Key = Key;
-    fn key_settings<'a>(&'a self) -> &<<Self as base::Algo>::Key as base::Key>::Settings {
+    type ConstructionData = Option<Vec<u8>>;
+    fn key_settings<'a>(&'a self) -> &() {
         &()
+    }
+    fn new(secret: Self::ConstructionData) -> Self {
+        Self(
+            Argon2::default(Variant::Argon2d),
+            secret,
+        )
     }
 }
 impl sym::Algo for Algo {
     type SigningInput = SigningData;
-    fn sign(msg: &Self::SigningInput, key: &Self::Key) -> Vec<u8> {
+    fn sign(&self, msg: &Self::SigningInput, key: &Self::Key) -> Vec<u8> {
         let mut buffer = vec![0; Self::HASH_LEN as usize];
-        Argon2::default(Variant::Argon2d).hash(
+        self.0.hash(
             buffer.as_mut_slice(),
             msg.msg.as_slice(),
             &msg.salt[..],
@@ -90,9 +95,9 @@ impl sym::Algo for Algo {
         buffer
     }
     type VerificationInput = SigningData;
-    fn verify(msg: &Self::VerificationInput, signature: &[u8], key: &Self::Key) -> bool {
+    fn verify(&self, msg: &Self::VerificationInput, signature: &[u8], key: &Self::Key) -> bool {
         let mut buffer = vec![0; Self::HASH_LEN as usize];
-        Argon2::default(Variant::Argon2d).hash(
+        self.0.hash(
             buffer.as_mut_slice(),
             msg.msg.as_slice(),
             &msg.salt[..],

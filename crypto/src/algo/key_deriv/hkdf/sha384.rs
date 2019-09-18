@@ -1,7 +1,7 @@
-use crate::algo::{self as base};
+use crate::algo as base;
 
-use ring::{digest::SHA384, hkdf, hmac::SigningKey};
-use std::{ops::Deref, sync::Arc};
+use ring::{hkdf, hmac::SigningKey};
+use std::sync::Arc;
 
 pub struct KeySettings {
     salt: Vec<u8>,
@@ -12,15 +12,15 @@ pub struct KeySettings {
 pub struct Key(Arc<SigningKey>);
 impl base::SafeGenerateKey for Key {
     type Settings = KeySettings;
-    fn generate<'a>(settings: &'a Self::Settings) -> Self {
-        let mut extracted_key = SigningKey::new(&SHA384, settings.salt.as_slice());
+    fn safe_generate<'a>(settings: &'a Self::Settings) -> Self {
+        let mut extracted_key = SigningKey::new(&ring::digest::SHA384, settings.salt.as_slice());
         for k in settings.extracted.iter() {
             extracted_key = hkdf::extract(&extracted_key, k.as_slice());
         }
         Self(Arc::new(extracted_key))
     }
 }
-impl Deref for Key {
+impl std::ops::Deref for Key {
     type Target = SigningKey;
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -31,12 +31,11 @@ pub struct Algo {
 }
 impl base::Algo for Algo {
     type Key = Key;
+    type ConstructionData = (Vec<u8>, Vec<Vec<u8>>);
     fn key_settings<'a>(&'a self) -> &'a <Self::Key as base::SafeGenerateKey>::Settings {
         &self.settings
     }
-}
-impl Algo {
-    pub fn new(salt: Vec<u8>, extracted: Vec<Vec<u8>>) -> Self {
+    fn new((salt, extracted): (Vec<u8>, Vec<Vec<u8>>)) -> Self {
         Self {
             settings: KeySettings {
                 salt: salt,
@@ -44,7 +43,9 @@ impl Algo {
             },
         }
     }
-    pub fn generate(key: <Self as base::Algo>::Key, data: &[&[u8]], size: usize) -> Vec<Vec<u8>> {
+}
+impl Algo {
+    pub fn generate(&self, key: <Self as base::Algo>::Key, data: &[&[u8]], size: usize) -> Vec<Vec<u8>> {
         data.iter()
             .map(|d| {
                 let mut out_buffer = vec![0; size];

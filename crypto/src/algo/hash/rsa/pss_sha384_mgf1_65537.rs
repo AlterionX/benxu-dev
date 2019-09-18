@@ -53,7 +53,7 @@ impl Clone for KeyPair {
 impl base::Key for KeyPair {
     type Settings = ();
     type Error = KeyGenError;
-    fn generate_with_err(_: &Self::Settings) -> Result<Self, KeyGenError> {
+    fn generate(_: &Self::Settings) -> Result<Self, KeyGenError> {
         // rust openssl as of 0.10.24 automatically uses required 65537 for exponent
         let private = Rsa::generate(2048)?;
         Ok(Self::create_from(private.private_key_to_der()?)?)
@@ -86,11 +86,14 @@ impl From<ErrorStack> for AlgoError {
     }
 }
 
-pub struct Algo {}
+pub struct Algo;
 impl base::Algo for Algo {
     type Key = KeyPair;
     fn key_settings<'a>(&'a self) -> &'a <<Self as base::Algo>::Key as base::Key>::Settings {
         &()
+    }
+    fn new(_: Self::ConstructionData) -> Self {
+        Self
     }
 }
 impl asymm::Algo for Algo {
@@ -197,7 +200,7 @@ mod unit_tests {
 
     #[test]
     fn test_sign_and_verify() {
-        let key: KeyPair = KeyPair::generate_with_err(&()).unwrap();
+        let key: KeyPair = KeyPair::generate(&()).unwrap();
         let sig: Vec<u8> = Algo::sign_private(b"hello", Some(key.private_key().unwrap())).unwrap();
         let verification = Algo::verify_public(b"hello", sig.as_slice(), key.public_key()).unwrap();
         assert!(verification == true);

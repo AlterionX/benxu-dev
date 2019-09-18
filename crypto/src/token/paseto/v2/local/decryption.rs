@@ -16,7 +16,7 @@ impl BasicToken {
     const MSG_RANGE: RangeFrom<usize> = (24..);
     pub(super) fn decrypt(
         self,
-        key: &<XCHACHA20_POLY1305 as A>::Key,
+        key: &ENC_KEY,
     ) -> Result<DecryptedToken, Error> {
         DecryptedToken::try_from((self, key))
     }
@@ -45,10 +45,10 @@ impl DecryptedToken {
         token::SerializedData::from(self)
     }
 }
-impl TryFrom<(BasicToken, &<XCHACHA20_POLY1305 as A>::Key)> for DecryptedToken {
+impl TryFrom<(BasicToken, &ENC_KEY)> for DecryptedToken {
     type Error = Error;
     fn try_from(
-        (tok, key): (BasicToken, &<XCHACHA20_POLY1305 as A>::Key),
+        (tok, key): (BasicToken, &ENC_KEY),
     ) -> Result<Self, Self::Error> {
         let aad = multi_part_pre_auth_encoding(&[
             HEADER.to_combined().as_slice(),
@@ -56,12 +56,12 @@ impl TryFrom<(BasicToken, &<XCHACHA20_POLY1305 as A>::Key)> for DecryptedToken {
             tok.footer.as_ref().map(|f| f.as_slice()).unwrap_or(b""),
         ])
         .map_err(|_| Error::Encryption)?;
-        let decryption_args = ChaChaDecryptArgs {
+        let decryption_args = DArgs {
             ciphertext: tok.msg().to_vec(),
             aad: Some(aad),
             nonce: ChaChaNonce::from_slice(tok.nonce.as_slice()).ok_or(Error::Decryption)?,
         };
-        let ciphertext = <XCHACHA20_POLY1305 as CipherA>::decrypt(key, &decryption_args)?;
+        let ciphertext = ENC_ALGO::new(()).decrypt(key, &decryption_args)?;
         Ok(Self {
             msg: ciphertext,
             footer: tok.footer,

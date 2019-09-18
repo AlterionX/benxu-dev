@@ -11,7 +11,7 @@ mod resume;
 
 /// Returns the "index" page, aka the home page of the website.
 ///
-/// This simply calls [`page_client::index()`] from [`page_client`].
+/// This simply calls [`page_client::home::index()`] from [`page_client`].
 #[get("/")]
 fn get_index() -> Markup {
     page_client::home::index()

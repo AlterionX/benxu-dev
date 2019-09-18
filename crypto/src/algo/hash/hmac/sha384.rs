@@ -7,7 +7,7 @@ use std::{ops::Deref, sync::Arc};
 pub struct Key(Arc<hmac::SigningKey>);
 impl base::SafeGenerateKey for Key {
     type Settings = ();
-    fn generate(_: &()) -> Self {
+    fn safe_generate(_: &()) -> Self {
         let mut nonce = [0; 32];
         OsRng.fill_bytes(&mut nonce);
         Key::new(&nonce)
@@ -29,18 +29,22 @@ impl Key {
 pub struct Algo;
 impl base::Algo for Algo {
     type Key = Key;
+    type ConstructionData = ();
     fn key_settings<'a>(&'a self) -> &<<Self as base::Algo>::Key as base::Key>::Settings {
         &()
+    }
+    fn new(_: ()) -> Self {
+        Self
     }
 }
 impl sym::Algo for Algo {
     type SigningInput = [u8];
-    fn sign(input: &Self::SigningInput, key: &Self::Key) -> Vec<u8> {
+    fn sign(&self, input: &Self::SigningInput, key: &Self::Key) -> Vec<u8> {
         let key = &key;
         hmac::sign(&key, input).as_ref().to_vec()
     }
     type VerificationInput = [u8];
-    fn verify(input: &Self::VerificationInput, signature: &[u8], key: &Self::Key) -> bool {
+    fn verify(&self, input: &Self::VerificationInput, signature: &[u8], key: &Self::Key) -> bool {
         hmac::verify_with_own_key(&key, input, signature).is_ok()
     }
 }

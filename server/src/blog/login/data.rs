@@ -33,7 +33,7 @@ impl<'a> AuthnWithStored<'a> {
                     Some(hash_and_salt.hash.len() as u32),
                 )
                 .map_err(|_| ())?;
-                <PWAlgo as HashA>::verify(&hash_input, hash_and_salt.hash.as_bytes(), key)
+                PWAlgo::new(None).verify(&hash_input, hash_and_salt.hash.as_bytes(), key)
                     .as_result((), ())
             }
         }

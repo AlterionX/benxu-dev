@@ -1,8 +1,5 @@
 use crate::algo::{self as base, cipher::symmetric as symm};
 
-use openssl::symm::{decrypt, encrypt, Cipher};
-use rand::{rngs::OsRng, RngCore};
-
 #[derive(Clone)]
 pub struct Key {
     key: Vec<u8>,
@@ -10,7 +7,8 @@ pub struct Key {
 }
 impl base::SafeGenerateKey for Key {
     type Settings = ();
-    fn generate(setting: &Self::Settings) -> Self {
+    fn safe_generate(setting: &Self::Settings) -> Self {
+        use rand::{rngs::OsRng, RngCore};
         let mut key = vec![0u8; 32];
         OsRng.fill_bytes(key.as_mut_slice());
         let mut nonce = vec![0u8; 16];
@@ -34,30 +32,41 @@ impl Key {
     }
 }
 
-pub struct Algo(Cipher);
+pub struct Algo(openssl::symm::Cipher);
 impl base::Algo for Algo {
     type Key = Key;
+    type ConstructionData = ();
     fn key_settings<'a>(
         &'a self,
     ) -> &'a <<Self as base::Algo>::Key as base::SafeGenerateKey>::Settings {
         &()
     }
+    fn new(_: ()) -> Self {
+        Self(openssl::symm::Cipher::aes_256_ctr())
+    }
 }
-impl symm::Algo for Algo {
-    type EncryptArgs = [u8];
-    type DecryptArgs = [u8];
-    fn encrypt(key: &Key, msg: &[u8]) -> Result<Vec<u8>, symm::EncryptError> {
-        encrypt(
-            Cipher::aes_256_ctr(),
+impl symm::Algo for Algo {}
+impl symm::CanEncrypt for Algo {
+    type EKey = Key;
+    type Input = [u8];
+    type Error = symm::EncryptError;
+    fn encrypt(&self, key: &Self::EKey, msg: &Self::Input) -> Result<Vec<u8>, Self::Error> {
+        openssl::symm::encrypt(
+            self.0,
             key.as_key(),
             Some(key.as_nonce()),
             msg,
         )
         .map_err(|_| symm::EncryptError::Base)
     }
-    fn decrypt(key: &Key, msg: &[u8]) -> Result<Vec<u8>, symm::DecryptError> {
-        decrypt(
-            Cipher::aes_256_ctr(),
+}
+impl symm::CanDecrypt for Algo {
+    type DKey = Key;
+    type Input = [u8];
+    type Error = symm::DecryptError;
+    fn decrypt(&self, key: &Self::DKey, msg: &Self::Input) -> Result<Vec<u8>, Self::Error> {
+        openssl::symm::decrypt(
+            self.0,
             key.as_key(),
             Some(key.as_nonce()),
             msg,

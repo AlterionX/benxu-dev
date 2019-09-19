@@ -48,59 +48,35 @@ impl token::Unpacked {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
-pub struct Protocol;
-impl Protocol {
-    pub fn encrypt<T, F>(
-        self,
-        tok: token::Data<T, F>,
-        key: &RSAKey,
-    ) -> Result<token::Packed, error::Error>
-    where
-        T: Serialize,
-        F: Serialize,
-    {
-        Self::type_encrypt(tok, key)
-    }
-    fn type_encrypt<T, F>(
-        tok: token::Data<T, F>,
-        private_key: &RSAKey,
-    ) -> Result<token::Packed, error::Error>
-    where
-        T: Serialize,
-        F: Serialize,
-    {
-        Ok(tok
-            .serialize()?
-            .v1_public_sign(private_key)?
-            .canonicalize()
-            .pack())
-    }
-    pub fn decrypt<T, F>(
-        tok: token::Packed,
-        key: &RSAKey,
-    ) -> Result<token::Data<T, F>, error::Error>
-    where
-        T: DeserializeOwned,
-        F: DeserializeOwned,
-    {
-        Self::type_decrypt(tok, key)
-    }
-    fn type_decrypt<T, F>(
-        tok: token::Packed,
-        key: &RSAKey,
-    ) -> Result<token::Data<T, F>, error::Error>
-    where
-        T: DeserializeOwned,
-        F: DeserializeOwned,
-    {
-        Ok(tok
-            .unpack()?
-            .v1_public_verify(key)?
-            .canonicalize()
-            .deserialize()?)
-    }
+pub fn encrypt<T, F>(
+    tok: token::Data<T, F>,
+    private_key: &RSAKey,
+) -> Result<token::Packed, error::Error>
+where
+    T: Serialize,
+    F: Serialize,
+{
+    Ok(tok
+        .serialize()?
+        .v1_public_sign(private_key)?
+        .canonicalize()
+        .pack())
 }
+pub fn decrypt<T, F>(
+    tok: token::Packed,
+    key: &RSAKey,
+) -> Result<token::Data<T, F>, error::Error>
+where
+    T: DeserializeOwned,
+    F: DeserializeOwned,
+{
+    Ok(tok
+        .unpack()?
+        .v1_public_verify(key)?
+        .canonicalize()
+        .deserialize()?)
+}
+
 
 #[cfg(test)]
 mod unit_tests {
@@ -115,9 +91,8 @@ mod unit_tests {
         };
         let beginning = orig.clone();
         let key = RSAKey::generate(&()).unwrap();
-        let encrypted_tok = Protocol::type_encrypt(beginning, &key).unwrap();
-        let decrypted_tok: token::Data<String, String> =
-            Protocol::type_decrypt(encrypted_tok, &key).unwrap();
+        let encrypted_tok = encrypt(beginning, &key).unwrap();
+        let decrypted_tok: token::Data<String, String> = decrypt(encrypted_tok, &key).unwrap();
         assert_eq!(orig, decrypted_tok);
     }
 }

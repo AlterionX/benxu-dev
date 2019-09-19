@@ -1,13 +1,17 @@
+//! Nonce related functions.
+
 use crate::algo::{
     hash::{hmac::sha384::{Algo as HMAC_SHA384, Key as HMAC_SHA384_KEY}, symmetric::Algo as HashA},
     Algo as A,
 };
 use rand::{rngs::OsRng, RngCore};
 
+/// A 32-byte wide chunk of random bytes.
 #[derive(Clone)]
 pub struct Randomness([u8; 32]);
 // TODO use const generics for how much randomness once it becomes available
 impl Randomness {
+    /// Generates the random bytes.
     pub fn new() -> Randomness {
         let mut nonce = [0; 32];
         OsRng.fill_bytes(&mut nonce);
@@ -19,9 +23,11 @@ impl Randomness {
     }
 }
 
+/// A 32-byte wide chunk of bytes, forming a nonce.
 #[derive(Clone)]
 pub struct Nonce([u8; 32]);
 impl Nonce {
+    /// Create the nonce with the provided bytes.
     pub fn recreate_nonce(old_nonce: &[u8]) -> Nonce {
         let mut nonce_data = [0; 32];
         for (idx, val) in old_nonce.iter().enumerate() {
@@ -29,6 +35,7 @@ impl Nonce {
         }
         Nonce(nonce_data)
     }
+    /// Creates the nonce out of the random bytes provided.
     pub fn create_from(randomness: Randomness, msg: &[u8]) -> Nonce {
         let randomness = randomness.0;
         let key = HMAC_SHA384_KEY::new(&randomness);
@@ -37,12 +44,15 @@ impl Nonce {
         free_buffer[0..32].copy_from_slice(&hash[0..32]);
         Nonce(free_buffer)
     }
+    /// Gets the component of the nonce representing the salt used for hashing.
     pub fn get_salt<'a>(&'a self) -> &'a [u8] {
         &self.0[0..16]
     }
+    /// Gets the component of the nonce representing the salt used for encryption.
     pub fn get_crypt_nonce<'a>(&'a self) -> &'a [u8] {
         &self.0[16..32]
     }
+    /// Gets the entire nonce as a slice.
     pub fn as_slice<'a>(&'a self) -> &'a [u8] {
         &self.0
     }

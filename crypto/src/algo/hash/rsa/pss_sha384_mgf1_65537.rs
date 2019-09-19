@@ -107,6 +107,7 @@ impl asymm::Algo for Algo {
     ) -> Result<Vec<u8>, Self::SigningError> {
         unimplemented!("Unimplemented by ring");
     }
+    /// TODO Ensure constant time.
     fn verify_public(
         msg: &[u8],
         signature: &[u8],

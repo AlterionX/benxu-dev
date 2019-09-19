@@ -47,7 +47,8 @@ pub fn post(
             .map_err(|_| Status::InternalServerError)?
             .curr;
         let new_credentials = auth::Credentials::<()>::safe_new(created.id, vec![]);
-        auth::attach_credentials_token(key, new_credentials, &mut cookies);
+        auth::attach_credentials_token(key, new_credentials, &mut cookies)
+            .map_err(|_| Status::InternalServerError)?;
     }
     Ok(Status::Ok)
 }

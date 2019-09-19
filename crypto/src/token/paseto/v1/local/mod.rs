@@ -1,3 +1,6 @@
+//! Implementation of the PASETO version 1, opaque token.
+
+/// A private prelude for files implementing this protocol.
 mod local_prelude {
     pub use crate::{
         algo::{
@@ -32,6 +35,7 @@ mod local_prelude {
     };
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
     pub use serde_json as json;
+    pub use boolinator::Boolinator;
     pub use std::{convert::TryFrom, ops::Deref, str};
 }
 use self::{decryption::BasicToken, encryption::SerializedRandToken, local_prelude::*};
@@ -41,10 +45,14 @@ mod encryption;
 
 pub mod error;
 
+/// The version string for this protocol.
 pub const VERSION: &'static str = "v1";
+/// The purpose string for this protocol.
 pub const PURPOSE: &'static str = "local";
+/// The agglomerated [`Header`] for this protocol.
 pub const HEADER: token::Header = token::Header::new(VERSION.as_bytes(), PURPOSE.as_bytes());
 
+/// A newtype struct differentiating the auth and encryption keys.
 pub struct AuthKey(Vec<u8>);
 impl Deref for AuthKey {
     type Target = [u8];
@@ -52,6 +60,7 @@ impl Deref for AuthKey {
         self.0.as_slice()
     }
 }
+/// A newtype struct differentiating the auth and encryption keys.
 pub struct EncryptionKey(Vec<u8>);
 impl Deref for EncryptionKey {
     type Target = [u8];
@@ -60,6 +69,7 @@ impl Deref for EncryptionKey {
     }
 }
 
+/// Takes the nonce and a static key, creating the auth and encrpytion keys.
 pub fn split_key(nonce: &Nonce, key: &[u8]) -> (EncryptionKey, AuthKey) {
     let hkdf = HKDF_SHA384::new((nonce.get_salt().to_vec(), vec![key.to_vec()]));
     let key_deriv_key = <<HKDF_SHA384 as A>::Key as SafeGenerateKey>::safe_generate(hkdf.key_settings());
@@ -77,57 +87,45 @@ pub fn split_key(nonce: &Nonce, key: &[u8]) -> (EncryptionKey, AuthKey) {
 }
 
 impl token::SerializedData {
+    /// Converts a [`SerializedData`] to the [`SerializedRandToken`] needed for encryption.
     fn v1_local_init(self) -> SerializedRandToken {
         SerializedRandToken::from(self)
     }
 }
 impl token::Unpacked {
+    /// Converts a [`Unpacked`] token to the [`BasicToken`] needed for decryption.
     fn v1_local_to_basic(self) -> Result<BasicToken, error::Error> {
         self.verify_header(HEADER).ok_or(Error::Unpack)?;
-        BasicToken::create_from(self)
+        Ok(BasicToken::create_from(self))
     }
 }
 
-pub struct Protocol;
-impl Protocol {
-    pub fn encrypt<T: Serialize + KnownClaims, F: Serialize>(
-        self,
-        tok: token::Data<T, F>,
-        key: &[u8],
-    ) -> Result<token::Packed, error::Error> {
-        Self::type_encrypt(tok, key)
-    }
-    fn type_encrypt<T: Serialize + KnownClaims, F: Serialize>(
-        tok: token::Data<T, F>,
-        key: &[u8],
-    ) -> Result<token::Packed, Error> {
-        Ok(tok
-            .serialize()?
-            .v1_local_init()
-            .preprocess(key)
-            .encrypt()?
-            .sign()?
-            .canonicalize()
-            .pack())
-    }
-    pub fn decrypt<T: DeserializeOwned + KnownClaims, F: DeserializeOwned>(
-        tok: token::Packed,
-        key: &[u8],
-    ) -> Result<token::Data<T, F>, error::Error> {
-        Self::type_decrypt(tok, key)
-    }
-    fn type_decrypt<T: DeserializeOwned + KnownClaims, F: DeserializeOwned>(
-        tok: token::Packed,
-        key: &[u8],
-    ) -> Result<token::Data<T, F>, error::Error> {
-        Ok(tok
-            .unpack()?
-            .v1_local_to_basic()?
-            .prime(key)
-            .verify()?
-            .decrypt()?
-            .deserialize()?)
-    }
+/// Encrypts, encodes, and packs a [`Data`] token into a [`Packed`] token.
+pub fn encrypt<T: Serialize + KnownClaims, F: Serialize>(
+    tok: token::Data<T, F>,
+    key: &[u8],
+) -> Result<token::Packed, Error> {
+    Ok(tok
+        .serialize()?
+        .v1_local_init()
+        .preprocess(key)
+        .encrypt()?
+        .sign()?
+        .canonicalize()
+        .pack())
+}
+/// Decrypts, decodes, and unpacks a [`Packed`] token into a [`Data`] token.
+pub fn decrypt<T: DeserializeOwned + KnownClaims, F: DeserializeOwned>(
+    tok: token::Packed,
+    key: &[u8],
+) -> Result<token::Data<T, F>, error::Error> {
+    Ok(tok
+        .unpack()?
+        .v1_local_to_basic()?
+        .prime(key)
+        .verify()?
+        .decrypt()?
+        .deserialize()?)
 }
 
 #[cfg(test)]
@@ -142,9 +140,8 @@ mod unit_tests {
         };
         let beginning = orig.clone();
         let key = b"some arbitrary key";
-        let encrypted_tok = Protocol::type_encrypt(beginning, &key[..]).unwrap();
-        let decrypted_tok: token::Data<String, String> =
-            Protocol::type_decrypt(encrypted_tok, &key[..]).unwrap();
+        let encrypted_tok = encrypt(beginning, &key[..]).unwrap();
+        let decrypted_tok: token::Data<String, String> = decrypt(encrypted_tok, &key[..]).unwrap();
         assert!(orig == decrypted_tok);
     }
 }

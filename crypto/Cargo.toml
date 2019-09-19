@@ -1,10 +1,16 @@
 [package]
-name = "crypto"
+name = "bundled-crypto"
 version = "0.1.0"
 authors = ["AlterionX <ben.xu.cs@gmail.com>"]
 edition = "2018"
+license = "MIT"
+description = "A collection of bundled crypto algorithms, encoding algorithms, and an implementation of the PASETO version protocol."
+# documentation = ""
+# homepage = ""
+# repository = ""
 
 [dependencies]
+# various crypto algos
 ring = { version = "0.13.5", features = ["rsa_signing"] }
 openssl = "0.10.24"
 rand = "0.7.0"

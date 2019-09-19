@@ -44,6 +44,7 @@ impl sym::Algo for Algo {
         hmac::sign(&key, input).as_ref().to_vec()
     }
     type VerificationInput = [u8];
+    /// TODO ensure constant time
     fn verify(&self, input: &Self::VerificationInput, signature: &[u8], key: &Self::Key) -> bool {
         hmac::verify_with_own_key(&key, input, signature).is_ok()
     }

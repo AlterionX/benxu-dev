@@ -1,21 +1,60 @@
+//! An implementation of the [PASETO token standard](https://paseto.io).
+//!
+//! Here is an example usage of the v2 local PASETO protocol:
+//! ```rust
+//! use bundled_crypto::token::paseto;
+//! use bundled_crypto::algo::{Algo, SafeGenerateKey};
+//!
+//! fn main() {
+//!     let key = <paseto::v2::local::Algo as Algo>::Key::safe_generate(&());
+//!     let tok = paseto::token::Data {
+//!         msg: "Hello World!", // Any serializable content.
+//!         footer: Some("Hello World 2!"), // Any serializable content.
+//!     };
+//!     let encrypted = paseto::v2::local::Protocol.encrypt(tok, &key).unwrap();
+//!     let tok: paseto::token::Data<String, String> = paseto::v2::local::Protocol::decrypt(encrypted, &key).unwrap();
+//! }
+//! ```
+//!
+//! TODO:
+//!  - \[x\] Constant time verification, dependent on library implementations.
+//!  - \[ \] Ensure string constant time comparison in the cryptographic primitives.
+//!  - \[x\] Ability send and receive, and decrypt/decode the payload into Rust objects.
+//!  - \[x\] Implement v1 local.
+//!  - \[x\] Implement v1 public.
+//!  - \[x\] Implement v2 local.
+//!  - \[x\] Implement v2 public.
+//!  - \[x\] Disallow accidental usage of public keys with local token keys and vice versa.
+//!  - \[ \] Disallow setting of `iss`, `sub`, `aud`, `exp`, `nbf`, `iat`, and `jti` in the top level.
+//!  - \[ \] Automatic validation of `iss`, `sub`, `aud`, `exp`, `nbf`, `iat`, and `jti` fields.
+//!  - \[ \] Built in footer validation + key id support.
+
 pub mod v1;
 pub mod v2;
 
 pub mod error;
 pub mod token;
 
+/// An enum representing the protocol used.
 enum Version {
+    /// An enum representing the `v1` protocols.
     V1(v1::Type),
+    /// An enum representing the `v2` protocols.
     V2(v2::Type),
 }
 
+/// A helper for copying a unsigned 64 bit int into a mutable slice.
 fn append_u64_to_little_endian_byte_array(
     to_encode: u64,
     byte_array: &mut [u8],
 ) -> Result<(), &'static str> {
+    /// Bytes in an unsigned 64 bit int.
     const U64_BYTE_WIDTH: usize = 8;
+    /// Bits in a byte.
     const BYTE_BIT_WIDTH: usize = 8;
+    /// Bits in an unsigned 64 bit int.
     const U64_BIT_WIDTH: usize = U64_BYTE_WIDTH * BYTE_BIT_WIDTH;
+    /// Mask matching the first bit of an unsigned 64 bit int.
     const U64_HIGH_BIT_MASK: u64 = 0x1u64 << (U64_BIT_WIDTH - 1);
 
     if byte_array.len() < U64_BYTE_WIDTH {
@@ -34,6 +73,7 @@ fn append_u64_to_little_endian_byte_array(
     }
     Ok(())
 }
+/// Implementation of the pre-auth encoding described by PASETO.
 pub fn multi_part_pre_auth_encoding(pieces: &[&[u8]]) -> Result<Vec<u8>, &'static str> {
     // precalc size
     const HEADER_SIZE: usize = 8;
@@ -70,11 +110,14 @@ pub fn multi_part_pre_auth_encoding(pieces: &[&[u8]]) -> Result<Vec<u8>, &'stati
     Ok(buffer)
 }
 
+/// A helper for flattening a slice of slices into a single [`Vec`].
 pub fn collapse_to_vec(data: &[&[u8]]) -> Vec<u8> {
     data.iter().flat_map(|s| s.iter()).map(|b| *b).collect()
 }
 
+/// A trait to help with known claims (the `iss`, etc. claims) later.
 pub trait KnownClaims {}
+/// Temporary impl, before the system actually works.
 impl KnownClaims for String {}
 
 #[cfg(test)]

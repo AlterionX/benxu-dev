@@ -1,3 +1,4 @@
+//! Collection of structs for decryption of the PASETO token.
 use super::local_prelude::*;
 
 pub(super) struct SerializedRandToken {

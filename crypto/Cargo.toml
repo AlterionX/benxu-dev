@@ -7,7 +7,7 @@ license = "MIT"
 description = "A collection of bundled crypto algorithms, encoding algorithms, and an implementation of the PASETO version protocol."
 # documentation = ""
 # homepage = ""
-# repository = ""
+repository = "https://github.com/AlterionX/benxu-dev"
 
 [dependencies]
 # various crypto algos

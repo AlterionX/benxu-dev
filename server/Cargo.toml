@@ -7,8 +7,8 @@ build = "build.rs"
 repository = "https://github.com/AlterionX/benxu-dev"
 
 [dependencies]
-page-client = { package = "benxu-page-client", path = "../page-client" }
-wasm-script = { package = "benxu-wasm-script", path = "../wasm-script" }
+page-client = { package = "static-page-builder", path = "../page-client" }
+wasm-script = { package = "wasm-slideshow", path = "../wasm-script" }
 blog-client = { package = "benxu-blog-client", path = "../blog-client" }
 blog-db = { package = "benxu-blog-db", path = "../blog-db" }
 crypto = { package = "bundled-crypto", path = "../crypto" }

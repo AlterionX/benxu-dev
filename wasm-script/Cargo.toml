@@ -1,5 +1,5 @@
 [package]
-name = "benxu-wasm-script"
+name = "wasm-slideshow"
 version = "0.1.0"
 authors = ["AlterionX <ben.xu.cs@gmail.com>"]
 edition = "2018"

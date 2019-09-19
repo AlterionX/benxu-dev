@@ -3,6 +3,7 @@ name = "benxu-blog-client"
 version = "0.1.0"
 authors = ["AlterionX <ben.xu.cs@gmail.com>"]
 edition = "2018"
+repository = "https://github.com/AlterionX/benxu-dev"
 
 [dependencies]
 yew = "0.7.0"

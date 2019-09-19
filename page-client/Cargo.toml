@@ -3,6 +3,7 @@ name = "benxu-page-client"
 version = "0.1.0"
 authors = ["AlterionX <ben.xu.cs@gmail.com>"]
 edition = "2018"
+repository = "https://github.com/AlterionX/benxu-dev"
 
 [dependencies]
 maud = { version = "0.21.0", features = ["rocket"] }

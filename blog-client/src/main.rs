@@ -1,3 +1,4 @@
+use wasm_bindgen::prelude::*;
 use chrono::{DateTime, Utc};
 
 struct Post {
@@ -14,6 +15,10 @@ enum Msg {
     Login,
     SubmitPost,
     AccessPost,
+}
+
+#[wasm_bindgen]
+pub fn render() {
 }
 
 fn main() {

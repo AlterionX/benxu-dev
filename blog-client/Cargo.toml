@@ -11,3 +11,22 @@ repository = "https://github.com/AlterionX/benxu-dev"
 seed = "0.4.1"
 serde = { version = "1.0.101", features = ["derive"] }
 chrono = { version = "0.4.9", features = ["serde"] }
+futures = "^0.1.26"
+wasm-bindgen = "0.2.50"
+js-sys = "0.3.27"
+[dependencies.web-sys]
+version = "0.3.27"
+features = [
+      'Document',
+      'Element',
+      'HtmlElement',
+      'Node',
+      'NodeList',
+      'Window',
+      'CssStyleDeclaration',
+      'EventTarget',
+      'EventListener',
+      'UiEvent',
+      'DomTokenList',
+]
+

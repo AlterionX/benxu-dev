@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["AlterionX <ben.xu.cs@gmail.com>"]
 edition = "2018"
 license = "MIT"
+description = "A WASM module for scrolling through slides on a specific page."
 repository = "https://github.com/AlterionX/benxu-dev"
 
 [lib]

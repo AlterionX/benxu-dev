@@ -1,9 +1,10 @@
 [package]
-name = "benxu-blog-db"
+name = "blog-db"
 version = "0.1.0"
 authors = ["AlterionX <ben.xu.cs@gmail.com>"]
 edition = "2018"
 license = "MIT"
+description = "A set of migration scripts and structs for interacting with the database of a blog."
 repository = "https://github.com/AlterionX/benxu-dev"
 
 [dependencies]

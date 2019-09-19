@@ -3,6 +3,7 @@ name = "static-page-builder"
 version = "0.1.0"
 authors = ["AlterionX <ben.xu.cs@gmail.com>"]
 edition = "2018"
+license = "MIT"
 repository = "https://github.com/AlterionX/benxu-dev"
 
 [dependencies]

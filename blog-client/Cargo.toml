@@ -8,5 +8,6 @@ description = "A frontend for a blog utilizing WASM."
 repository = "https://github.com/AlterionX/benxu-dev"
 
 [dependencies]
-yew = "0.7.0"
-
+seed = "0.4.1"
+serde = { version = "1.0.101", features = ["derive"] }
+chrono = { version = "0.4.9", features = ["serde"] }

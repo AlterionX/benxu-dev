@@ -9,7 +9,7 @@ repository = "https://github.com/AlterionX/benxu-dev"
 
 [dependencies]
 maud = { version = "0.21.0", features = ["rocket"] }
-chrono = { version = "0.4.7", features = ["serde"] }
-serde = { version = "1.0.98", features = ["derive"] }
+chrono = { version = "0.4.9", features = ["serde"] }
+serde = { version = "1.0.101", features = ["derive"] }
 typed-builder = "0.3.0"
 

@@ -16,7 +16,7 @@ blog-db = { package = "blog-db", version = "0.1.0", path = "../blog-db" }
 crypto = { package = "bundled-crypto", version = "0.1.0", path = "../crypto" }
 
 # encoding, decoding, management
-serde = { version = "1.0.100", features = ["derive"] }
+serde = { version = "1.0.101", features = ["derive"] }
 serde_json = "1.0.40"
 base64 = "0.10.1"
 maud = { version = "0.21.0", features = ["rocket"] }
@@ -28,11 +28,11 @@ diesel = { version = "1.4.2", features = ["postgres", "chrono", "r2d2"] }
 
 # utility structs + fns
 simple_logger = "1.3.0"
-log = { version = "0.4", features = ["std", "serde"] }
+log = { version = "0.4.8", features = ["std", "serde"] }
 tap = "0.4.0"
 boolinator = "2.4.0"
 chrono = { version = "0.4.9", features = ["serde"] }
-rand = "0.7.0"
+rand = "0.7.2"
 uuid = { version = "0.6.5", features = ["serde", "v4"] }
 
 # config

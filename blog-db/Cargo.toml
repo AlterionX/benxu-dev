@@ -8,9 +8,9 @@ description = "A set of migration scripts and structs for interacting with the d
 repository = "https://github.com/AlterionX/benxu-dev"
 
 [dependencies]
-chrono = { version = "0.4.7", features = ["serde"] }
+chrono = { version = "0.4.9", features = ["serde"] }
 diesel = { version = "1.4.2", features = ["postgres", "chrono", "uuid"] }
-serde = { version = "1.0.98", features = ["derive"] }
+serde = { version = "1.0.101", features = ["derive"] }
 uuid = { version = "0.6.5", features = ["serde", "v4"] }
 dotenv = "0.14.1"
 

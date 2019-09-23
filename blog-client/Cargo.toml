@@ -7,11 +7,22 @@ license = "MIT"
 description = "A frontend for a blog utilizing WASM."
 repository = "https://github.com/AlterionX/benxu-dev"
 
+[lib]
+crate-type = ["cdylib"]
+
 [dependencies]
-seed = "0.4.1"
+db-models = { package = "blog-db", version = "0.1.0", path = "../blog-db", default-features = false }
+
+seed = { version = "0.4.1", git = "https://github.com/David-OConnor/seed.git" }
 serde = { version = "1.0.101", features = ["derive"] }
+
+boolinator = "2.4.0"
+uuid = { version = "0.7.4", features = ["serde"] }
 chrono = { version = "0.4.9", features = ["serde"] }
+percent-encoding = "2.1.0"
+
 futures = "^0.1.26"
+
 wasm-bindgen = "0.2.50"
 js-sys = "0.3.27"
 [dependencies.web-sys]
@@ -28,5 +39,7 @@ features = [
       'EventListener',
       'UiEvent',
       'DomTokenList',
+      'Location',
+      'History',
 ]
 

@@ -7,10 +7,7 @@ pub mod data;
 use rocket::http::Status;
 use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
-use crate::{
-    blog::{auth, db},
-    uuid_conv::FromRUuid,
-};
+use crate::blog::{auth, db};
 use blog_db::models::*;
 
 /// Checks if credentials allows for creation of requested permissions.
@@ -50,7 +47,7 @@ pub fn post(
     target_user_id: RUuid,
     permissions_to_create: Json<Vec<auth::Permission>>,
 ) -> Status {
-    let target_user_id = uuid::Uuid::from_ruuid(target_user_id);
+    let target_user_id = target_user_id.into_inner();
     validate_and_create_all(&db, credentials, target_user_id, permissions_to_create)
         .map_or_else(|e| e.into(), |_| Status::Ok)
 }
@@ -90,10 +87,7 @@ pub mod permission {
     use rocket::http::Status;
     use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
-    use crate::{
-        blog::{auth, db, permissions::Error},
-        uuid_conv::FromRUuid,
-    };
+    use crate::blog::{auth, db, permissions::Error};
     use blog_db::models::*;
 
     /// Gets the permission with the requested id. Requires caller to have the
@@ -104,7 +98,7 @@ pub mod permission {
         _credentials: auth::Credentials<auth::perms::CanViewPermission>,
         id: RUuid,
     ) -> Result<Json<permissions::Data>, Status> {
-        db.get_permission_with_id(uuid::Uuid::from_ruuid(id))
+        db.get_permission_with_id(id.into_inner())
             .map(|p| Json(p))
             .map_err(|e| (e.into(): Error).into())
     }
@@ -116,7 +110,7 @@ pub mod permission {
         _credentials: auth::Credentials<auth::perms::CanDeletePermission>,
         id: RUuid,
     ) -> Result<Json<permissions::Data>, Status> {
-        db.delete_permission_with_id(uuid::Uuid::from_ruuid(id))
+        db.delete_permission_with_id(id.into_inner())
             .map(|p| Json(p))
             .map_err(|e| (e.into(): Error).into())
     }

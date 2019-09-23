@@ -1,11 +1,18 @@
 //! Models used for querying user data.
-use crate::schema::*;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "diesel")]
+use crate::schema::*;
+
 /// Data representing a complete row in the table.
-#[derive(Identifiable, Queryable, Serialize, Deserialize)]
-#[table_name = "users"]
+#[derive(Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "diesel",
+    derive(Identifiable, Queryable),
+    table_name = "users",
+)]
 pub struct Data {
     /// Id of the record.
     pub id: uuid::Uuid,
@@ -72,8 +79,12 @@ impl From<Data> for DataNoMeta {
 }
 
 /// Represents a new user with its id.
-#[derive(Insertable, Serialize, Deserialize)]
-#[table_name = "users"]
+#[derive(Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "diesel",
+    derive(Insertable),
+    table_name = "users",
+)]
 pub struct NewWithId<'a> {
     /// User's email.
     email: &'a str,
@@ -90,6 +101,7 @@ pub struct NewWithId<'a> {
     /// Optional last name.
     last_name: &'a str,
 }
+#[cfg(not(target_arch = "wasm32"))]
 impl<'a> From<New<'a>> for NewWithId<'a> {
     fn from(new: New<'a>) -> Self {
         Self {
@@ -147,8 +159,12 @@ pub struct NewNoMeta {
 }
 
 /// Represents updates to the data structure.
-#[derive(AsChangeset, Serialize, Deserialize)]
-#[table_name = "users"]
+#[derive(Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "diesel",
+    derive(AsChangeset),
+    table_name = "users",
+)]
 pub struct Changed<'a> {
     /// The users's user name.
     pub user_name: Option<&'a str>,

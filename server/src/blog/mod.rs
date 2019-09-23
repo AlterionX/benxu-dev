@@ -10,12 +10,18 @@ pub mod login;
 pub mod permissions;
 pub mod posts;
 
-use rocket::{http::Status, Route};
+use rocket::Route;
+use maud::Markup;
 
-/// Handler for serving the primary web app, to be implemented.
+/// Handler for serving the primary web app.
+#[get("/<_path..>")]
+pub fn get(_path: Option<rocket::http::uri::Segments>) -> Markup {
+    page_client::blog::index()
+}
+/// Handler for serving the primary web app for when there is no path.
 #[get("/")]
-pub fn get() -> Status {
-    Status::NotImplemented
+pub fn get_unadorned() -> Markup {
+    page_client::blog::index()
 }
 
 /// Handlers, functions, structs for marshalling editor data and retrieving the webpage.
@@ -28,10 +34,16 @@ pub mod editor {
     }
 }
 
-/// Provides a [`Vec`] of [`Route`]s to be attached with [`rocket::Rocket::mount()`].
-pub fn routes() -> Vec<Route> {
+/// Provides a [`Vec`] of [`Route`]s to be attached with [`rocket::Rocket::mount()`]. Used for the
+/// SPA endpoints.
+pub fn spa_routes() -> Vec<Route> {
+    routes![get, get_unadorned]
+}
+/// Provides a [`Vec`] of [`Route`]s to be attached with [`rocket::Rocket::mount()`]. Used for the
+/// api endpoints.
+pub fn api_routes() -> Vec<Route> {
     routes![
-        get, // blog front page
+        posts::get,
         posts::post,
         posts::post::get,
         posts::post::patch,

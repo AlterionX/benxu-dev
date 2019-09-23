@@ -279,3 +279,32 @@ pub mod resume {}
 pub mod links {}
 /// Functions generating a complete list of my projects. Not yet implemented.
 pub mod projects {}
+/// Functions serving the initial blog page, before it gets taken over by
+/// [`blog_client`](blog_client).
+pub mod blog {
+    use crate::{data, partials};
+    use maud::{Markup, html};
+    /// Returns a list of [`Css`](crate::data::Css) scripts that go in my blog page.
+    fn css_scripts<'a>() -> [data::Css<'a>; 3] {
+        [
+            data::Css::Critical { src: "reset" },
+            data::Css::Critical { src: "typography" },
+            data::Css::Critical { src: "main" },
+        ]
+    }
+
+    /// Returns a basic page, as everything will be managed by `blog_client`.
+    pub fn index() -> Markup {
+        let (glue, load) = data::Script::wasm_bindgen_loader("blog_client");
+        let js_scripts = [
+            data::Script::External(glue.as_str()),
+            data::Script::Embedded(load.as_str()),
+        ];
+        let css_scripts = css_scripts();
+        let meta = data::MetaData::builder()
+            .scripts(&js_scripts[..])
+            .css(&css_scripts[..])
+            .build();
+        partials::basic_page(html!{}, Some(&meta))
+    }
+}

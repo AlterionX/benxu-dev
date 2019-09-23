@@ -1,6 +1,9 @@
 //! Database + [`rocket`] compatibility + db queries.
 
+use rocket::{request::FromFormValue, http::RawStr};
 use rocket_contrib::database;
+
+use chrono::{DateTime, Utc};
 
 use blog_db::{models::*, schema};
 use diesel::prelude::*;
@@ -17,7 +20,138 @@ impl DB {
     }
 }
 
+pub enum OrderingField {
+    Date, AlphabeticalTitle
+}
+impl<'v> FromFormValue<'v> for OrderingField {
+    type Error = &'v RawStr;
+    fn from_form_value(form_value: &'v RawStr) -> Result<Self, Self::Error> {
+        match form_value.as_str() {
+            "date" => Ok(Self::Date),
+            "title" => Ok(Self::AlphabeticalTitle),
+            _ => Err(form_value),
+        }
+    }
+}
+pub enum SortOrdering {
+    Ascending, Descending
+}
+impl<'v> FromFormValue<'v> for SortOrdering {
+    type Error = &'v RawStr;
+    fn from_form_value(form_value: &'v RawStr) -> Result<Self, Self::Error> {
+        match form_value.as_str() {
+            "asc" => Ok(Self::Descending),
+            "dsc" => Ok(Self::Ascending),
+            _ => Err(form_value),
+        }
+    }
+}
+/// A set of conditions for obtaining a list of posts.
+pub enum PostListing {
+    /// Getting posts by date.
+    Date {
+        /// The minimum of the time range to look at when searching.
+        start: DateTime<Utc>,
+        /// The maximum of the time range to look at when searching.
+        stop: DateTime<Utc>,
+        /// The field to order by.
+        order_by: OrderingField,
+        /// The direction to sort by.
+        ord: SortOrdering,
+        /// The maximum number of items returned.
+        limit: usize,
+    },
+    /// Getting posts by a limit and offset.
+    LimAndOffset {
+        /// The offset at which to start adding to the list of posts.
+        offset: usize,
+        /// The number of posts, at most, to return.
+        lim: usize,
+        /// The field to order by.
+        order_by: OrderingField,
+        /// The direction to sort by.
+        ord: SortOrdering,
+    },
+}
 impl DB {
+    /// Find posts based on the provided conditions.
+    pub fn find_posts_with_post_listing_conditions(&self, conditions: PostListing) -> Result<Vec<posts::BasicData>, diesel::result::Error> {
+        match conditions {
+            PostListing::Date {
+                start,
+                stop,
+                order_by,
+                ord,
+                limit,
+            } => {
+                let query = schema::posts::table
+                    .select(posts::BasicData::COLUMNS)
+                    .filter(
+                        schema::posts::published_at.gt(start)
+                        .and(schema::posts::published_at.lt(stop))
+                    )
+                    .limit(limit as i64);
+                // TODO try to make this better (maybe Box?)
+                match order_by {
+                    OrderingField::Date => match ord {
+                        SortOrdering::Ascending => query
+                            .order(schema::posts::published_at.asc())
+                            .load(self.conn()),
+                        SortOrdering::Descending => query
+                            .order(schema::posts::published_at.desc())
+                            .load(self.conn()),
+                    },
+                    OrderingField::AlphabeticalTitle => match ord {
+                        SortOrdering::Ascending => query
+                            .order(schema::posts::title.asc())
+                            .load(self.conn()),
+                        SortOrdering::Descending => query
+                            .order(schema::posts::title.desc())
+                            .load(self.conn()),
+                    },
+                }
+            },
+            PostListing::LimAndOffset {
+                offset,
+                lim,
+                order_by,
+                ord,
+            } => {
+                let query = schema::posts::table;
+                match order_by {
+                    OrderingField::Date => match ord {
+                        SortOrdering::Ascending => query
+                            .select(posts::BasicData::COLUMNS)
+                            .order(schema::posts::published_at.asc())
+                            .offset(offset as i64)
+                            .limit(lim as i64)
+                            .load(self.conn()),
+                        SortOrdering::Descending => query
+                            .select(posts::BasicData::COLUMNS)
+                            .order(schema::posts::published_at.desc())
+                            .offset(offset as i64)
+                            .limit(lim as i64)
+                            .load(self.conn()),
+                    },
+                    OrderingField::AlphabeticalTitle => match ord {
+                        SortOrdering::Ascending => query
+                            .select(posts::BasicData::COLUMNS)
+                            .order(schema::posts::title.asc())
+                            .offset(offset as i64)
+                            .limit(lim as i64)
+                            .load(self.conn()),
+                        SortOrdering::Descending => query
+                            .select(posts::BasicData::COLUMNS)
+                            .order(schema::posts::title.desc())
+                            .offset(offset as i64)
+                            .limit(lim as i64)
+                            .load(self.conn()),
+                    },
+                }
+            },
+        }
+    }
+
     /// Inserts the provided new post into the database. Returns the inserted post on success.
     pub fn insert_post<'a, N: Into<posts::NewWithId<'a>>>(
         &self,

@@ -23,12 +23,17 @@ pub mod sso {
 
     /// Google specific SSO structs.
     pub mod google {
-        use crate::schema::*;
         use serde::{Deserialize, Serialize};
+        #[cfg(feature = "diesel")]
+        use crate::schema::*;
 
         /// The complete model of a row in the `google_sso` table.
-        #[derive(Identifiable, Queryable, Serialize, Deserialize)]
-        #[table_name = "google_sso"]
+        #[derive(Serialize, Deserialize)]
+        #[cfg_attr(
+            feature = "diesel",
+            derive(Identifiable, Queryable),
+            table_name = "google_sso",
+        )]
         pub struct Data {
             /// The id of the row.
             pub id: uuid::Uuid,
@@ -40,14 +45,19 @@ pub mod sso {
 
 /// Password record data.
 pub mod pw {
-    use crate::{models, schema::*};
     use chrono::{DateTime, Utc};
     use serde::{Deserialize, Serialize};
+    #[cfg(feature = "diesel")]
+    use crate::schema::*;
 
     /// Fully represents a row in the passwords table.
-    #[derive(Identifiable, Associations, Queryable, Serialize, Deserialize)]
-    #[belongs_to(parent = "models::users::Data", foreign_key = "user_id")]
-    #[table_name = "passwords"]
+    #[derive(Serialize, Deserialize)]
+    #[cfg_attr(
+        feature = "diesel",
+        derive(Identifiable, Associations, Queryable),
+        belongs_to(parent = "crate::models::users::Data", foreign_key = "user_id"),
+        table_name = "passwords",
+    )]
     pub struct Data {
         /// Id of the row.
         pub id: uuid::Uuid,
@@ -68,8 +78,12 @@ pub mod pw {
     }
 
     /// Represents a new row to be added to the table.
-    #[derive(Insertable, Serialize, Deserialize)]
-    #[table_name = "passwords"]
+    #[derive(Serialize, Deserialize)]
+    #[cfg_attr(
+        feature = "diesel",
+        derive(Insertable),
+        table_name = "passwords",
+    )]
     pub struct NewWithId<'a> {
         /// Id of the row to be added.
         id: uuid::Uuid,
@@ -84,6 +98,7 @@ pub mod pw {
         /// The salt used when hashing the password.
         salt: &'a str,
     }
+    #[cfg(not(target_arch = "wasm32"))]
     impl<'a> From<New<'a>> for NewWithId<'a> {
         fn from(new: New<'a>) -> Self {
             Self {
@@ -113,8 +128,12 @@ pub mod pw {
     }
 
     /// Represents a set of changes to the row.
-    #[derive(AsChangeset, Serialize, Deserialize)]
-    #[table_name = "passwords"]
+    #[derive(Serialize, Deserialize)]
+    #[cfg_attr(
+        feature = "diesel",
+        derive(AsChangeset),
+        table_name = "passwords",
+    )]
     pub struct Changed {
         /// Id of the user who most recently updated (aka creeated) the row.
         pub updated_by: uuid::Uuid,

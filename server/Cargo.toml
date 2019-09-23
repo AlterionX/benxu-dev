@@ -12,7 +12,7 @@ repository = "https://github.com/AlterionX/benxu-dev"
 page-client = { package = "static-page-builder", version = "0.1.0", path = "../page-client" }
 wasm-script = { package = "wasm-slideshow", version = "0.1.0", path = "../wasm-script" }
 blog-client = { package = "blog-client", version = "0.1.0", path = "../blog-client" }
-blog-db = { package = "blog-db", version = "0.1.0", path = "../blog-db" }
+blog-db = { package = "blog-db", version = "0.1.0", path = "../blog-db", default-features = true }
 crypto = { package = "bundled-crypto", version = "0.1.0", path = "../crypto" }
 
 # encoding, decoding, management
@@ -33,7 +33,7 @@ tap = "0.4.0"
 boolinator = "2.4.0"
 chrono = { version = "0.4.9", features = ["serde"] }
 rand = "0.7.2"
-uuid = { version = "0.6.5", features = ["serde", "v4"] }
+uuid = { version = "0.7.4", features = ["serde"] }
 
 # config
 dotenv = "0.14.1"

@@ -1,15 +1,20 @@
 //! A collection of types related to the many to many relation between posts and tags.
 
-use crate::schema::*;
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "diesel")]
+use crate::schema::*;
 
+#[derive(Serialize, Deserialize)]
 /// Data representing a single post to tag relation.
-#[derive(Identifiable, Queryable, Associations)]
-#[belongs_to(super::posts::Post)]
-#[belongs_to(super::tags::Tag)]
+#[cfg_attr(
+    feature = "diesel",
+    derive(Identifiable, Queryable, Associations),
+    belongs_to(super::posts::Post),
+    belongs_to(super::tags::Tag),
+)]
 pub struct PostTagJunction {
     /// A primary key composed of (post's id, tag's id) to ensure that the relation is unique.
-    #[primary_key(nonstandard)]
+    #[cfg_attr(feature = "diesel", primary_key(nonstandard))]
     pub id: (uuid::Uuid, uuid::Uuid),
     /// The post id represented by this relation.
     pub post_id: uuid::Uuid,
@@ -20,8 +25,12 @@ pub struct PostTagJunction {
 }
 
 /// A new post to tag relation.
-#[derive(Insertable, Serialize, Deserialize)]
-#[table_name = "post_tag_junctions"]
+#[derive(Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "diesel",
+    derive(Insertable),
+    table_name = "post_tag_junctions",
+)]
 pub struct NewPostTagJunction {
     /// The post id represented by this relation.
     pub post_id: uuid::Uuid,

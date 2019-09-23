@@ -7,7 +7,6 @@ use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
 use crate::{
     blog::{auth, credentials::data::SavableCredential, DB},
-    uuid_conv::FromRUuid,
     PWKeyFixture,
 };
 
@@ -53,7 +52,7 @@ pub mod pws {
             id: RUuid,
             changed_pw: Json<String>,
         ) -> Result<Status, Status> {
-            let id = uuid::Uuid::from_ruuid(id);
+            let id = id.into_inner();
             let target_user_id =
                 db.find_pw_by_id(id)
                     .map(|pw_rec| pw_rec.user_id)
@@ -99,7 +98,7 @@ pub mod pws {
             credentials: auth::UnverifiedPermissionsCredential,
             id: RUuid,
         ) -> Result<Status, Status> {
-            let id = uuid::Uuid::from_ruuid(id);
+            let id = id.into_inner();
             let target_user_id =
                 db.find_pw_by_id(id)
                     .map(|pw_rec| pw_rec.user_id)

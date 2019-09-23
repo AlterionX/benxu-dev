@@ -1,13 +1,19 @@
 //! A collection of types related to the permissions, which belong to an user.
 
-use crate::{models, schema::*};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "diesel")]
+use crate::schema::*;
+
 /// Data representing a complete row in the table.
-#[derive(Identifiable, Associations, Queryable, Serialize, Deserialize)]
-#[belongs_to(parent = "models::users::Data", foreign_key = "user_id")]
-#[table_name = "permissions"]
+#[derive(Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "diesel",
+    derive(Identifiable, Associations, Queryable),
+    belongs_to(parent = "crate::models::users::Data", foreign_key = "user_id"),
+    table_name = "permissions",
+)]
 pub struct Data {
     /// The id of the row.
     pub id: uuid::Uuid,
@@ -23,8 +29,12 @@ pub struct Data {
 
 /// Data representing a new permission, but with an id. This is a convenience struct so that the
 /// user does not need to create an id manually.
-#[derive(Insertable, Serialize, Deserialize)]
-#[table_name = "permissions"]
+#[derive(Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "diesel",
+    derive(Insertable),
+    table_name = "permissions",
+)]
 pub struct NewWithId<'a> {
     /// The id of the row being inserted.
     id: uuid::Uuid,
@@ -35,6 +45,7 @@ pub struct NewWithId<'a> {
     /// The permission represented by this record.
     permission: &'a str,
 }
+#[cfg(not(target_arch = "wasm32"))]
 impl<'a> From<New<'a>> for NewWithId<'a> {
     fn from(new: New<'a>) -> Self {
         Self {

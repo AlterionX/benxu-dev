@@ -1,11 +1,16 @@
 //! Models used to represent post tags.
 
-use crate::schema::*;
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "diesel")]
+use crate::schema::*;
+
 /// Data representing a complete row in the table.
-#[derive(Identifiable, Queryable, Serialize, Deserialize)]
-#[table_name = "tags"]
+#[cfg_attr(
+    feature = "diesel",
+    derive(Identifiable, Queryable),
+    table_name = "tags",
+)]
 pub struct Data {
     /// The id of the new record.
     pub id: uuid::Uuid,
@@ -17,8 +22,12 @@ pub struct Data {
 
 /// Data to be inserted as a new row in the table. Automatically adds an id to the struct
 /// [`New`](crate::models::tags::New).
-#[derive(Identifiable, Insertable, Serialize, Deserialize)]
-#[table_name = "tags"]
+#[derive(Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "diesel",
+    derive(Identifiable, Insertable),
+    table_name = "tags",
+)]
 pub struct NewWithId<'a> {
     /// The id of the new record.
     id: uuid::Uuid,
@@ -29,6 +38,7 @@ pub struct NewWithId<'a> {
     /// The creator of the tag.
     created_by: uuid::Uuid,
 }
+#[cfg(not(target_arch = "wasm32"))]
 impl<'a> From<New<'a>> for NewWithId<'a> {
     fn from(new_tag: New<'a>) -> Self {
         Self {
@@ -52,8 +62,12 @@ pub struct New<'a> {
 }
 
 /// An update to the name and description of the tag.
-#[derive(AsChangeset, Serialize, Deserialize)]
-#[table_name = "tags"]
+#[derive(Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "diesel",
+    derive(AsChangeset),
+    table_name = "tags",
+)]
 pub struct Update {
     /// The name of the tag.
     pub name: Option<String>,

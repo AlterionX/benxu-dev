@@ -109,18 +109,17 @@ impl<'a> Script<'a> {
     /// A default script loading wasm glue for my wasm code.
     pub fn wasm_bindgen_loader(name: &str) -> (String, String) {
         let glue = format!("wasm-bindgen-glue/{}.js", name);
-        let load = format!(
-            "\
+        let load = format!("\
              document.addEventListener(\
-             \"DOMContentLoaded\",\
-             function(){{\
-             var mod = wasm_bindgen(\"/public/wasm/{}_bg.wasm\");\
-             if (mod.load_listeners) {{\
-             var listeners = mod.load_listeners();\
-             }}\
-             }}\
+                \"DOMContentLoaded\",\
+                function(){{\
+                    var mod = wasm_bindgen(\"/public/wasm/{}_bg.wasm\");\
+                    if (mod.load_listeners) {{\
+                        var listeners = mod.load_listeners();\
+                    }}\
+                }}\
              );\
-             ",
+            ",
             name
         );
         (glue, load)

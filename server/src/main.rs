@@ -25,8 +25,6 @@ use rocket_contrib::serve::StaticFiles;
 use std::{path::Path, sync::Arc};
 use tap::*;
 
-mod uuid_conv;
-
 mod blog;
 mod fixed;
 
@@ -64,7 +62,9 @@ impl Server {
     /// Filesystem path root for static resources.
     const PUBLIC_DIRECTORY: &'static str = "./public";
     /// Routing path root for blog pages/endpoints from the [`blog`](crate::blog) module.
-    const BLOG_ROOT: &'static str = "/blog";
+    const BLOG_API_ROOT: &'static str = "/api";
+    /// Routing path root for blog pages/endpoints from the [`blog`](crate::blog) module.
+    const BLOG_SPA_ROOT: &'static str = "/blog";
 
     /// Seeks out and returns the path to the secret key for password hashing, returning an error
     /// if it could not find the file and defaulting to
@@ -228,7 +228,8 @@ impl Server {
                 .attach(blog::DB::fairing())
                 .manage(Arc::clone(&local_loaded_key))
                 .manage(paseto_key.get_key_fixture())
-                .mount(Self::BLOG_ROOT, blog::routes());
+                .mount(Self::BLOG_API_ROOT, blog::api_routes())
+                .mount(Self::BLOG_SPA_ROOT, blog::spa_routes());
             info!("Rocket ready for launch!");
             rocket
         };
@@ -252,7 +253,7 @@ impl Server {
 
 /// Initializes server and listens for errors that occur after launching rocket.
 fn main() {
-    simple_logger::init().expect("No problems initializing simple_logger.");
+    simple_logger::init_with_level(log::Level::Info).expect("No problems initializing simple_logger.");
     info!("Initializing server...");
     let mut server = Server::new();
     info!("Server initialized!");

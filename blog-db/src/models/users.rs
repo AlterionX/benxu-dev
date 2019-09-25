@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::schema::*;
 
 /// Data representing a complete row in the table.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(
     feature = "diesel",
     derive(Identifiable, Queryable),
@@ -41,7 +41,7 @@ impl Data {
 }
 
 /// Data representing the user building_clocks()
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DataNoMeta {
     /// Id of the record.
     pub id: uuid::Uuid,

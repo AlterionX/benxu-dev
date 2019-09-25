@@ -13,7 +13,6 @@ use crate::{
     locations::*,
 };
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Name {
     pub first: String,

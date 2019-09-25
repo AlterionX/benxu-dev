@@ -7,6 +7,7 @@ members = [
     "wasm-script",
     # blog pages
     "blog-client",
+    "blog-login-enum",
     "blog-db",
     # crypto suite extracted for convenience
     "crypto",

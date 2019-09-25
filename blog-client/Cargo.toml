@@ -12,6 +12,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 db-models = { package = "blog-db", version = "0.1.0", path = "../blog-db", default-features = false }
+login-enum = { package = "blog-login-enum", version = "0.1.0", path = "../blog-login-enum" }
 
 seed = { version = "0.4.1", git = "https://github.com/David-OConnor/seed.git" }
 serde = { version = "1.0.101", features = ["derive"] }

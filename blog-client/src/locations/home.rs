@@ -27,9 +27,7 @@ fn render_post(p: &posts::BasicData) -> seed::dom_types::Node<GlobalM> {
             .unwrap_or("Unpublished".to_owned())
         ],
         a![
-            attrs!{
-                At::Href => format!("/blog/posts/{}", p.id),
-            },
+            attrs!{ At::Href => format!("/blog/posts/{}", p.id) },
             p.title,
         ],
         // self.author.to_view(), // TODO

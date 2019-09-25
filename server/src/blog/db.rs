@@ -222,9 +222,13 @@ impl DB {
         &self,
         user_name: &str,
     ) -> Result<users::Data, diesel::result::Error> {
-        schema::users::table
-            .filter(schema::users::user_name.eq(user_name))
-            .get_result(self.conn())
+        use log::*;
+        trace!("Searching for {:?}.", user_name);
+        let query = schema::users::table
+            .filter(schema::users::user_name.eq(user_name));
+        trace!("Query constructed. Now running...");
+        trace!("Query ran for all uses {:?}. Now running...", query.get_results::<users::Data>(self.conn()));
+        query.first(self.conn())
     }
     /// Create a user from the provided user info.
     pub fn create_user<'a, N: Into<users::NewWithId<'a>>>(

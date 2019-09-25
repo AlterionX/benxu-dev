@@ -12,6 +12,7 @@ repository = "https://github.com/AlterionX/benxu-dev"
 page-client = { package = "static-page-builder", version = "0.1.0", path = "../page-client" }
 wasm-script = { package = "wasm-slideshow", version = "0.1.0", path = "../wasm-script" }
 blog-client = { package = "blog-client", version = "0.1.0", path = "../blog-client" }
+blog-login-enum = { package = "blog-login-enum", version = "0.1.0", path = "../blog-login-enum" }
 blog-db = { package = "blog-db", version = "0.1.0", path = "../blog-db", default-features = true }
 crypto = { package = "bundled-crypto", version = "0.1.0", path = "../crypto" }
 

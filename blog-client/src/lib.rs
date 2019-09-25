@@ -60,6 +60,14 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M>) {
                 orders.send_msg(M::RenderPage(loc));
             }
         },
+        M::Login(login_msg) => {
+            log(format!("Handling login update.").as_str());
+            if let locations::Location::Login(s) = &mut model.loc {
+                locations::login::update(login_msg, s, &mut model.store, orders);
+            } else {
+                orders.skip();
+            }
+        },
         _ => (),
     }
 }

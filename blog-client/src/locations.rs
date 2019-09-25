@@ -7,7 +7,7 @@ use chrono::{DateTime, Utc};
 use serde::{Serialize, Deserialize};
 use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 
-use db_models::models::posts;
+use db_models::models::{posts, users};
 use crate::{
     messages::M as GlobalM,
     model::{Model as GlobalModel, Store as GlobalStore},
@@ -74,43 +74,7 @@ impl Location {
     pub fn to_view(&self, gs: &GlobalStore) -> Vec<seed::dom_types::Node<GlobalM>> {
         match self {
             Location::Home(home_store) => home::render(home_store, gs),
-            Location::Login(_) => {
-                vec![
-                    form![
-                        p!["Please enter your username"],
-                        input![
-                            attrs! {
-                                At::Class => "single-line-text-entry";
-                                At::Placeholder => "username";
-                                At::AutoFocus => true;
-                                At::Type => "text";
-                            },
-                            input_ev(Ev::Input, |text| GlobalM::Login(login::M::UserName(text))),
-                        ],
-                        br![],
-                        p!["Please enter your password"],
-                        input![
-                            attrs! {
-                                At::Class => "single-line-text-entry";
-                                At::Placeholder => "password";
-                                At::AutoFocus => true;
-                                At::Type => "password";
-                            },
-                            input_ev(Ev::Input, |text| GlobalM::Login(login::M::Password(text))),
-                        ],
-                        br![],
-                        input![
-                            attrs! { At::Type => "submit" },
-                            "Login",
-                        ],
-                        raw_ev(Ev::Submit, |e| {
-                            e.prevent_default();
-                            // TODO actually submit
-                            GlobalM::Login(login::M::FormSubmission)
-                        }),
-                    ],
-                ]
-            },
+            Location::Login(login_store) => vec![login::render(login_store, gs)],
             Location::Viewer(pm) => {
                 vec![]
             },
@@ -129,6 +93,7 @@ pub enum LocationWithData {
     Viewer(PostMarker, FetchObject<posts::DataNoMeta>),
     Home(home::Store, FetchObject<Vec<posts::BasicData>>),
     Editor(PostMarker, FetchObject<posts::DataNoMeta>),
+    Login(FetchObject<users::DataNoMeta>),
 }
 impl LocationWithData {
     pub fn to_loc(&self) -> Location {
@@ -136,6 +101,7 @@ impl LocationWithData {
             Self::Viewer(pm, _) => Location::Viewer(pm.clone()),
             Self::Editor(pm, _) => Location::Editor(pm.clone()),
             Self::Home(pq, _) => Location::Home(pq.clone()),
+            Self::Login(_) => Location::Login(login::Store::default()),
         }
     }
 }

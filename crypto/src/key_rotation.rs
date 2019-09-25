@@ -153,7 +153,13 @@ impl<K: SafeGenerateKey + Clone + Send + Sync, A: Algo<Key = K> + Send + Sync + 
                     error!("Key rotation thread crashed.");
                     panic!("Thread crashed!");
                 }
-                match rx.recv_timeout(Instant::now() - deadline) {
+                let now = Instant::now();
+                let duration_to_wait = if now > deadline {
+                    deadline - now
+                } else {
+                    Duration::new(0, 0)
+                };
+                match rx.recv_timeout(duration_to_wait) {
                     Err(RecvTimeoutError::Disconnected) => break,
                     _ => (), // continue if nothing
                 }

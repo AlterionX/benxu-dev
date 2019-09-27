@@ -227,7 +227,7 @@ impl DB {
         let query = schema::users::table
             .filter(schema::users::user_name.eq(user_name));
         trace!("Query constructed. Now running...");
-        trace!("Query ran for all uses {:?}. Now running...", query.get_results::<users::Data>(self.conn()));
+        trace!("Query ran for all uses {:?}. Now running...", query.get_result::<users::Data>(self.conn()));
         query.first(self.conn())
     }
     /// Create a user from the provided user info.

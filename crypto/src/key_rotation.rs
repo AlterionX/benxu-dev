@@ -146,6 +146,7 @@ impl<K: SafeGenerateKey + Clone + Send + Sync, A: Algo<Key = K> + Send + Sync + 
         let handle = thread::spawn(move || {
             let key_store_fixture = remote_copy;
             loop {
+                use log::info;
                 let deadline = Instant::now() + period_between_rotation;
                 if let Err(_) = key_store_fixture.advance_generation() {
                     use log::error;
@@ -154,11 +155,12 @@ impl<K: SafeGenerateKey + Clone + Send + Sync, A: Algo<Key = K> + Send + Sync + 
                     panic!("Thread crashed!");
                 }
                 let now = Instant::now();
-                let duration_to_wait = if now > deadline {
+                let duration_to_wait = if now < deadline {
                     deadline - now
                 } else {
                     Duration::new(0, 0)
                 };
+                info!("Scheduled key exchange for {:?} from now.", duration_to_wait);
                 match rx.recv_timeout(duration_to_wait) {
                     Err(RecvTimeoutError::Disconnected) => break,
                     _ => (), // continue if nothing

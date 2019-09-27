@@ -48,14 +48,13 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M>) {
             }
         },
         M::RenderPage(loc) => {
-            log("Rendering page.");
             model.loc = loc;
         },
         M::DataFetched(fetched) => {
             log("Data fetched. Will now render page.");
             let loc = fetched.to_loc();
             if let Err(m) = model.update_with(fetched) {
-                orders.send_msg(M::ChangePage(loc));
+                orders.send_msg(m);
             } else {
                 orders.send_msg(M::RenderPage(loc));
             }

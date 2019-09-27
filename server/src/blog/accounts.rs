@@ -22,12 +22,12 @@ use crypto::Generational;
 /// As of now, no default account permissions are provided on creation on the server side.
 #[post("/accounts", format = "json", data = "<user_to_create>")]
 pub fn post(
+    credentials: Option<auth::UnverifiedPermissionsCredential>,
+    user_to_create: Json<users::NewNoMeta>,
     db: db::DB,
     mut cookies: Cookies,
     tok_key_store: State<TokenKeyFixture>,
-    credentials: Option<auth::UnverifiedPermissionsCredential>,
-    user_to_create: Json<users::NewNoMeta>,
-) -> Result<Status, Status> {
+) -> Result<Json<users::DataNoMeta>, Status> {
     let user_to_create = user_to_create.into_inner();
     let creator = credentials
         .map(auth::UnverifiedPermissionsCredential::into_inner)
@@ -49,7 +49,7 @@ pub fn post(
         auth::attach_credentials_token(key, new_credentials, &mut cookies)
             .map_err(|_| Status::InternalServerError)?;
     }
-    Ok(Status::Ok)
+    Ok(Json(created.strip_meta()))
 }
 /// Creates an account.
 ///

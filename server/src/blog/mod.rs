@@ -15,13 +15,15 @@ use maud::Markup;
 
 /// Handler for serving the primary web app.
 #[get("/<_path..>")]
-pub fn get(_path: Option<rocket::http::uri::Segments>) -> Markup {
-    page_client::blog::index()
+pub fn get(_path: Option<rocket::http::uri::Segments>, c: Option<auth::UnverifiedPermissionsCredential>) -> Markup {
+    // TODO set based on permissions
+    page_client::blog::index(c.is_some())
 }
 /// Handler for serving the primary web app for when there is no path.
 #[get("/")]
-pub fn get_unadorned() -> Markup {
-    page_client::blog::index()
+pub fn get_unadorned(c: Option<auth::UnverifiedPermissionsCredential>) -> Markup {
+    // TODO set based on permissions
+    page_client::blog::index(c.is_some())
 }
 
 /// Handlers, functions, structs for marshalling editor data and retrieving the webpage.

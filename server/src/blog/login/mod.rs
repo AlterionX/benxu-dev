@@ -31,7 +31,17 @@ pub fn post(
         Ok(None) // TODO create a landing page + replace
     } else {
         info!("Processing data.");
-        let (user, perms) = auth_data.authenticate(&db, &pw_key_store)?;
+        let (user, perms) = match auth_data.authenticate(&db, &pw_key_store) {
+            Err(e) => {
+                error!("{:?}", e);
+                let e = Err(e.into());
+                error!("Converted to: {:?}", e);
+                return e;
+            },
+            Ok(user) => {
+                user
+            },
+        };
         debug!("Resolved to user {}.", user.user_name);
         auth::attach_credentials_token(
             &tok_key_store

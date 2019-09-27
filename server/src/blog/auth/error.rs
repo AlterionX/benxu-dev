@@ -51,7 +51,7 @@ impl From<&Error> for Status {
 }
 impl From<Error> for Status {
     fn from(e: Error) -> Self {
-        e.into()
+        (&e).into()
     }
 }
 impl From<Error> for (Status, Error) {

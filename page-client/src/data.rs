@@ -82,11 +82,19 @@ impl<'a> Default for MetaData<'a> {
 pub struct Logo<'a> {
     /// The url to the actual image.
     pub src: &'a str,
+    pub href: Option<&'a str>,
 }
 impl<'a> Render for Logo<'a> {
     fn render(&self) -> Markup {
         html! {
-            img.logo src=(self.src);
+            div.logo {
+                @match self.href {
+                    Some(link) => a.logo-wrapper href=(link) {
+                        img.logo-img src=(self.src);
+                    },
+                    None => img.logo-img src=(self.src);,
+                }
+            }
         }
     }
 }

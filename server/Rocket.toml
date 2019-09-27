@@ -1,3 +1,11 @@
+[dev]
+address = "localhost"
+port = 8000
+limits = { forms = 32768 }
+[dev.tls]
+certs = "private/localhost.crt"
+key = "private/localhost.key"
+
 [production]
 address = "localhost"
 port = 4000

@@ -79,7 +79,7 @@ impl From<Data> for DataNoMeta {
 }
 
 /// Represents a new user with its id.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(
     feature = "diesel",
     derive(Insertable),

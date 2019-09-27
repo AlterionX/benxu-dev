@@ -22,6 +22,7 @@ server/benxu-dev-server
 server/public/wasm-pack/
 server/public/wasm/
 server/public/js/wasm-bindgen-glue/
+server/private
 
 .env
 .pw_secret

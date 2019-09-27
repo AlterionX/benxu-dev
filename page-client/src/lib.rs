@@ -5,10 +5,28 @@
 mod data;
 mod partials;
 
+pub fn logo() -> Option<data::Logo<'static>> {
+    Some(data::Logo {
+        src: "/public/img/branding.svg",
+        href: Some("/"),
+    })
+}
+
 /// Functions generating my home page.
 pub mod home {
     use crate::{data, partials};
     use maud::{html, Markup, Render};
+
+    /// Create a basic menu.
+    pub fn menu() -> Option<data::Menu<'static>> {
+        Some(data::Menu(&[
+            data::MenuItem {
+                text: "Blog",
+                link: Some("/blog"),
+                children: None,
+            },
+        ]))
+    }
 
     /// Returns a list of links as [`Markup`].
     fn link_group<'a>() -> Markup {
@@ -256,9 +274,13 @@ pub mod home {
             data::Script::Embedded(load.as_str()),
         ];
         let css_scripts = css_scripts();
+        let menu = menu();
+        let logo = crate::logo();
         let meta = data::MetaData::builder()
             .scripts(&js_scripts[..])
             .css(&css_scripts[..])
+            .menu(menu.as_ref())
+            .logo(logo.as_ref())
             .build();
         partials::basic_page(
             html! {
@@ -284,6 +306,38 @@ pub mod projects {}
 pub mod blog {
     use crate::{data, partials};
     use maud::{Markup, html};
+
+    /// Create a basic menu.
+    pub fn menu() -> Option<data::Menu<'static>> {
+        Some(data::Menu(&[
+            data::MenuItem {
+                text: "Blog",
+                link: Some("/blog"),
+                children: None,
+            },
+            data::MenuItem {
+                text: "Login",
+                link: Some("/blog/login"),
+                children: None,
+            },
+        ]))
+    }
+    /// Create a basic menu for a special user.
+    pub fn logged_in_menu() -> Option<data::Menu<'static>> {
+        Some(data::Menu(&[
+            data::MenuItem {
+                text: "Blog",
+                link: Some("/blog"),
+                children: None,
+            },
+            data::MenuItem {
+                text: "Profile",
+                link: Some("/blog/profile"),
+                children: None,
+            },
+        ]))
+    }
+
     /// Returns a list of [`Css`](crate::data::Css) scripts that go in my blog page.
     fn css_scripts<'a>() -> [data::Css<'a>; 3] {
         [
@@ -294,16 +348,24 @@ pub mod blog {
     }
 
     /// Returns a basic page, as everything will be managed by `blog_client`.
-    pub fn index() -> Markup {
+    pub fn index(is_logged_in: bool) -> Markup {
         let (glue, load) = data::Script::wasm_bindgen_loader("blog_client");
         let js_scripts = [
             data::Script::External(glue.as_str()),
             data::Script::Embedded(load.as_str()),
         ];
         let css_scripts = css_scripts();
+        let menu = if is_logged_in {
+            logged_in_menu()
+        } else {
+            menu()
+        };
+        let logo = crate::logo();
         let meta = data::MetaData::builder()
             .scripts(&js_scripts[..])
             .css(&css_scripts[..])
+            .menu(menu.as_ref())
+            .logo(logo.as_ref())
             .build();
         partials::basic_page(html!{}, Some(&meta))
     }

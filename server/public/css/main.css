@@ -36,6 +36,11 @@ li {
     width: 100%;
 
     padding: 20px;
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
 }
 .site-body {
     flex-grow: 1;
@@ -51,9 +56,9 @@ li {
     width: 100%;
 
     padding: 20px 20px;
-}
-
-.logo {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .copyright {
@@ -82,3 +87,36 @@ li {
     filter: invert(50%);
 }
 
+.menu {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+.menu > li {
+    padding: 0;
+    padding-right: 2.5em;
+    display: inline-block;
+}
+.menu > li:last-of-type {
+    padding: 0;
+    padding-right: 2vw;
+    display: inline-block;
+}
+
+.logo {
+    height: 6vh;
+    width: 6vh;
+    padding: 5px;
+    padding-left: 2vw;
+
+    box-sizing: content-box;
+}
+.logo > a {
+}
+.logo > a > img {
+    max-width: 100%;
+    max-height: 100%;
+    min-width: 100%;
+    min-height: 100%;
+}

@@ -55,6 +55,7 @@ pub fn api_routes() -> Vec<Route> {
         editor::get,
         accounts::post,
         accounts::account::get,
+        accounts::account::get_self,
         accounts::account::patch,
         accounts::account::delete,
         login::post,

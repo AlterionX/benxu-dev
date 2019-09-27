@@ -1,4 +1,4 @@
-#![feature(type_ascription)]
+#![feature(type_ascription, result_map_or_else)]
 
 #[macro_use]
 extern crate seed;
@@ -22,71 +22,71 @@ extern "C" {
     pub fn log(a: &str);
 }
 
-fn init(url: Url, orders: &mut impl Orders<M>) -> Model {
+fn init(url: Url, orders: &mut impl Orders<M, M>) -> Model {
     if let Some(msg) = routes(url) {
         orders.send_msg(msg);
     }
     Model::default()
 }
-
-fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M>) {
+fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
+    use locations::*;
     match msg {
-        M::ChangePage(loc) => match loc.find_redirect(&model) {
-            Ok(changed_loc) => {
-                log("Attempt to get another page.");
-                orders.skip().send_msg(M::ChangePage(changed_loc));
-            },
-            Err(loc) => match loc.required_data_fetch(&model) {
-                Ok(fetch_req) => {
-                    log("Attempt to fetch data.");
-                    orders.skip().perform_cmd(fetch_req);
-                },
-                Err(loc) => {
-                    log("Attempt to render page directly, since data is already present.");
-                    orders.skip().send_msg(M::RenderPage(loc));
-                },
-            }
-        },
-        M::RenderPage(loc) => {
-            model.loc = loc;
-        },
-        M::DataFetched(fetched) => {
+        M::ChangePage(loc) => { loc.prep_page_for_render(&model.loc, &model.store, orders); },
+        M::RenderPage(loc) => { model.loc = loc; },
+        M::StoreOp(op, f) => {
             log("Data fetched. Will now render page.");
-            let loc = fetched.to_loc();
-            if let Err(m) = model.update_with(fetched) {
-                orders.send_msg(m);
-            } else {
-                orders.send_msg(M::RenderPage(loc));
-            }
+            f(model.store.exec(op)).map(|m| orders.send_msg(m));
         },
-        M::Login(login_msg) => {
-            log(format!("Handling login update.").as_str());
-            if let locations::Location::Login(s) = &mut model.loc {
-                locations::login::update(login_msg, s, &mut model.store, orders);
+        // TODO remove boilerplate with macro?
+        M::Listing(msg) => {
+            log(format!("Handling editor update.").as_str());
+            if let Location::Listing(s) = &mut model.loc {
+                listing::update(msg, s, &model.store, &mut orders.proxy(M::Listing));
             } else {
                 orders.skip();
             }
         },
-        _ => (),
+        M::Viewer(msg) => {
+            log(format!("Handling viewer update.").as_str());
+            if let Location::Viewer(s) = &mut model.loc {
+                viewer::update(msg, s, &model.store, &mut orders.proxy(M::Viewer));
+            } else {
+                orders.skip();
+            }
+        },
+        M::Login(msg) => {
+            log(format!("Handling login update.").as_str());
+            if let Location::Login(s) = &mut model.loc {
+                login::update(msg, s, &model.store, &mut orders.proxy(M::Login));
+            } else {
+                orders.skip();
+            }
+        },
+        M::Editor(msg) => {
+            log(format!("Handling editor update.").as_str());
+            if let Location::Editor(s) = &mut model.loc {
+                editor::update(msg, s, &model.store, &mut orders.proxy(M::Editor));
+            } else {
+                orders.skip();
+            }
+        },
     }
 }
-
-fn routes(url: seed::Url) -> Option<M> {
+fn routes(url: Url) -> Option<M> {
     log(format!("Routing: {:?}", url).as_str());
     messages::RouteMatch::from(url).into_inner()
 }
-
 fn view(m: &Model) -> impl View<M> {
     log(format!("Converting location {:?} to view.", m.loc).as_str());
     m.to_view()
 }
 
 #[wasm_bindgen(start)]
-pub fn render() {
+pub fn begin_app() {
     log("Beginning render.");
-    let body_tag = seed::body();
 
     let app = seed::App::build(init, update, view);
+    let body_tag = seed::body();
     let app = match body_tag.query_selector("main") {
         Ok(Some(main_tag)) => app.mount(main_tag),
         _ => app.mount(body_tag),

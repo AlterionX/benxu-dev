@@ -24,10 +24,13 @@ path = "../blog-login-enum"
 version = "0.4.1"
 git = "https://github.com/David-OConnor/seed.git"
 [dependencies.serde]
-serde = { version = "1.0.101", features = ["derive"] }
+version = "1.0.101"
+features = ["derive"]
 
 [dependencies.boolinator]
 version = "2.4.0"
+[dependencies.tap]
+version = "0.4.0"
 [dependencies.uuid]
 version = "0.7.4"
 features = ["serde"]

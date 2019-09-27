@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use seed::prelude::*;
 use futures::Future;
 use seed::fetch::FetchObject;
@@ -5,11 +7,11 @@ use chrono::{DateTime, Utc};
 use serde::{Serialize, Deserialize};
 use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 
-use login_enum::*;
-use db_models::models::posts;
+use login_enum::{Authentication, Password};
+use db_models::models::users;
 use crate::{
     messages::M as GlobalM,
-    locations::*,
+    model::{Store as GlobalS, StoreOperations as GSOp},
 };
 
 #[derive(Debug, Clone)]
@@ -25,16 +27,13 @@ pub enum M {
     LastName(String),
     Email(String),
 
-    Creation,
-    Login,
+    CreateUser,
+    CreateCredential,
 
-    UserCreation(FetchObject<users::DataNoMeta>),
-    CredentialCreation(FetchObject<users::DataNoMeta>),
-    QueryResult(FetchObject<users::DataNoMeta>),
+    CreateSession,
 }
-
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct Store {
+pub struct S {
     is_create_mode: bool,
     username: String,
     password: String,
@@ -44,11 +43,14 @@ pub struct Store {
     last_name: Option<String>,
     email: Option<String>,
 }
-impl Store {
+impl S {
     fn create_user_post(&self) -> impl Future<Item = GlobalM, Error = GlobalM> {
         use seed::fetch::{Request, Method};
         const CREATE_USER_URL: &'static str = "/api/accounts";
-        let fetch_map = move |fo| GlobalM::Login(M::UserCreation(fo));
+        let fetch_map = move |fo| GlobalM::StoreOp(
+            GSOp::UpdateUser(fo),
+            |res| res.ok().map(|_| GlobalM::Login(M::CreateCredential))
+        );
         Request::new(CREATE_USER_URL)
             .method(Method::Post)
             .send_json(&users::NewNoMeta {
@@ -59,11 +61,11 @@ impl Store {
             })
             .fetch_json(fetch_map)
     }
-    fn create_credential_post(&self) -> impl Future<Item = GlobalM, Error = GlobalM> {
+    fn create_credential_post(&self) -> impl Future<Item = M, Error = M> {
         use seed::fetch::{Request, Method};
-        const LOGIN_URL: &'static str = "/api/credentials/pws";
-        let fetch_map = move |fo| GlobalM::Login(M::CredentialCreation(fo));
-        Request::new(LOGIN_URL)
+        const CREDENTIAL_URL: &'static str = "/api/credentials/pws";
+        let fetch_map = move |_: FetchObject<()>| M::CreateCredential;
+        Request::new(CREDENTIAL_URL)
             .method(Method::Post)
             .send_json(&Authentication::Password(Password {
                 user_name: self.username.clone(),
@@ -71,10 +73,13 @@ impl Store {
             }))
             .fetch_json(fetch_map)
     }
-    fn post(&self) -> impl Future<Item = GlobalM, Error = GlobalM> {
+    fn create_session_post(&self) -> impl Future<Item = GlobalM, Error = GlobalM> {
         use seed::fetch::{Request, Method};
         const LOGIN_URL: &'static str = "/api/login";
-        let fetch_map = move |fo| GlobalM::Login(M::QueryResult(fo));
+        let fetch_map = move |fo| GlobalM::StoreOp(
+            GSOp::UpdateUser(fo),
+            |_| None,
+        );
         Request::new(LOGIN_URL)
             .method(Method::Post)
             .send_json(&Authentication::Password(Password {
@@ -85,13 +90,13 @@ impl Store {
     }
 }
 
-pub fn update(m: M, s: &mut Store, gs: &mut GlobalStore, orders: &mut impl Orders<GlobalM>) {
+pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM>) {
     crate::log(format!("Updating store with {:?}", m).as_str());
     match m {
         M::UserName(un) => s.username = un,
         M::Password(pw) => s.password = pw,
 
-        M::ToggleCreateMode => update(M::SetCreateMode(!s.is_create_mode), s, gs, orders),
+        M::ToggleCreateMode => { update(M::SetCreateMode(!s.is_create_mode), s, gs, orders) },
         M::SetCreateMode(is_mode) => s.is_create_mode = is_mode,
 
         M::PasswordConfirmation(pw) => s.password_confirmation = Some(pw),
@@ -99,58 +104,13 @@ pub fn update(m: M, s: &mut Store, gs: &mut GlobalStore, orders: &mut impl Order
         M::LastName(last) => s.last_name = Some(last),
         M::Email(email) => s.email = Some(email),
 
-        M::Creation => {
-            orders
-                .skip()
-                .perform_cmd(s.create_user_post());
-        },
-        M::Login => {
-            orders
-                .skip()
-                .perform_cmd(s.post());
-        },
-        M::UserCreation(fo) => {
-            match fo.response() {
-                Err(e) => crate::log(format!("Error {:?} occurred! TODO: show an error.", e).as_str()),
-                Ok(fetched) => {
-                    let unparsed = fetched.data;
-                    let parsed = crate::model::User {
-                        id: unparsed.id,
-                        name: crate::model::Name {
-                            first: unparsed.first_name.unwrap_or("unknown".to_owned()),
-                            last: unparsed.last_name.unwrap_or("unknown".to_owned()),
-                            nickname: "unknown".to_owned(),
-                        },
-                        can_see_unpublished: false,
-                    };
-                    gs.user.replace(parsed);
-                    orders.perform_cmd(s.create_credential_post());
-                },
-            }
-        },
-        M::QueryResult(fo) => {
-            match fo.response() {
-                Err(e) => crate::log(format!("Error {:?} occurred! TODO: show an error.", e).as_str()),
-                Ok(fetched) => {
-                    let unparsed = fetched.data;
-                    let parsed = crate::model::User {
-                        id: unparsed.id,
-                        name: crate::model::Name {
-                            first: unparsed.first_name.unwrap_or("unknown".to_owned()),
-                            last: unparsed.last_name.unwrap_or("unknown".to_owned()),
-                            nickname: "unknown".to_owned(),
-                        },
-                        can_see_unpublished: false,
-                    };
-                    gs.user.replace(parsed);
-                },
-            }
-        },
-        // TODO consider if there are any updates for when credentials get created.
-        M::CredentialCreation(_fo) => (),
+        M::CreateUser => { orders.perform_g_cmd(s.create_user_post()); },
+        M::CreateSession => { orders.perform_g_cmd(s.create_session_post()); },
+        M::CreateCredential => { orders.perform_cmd(s.create_credential_post()); },
     }
 }
-pub fn render(s: &Store, gs: &GlobalStore) -> seed::dom_types::Node<GlobalM> {
+
+pub fn render(s: &S, _gs: &GlobalS) -> Node<M> {
     form![
         p!["Please enter your username"],
         input![
@@ -162,7 +122,7 @@ pub fn render(s: &Store, gs: &GlobalStore) -> seed::dom_types::Node<GlobalM> {
             },
             input_ev(Ev::Input, |text| {
                 crate::log(format!("Updating username to {:?}!", text).as_str());
-                GlobalM::Login(login::M::UserName(text))
+                M::UserName(text)
             }),
         ],
         br![],
@@ -173,7 +133,7 @@ pub fn render(s: &Store, gs: &GlobalStore) -> seed::dom_types::Node<GlobalM> {
                 At::Placeholder => "password";
                 At::Type => "password";
             },
-            input_ev(Ev::Input, |text| GlobalM::Login(login::M::Password(text))),
+            input_ev(Ev::Input, |text| M::Password(text)),
         ],
         br![],
         if s.is_create_mode {
@@ -185,7 +145,7 @@ pub fn render(s: &Store, gs: &GlobalStore) -> seed::dom_types::Node<GlobalM> {
                         At::Placeholder => "password";
                         At::Type => "password";
                     },
-                    input_ev(Ev::Input, |text| GlobalM::Login(login::M::PasswordConfirmation(text))),
+                    input_ev(Ev::Input, |text| M::PasswordConfirmation(text)),
                 ],
                 br![],
                 p!["Please enter your first name."],
@@ -195,7 +155,7 @@ pub fn render(s: &Store, gs: &GlobalStore) -> seed::dom_types::Node<GlobalM> {
                         At::Placeholder => "First Name";
                         At::Type => "text";
                     },
-                    input_ev(Ev::Input, |text| GlobalM::Login(login::M::FirstName(text))),
+                    input_ev(Ev::Input, |text| M::FirstName(text)),
                 ],
                 br![],
                 p!["Please enter your last name."],
@@ -205,7 +165,7 @@ pub fn render(s: &Store, gs: &GlobalStore) -> seed::dom_types::Node<GlobalM> {
                         At::Placeholder => "last name";
                         At::Type => "text";
                     },
-                    input_ev(Ev::Input, |text| GlobalM::Login(login::M::LastName(text))),
+                    input_ev(Ev::Input, |text| M::LastName(text)),
                 ],
                 br![],
                 p!["Please enter your email."],
@@ -215,7 +175,7 @@ pub fn render(s: &Store, gs: &GlobalStore) -> seed::dom_types::Node<GlobalM> {
                         At::Placeholder => "email";
                         At::Type => "email";
                     },
-                    input_ev(Ev::Input, |text| GlobalM::Login(login::M::Email(text))),
+                    input_ev(Ev::Input, |text| M::Email(text)),
                 ],
                 br![],
             ]
@@ -227,7 +187,7 @@ pub fn render(s: &Store, gs: &GlobalStore) -> seed::dom_types::Node<GlobalM> {
                     "Already have an account? Login instead!",
                     raw_ev(Ev::Click, |e| {
                         e.prevent_default();
-                        GlobalM::Login(M::Creation)
+                        M::CreateUser
                     }),
                 ],
                 br![],
@@ -236,7 +196,7 @@ pub fn render(s: &Store, gs: &GlobalStore) -> seed::dom_types::Node<GlobalM> {
                     "Log in",
                     raw_ev(Ev::Click, |e| {
                         e.prevent_default();
-                        GlobalM::Login(M::SetCreateMode(false))
+                        M::SetCreateMode(false)
                     }),
                 ],
             ]
@@ -247,7 +207,7 @@ pub fn render(s: &Store, gs: &GlobalStore) -> seed::dom_types::Node<GlobalM> {
                     "Don't have an account yet? Sign up.",
                     raw_ev(Ev::Click, |e| {
                         e.prevent_default();
-                        GlobalM::Login(M::Login)
+                        M::CreateSession
                     }),
                 ],
                 br![],
@@ -256,7 +216,7 @@ pub fn render(s: &Store, gs: &GlobalStore) -> seed::dom_types::Node<GlobalM> {
                     "Sign up",
                     raw_ev(Ev::Click, |e| {
                         e.prevent_default();
-                        GlobalM::Login(M::SetCreateMode(true))
+                        M::SetCreateMode(true)
                     }),
                 ],
             ]

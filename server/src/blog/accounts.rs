@@ -68,7 +68,7 @@ pub fn create_account(
 pub mod account {
     use super::*;
 
-    /// Handler to get the account info page. Accounts are private only for now -- you can only
+    /// Handler to get the account info. Accounts are private only for now -- you can only
     /// view this page if you're logged in as the correct user.
     #[get("/accounts/<id>")]
     pub fn get(
@@ -80,6 +80,20 @@ pub mod account {
         if credentials.user_id() != id {
             return Err(Status::Unauthorized);
         }
+        db.find_user_by_id(id)
+            .map(users::Data::strip_meta)
+            .map(Json)
+            .map_err(|_| Status::InternalServerError)
+    }
+    /// Handler to get the account info page. Accounts are private only for now -- you can only
+    /// view this page if you're logged in as the correct user.
+    #[get("/accounts/me")]
+    pub fn get_self(
+        db: db::DB,
+        credentials: Option<auth::UnverifiedPermissionsCredential>,
+    ) -> Result<Json<users::DataNoMeta>, Status> {
+        let credentials = credentials.ok_or(Status::Unauthorized)?;
+        let id = credentials.user_id();
         db.find_user_by_id(id)
             .map(users::Data::strip_meta)
             .map(Json)

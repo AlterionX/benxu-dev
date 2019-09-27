@@ -2,6 +2,7 @@ use boolinator::Boolinator;
 use crate::{
     requests::PostQuery,
     locations::*,
+    model,
 };
 
 #[derive(Clone)]
@@ -11,14 +12,16 @@ pub enum PostAccessMethod {
 }
 #[derive(Clone)]
 pub enum M {
-    Login(login::M),
-    SubmitPost(String, String, Option<uuid::Uuid>),
-    AccessPost(PostAccessMethod),
+    // Change locations
     ChangePage(Location),
     RenderPage(Location),
-    LoadInternal,
-    Navigate,
-    DataFetched(LocationWithData),
+    // Globabl state
+    StoreOp(model::StoreOperations, fn(Result<Option<Location>, ()>) -> Option<M>),
+    // Location specific
+    Login(login::M),
+    Editor(editor::M),
+    Viewer(viewer::M),
+    Listing(listing::M),
 }
 impl M {
     pub fn page_change(loc: Location) -> Self {
@@ -31,22 +34,24 @@ impl RouteMatch {
     pub fn into_inner(self) -> Option<M> {
         self.0
     }
-    fn to_opt_msg(url: seed::Url) -> Option<M> {
+    fn to_opt_msg(mut url: seed::Url) -> Option<M> {
         crate::log("Hello from beyond...");
-        let root = (url.path.get(0)?.as_ref(): &str == "blog")
-            .as_some_from(|| url.path.get(1))?
-            .map(|s| if s == "" {
-                "home"
-            } else {
-                s.as_str()
-            })
-            .unwrap_or("home");
+        let potential_id = (url.path.len() >= 3)
+            .as_some_from(|| url.path.remove(2));
+        let potential_resource = (url.path.len() >= 2)
+            .as_some_from(|| url.path.remove(1));
+        let potential_root = (url.path.len() >= 1)
+            .as_some_from(|| url.path.remove(0));
+        let root = (potential_root?.as_ref(): &str == "blog")
+            .as_some_from(|| potential_resource)?
+            .map(|s| if s == "" { "home".to_owned() } else { s })
+            .unwrap_or("home".to_owned());
         crate::log(format!("{:?}", root).as_str());
-        Some(M::ChangePage(match root {
-            "home" => Location::Home(home::Store { query: url.search.map(PostQuery::Raw) }),
-            "posts" => Location::Viewer(url.path[2].as_str().into()),
-            "editor" => Location::Editor(url.path[2].as_str().into()),
-            "login" => Location::Login(login::Store::default()),
+        Some(M::ChangePage(match root.as_ref() {
+            "home" => Location::Listing(listing::S { query: url.search.map(PostQuery::Raw) }),
+            "posts" => Location::Viewer(potential_id.expect("post_id to be present").into()),
+            "editor" => Location::Editor(potential_id.expect("post_id to be present").into()),
+            "login" => Location::Login(login::S::default()),
             _ => Location::NotFound,
         }))
     }

@@ -1,11 +1,13 @@
 //! Represents all methods to sign into the site.
 
+use serde::{Deserialize, Serialize};
+
 /// Data needed for single sign on (sso). Currently unimplemented
 pub mod sso {
     use serde::{Deserialize, Serialize};
 
     /// An enum matching all the different SSO providers.
-    #[derive(Serialize, Deserialize)]
+    #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
     pub enum Credentials {
         /// Google's SSO provider's data.
         Google(google::Data),
@@ -23,16 +25,16 @@ pub mod sso {
 
     /// Google specific SSO structs.
     pub mod google {
-        use serde::{Deserialize, Serialize};
         #[cfg(feature = "diesel")]
         use crate::schema::*;
+        use serde::{Deserialize, Serialize};
 
         /// The complete model of a row in the `google_sso` table.
-        #[derive(Serialize, Deserialize)]
+        #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
         #[cfg_attr(
             feature = "diesel",
             derive(Identifiable, Queryable),
-            table_name = "google_sso",
+            table_name = "google_sso"
         )]
         pub struct Data {
             /// The id of the row.
@@ -45,18 +47,18 @@ pub mod sso {
 
 /// Password record data.
 pub mod pw {
-    use chrono::{DateTime, Utc};
-    use serde::{Deserialize, Serialize};
     #[cfg(feature = "diesel")]
     use crate::schema::*;
+    use chrono::{DateTime, Utc};
+    use serde::{Deserialize, Serialize};
 
     /// Fully represents a row in the passwords table.
-    #[derive(Serialize, Deserialize)]
+    #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
     #[cfg_attr(
         feature = "diesel",
         derive(Identifiable, Associations, Queryable),
         belongs_to(parent = "crate::models::users::Data", foreign_key = "user_id"),
-        table_name = "passwords",
+        table_name = "passwords"
     )]
     pub struct Data {
         /// Id of the row.
@@ -78,12 +80,8 @@ pub mod pw {
     }
 
     /// Represents a new row to be added to the table.
-    #[derive(Serialize, Deserialize)]
-    #[cfg_attr(
-        feature = "diesel",
-        derive(Insertable),
-        table_name = "passwords",
-    )]
+    #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+    #[cfg_attr(feature = "diesel", derive(Insertable), table_name = "passwords")]
     pub struct NewWithId<'a> {
         /// Id of the row to be added.
         id: uuid::Uuid,
@@ -113,7 +111,7 @@ pub mod pw {
     }
 
     /// Represents a new row without the primary key.
-    #[derive(Serialize, Deserialize)]
+    #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
     pub struct New<'a> {
         /// Id of the user who will create the row.
         pub created_by: uuid::Uuid,
@@ -128,12 +126,8 @@ pub mod pw {
     }
 
     /// Represents a set of changes to the row.
-    #[derive(Serialize, Deserialize)]
-    #[cfg_attr(
-        feature = "diesel",
-        derive(AsChangeset),
-        table_name = "passwords",
-    )]
+    #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+    #[cfg_attr(feature = "diesel", derive(AsChangeset), table_name = "passwords")]
     pub struct Changed {
         /// Id of the user who most recently updated (aka creeated) the row.
         pub updated_by: uuid::Uuid,
@@ -148,6 +142,7 @@ pub mod pw {
 pub mod fido {}
 
 /// Represents one of many types of credentials stored in database.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Data {
     /// Denotes that data represents a password credential.
     Password(pw::Data),

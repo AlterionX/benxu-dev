@@ -6,10 +6,11 @@ use serde::{Deserialize, Serialize};
 use crate::schema::*;
 
 /// Data representing a complete row in the table.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[cfg_attr(
     feature = "diesel",
     derive(Identifiable, Queryable),
-    table_name = "tags",
+    table_name = "tags"
 )]
 pub struct Data {
     /// The id of the new record.
@@ -22,11 +23,11 @@ pub struct Data {
 
 /// Data to be inserted as a new row in the table. Automatically adds an id to the struct
 /// [`New`](crate::models::tags::New).
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[cfg_attr(
     feature = "diesel",
     derive(Identifiable, Insertable),
-    table_name = "tags",
+    table_name = "tags"
 )]
 pub struct NewWithId<'a> {
     /// The id of the new record.
@@ -51,7 +52,7 @@ impl<'a> From<New<'a>> for NewWithId<'a> {
 }
 
 /// A simple new tag record, without the id.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct New<'a> {
     /// The name of the tag.
     pub name: &'a str,
@@ -62,12 +63,8 @@ pub struct New<'a> {
 }
 
 /// An update to the name and description of the tag.
-#[derive(Serialize, Deserialize)]
-#[cfg_attr(
-    feature = "diesel",
-    derive(AsChangeset),
-    table_name = "tags",
-)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "diesel", derive(AsChangeset), table_name = "tags")]
 pub struct Update {
     /// The name of the tag.
     pub name: Option<String>,

@@ -7,12 +7,12 @@ use serde::{Deserialize, Serialize};
 use crate::schema::*;
 
 /// Data representing a complete row in the table.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[cfg_attr(
     feature = "diesel",
     derive(Identifiable, Associations, Queryable),
     belongs_to(parent = "crate::models::users::Data", foreign_key = "user_id"),
-    table_name = "permissions",
+    table_name = "permissions"
 )]
 pub struct Data {
     /// The id of the row.
@@ -29,12 +29,8 @@ pub struct Data {
 
 /// Data representing a new permission, but with an id. This is a convenience struct so that the
 /// user does not need to create an id manually.
-#[derive(Serialize, Deserialize)]
-#[cfg_attr(
-    feature = "diesel",
-    derive(Insertable),
-    table_name = "permissions",
-)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "diesel", derive(Insertable), table_name = "permissions")]
 pub struct NewWithId<'a> {
     /// The id of the row being inserted.
     id: uuid::Uuid,
@@ -58,7 +54,7 @@ impl<'a> From<New<'a>> for NewWithId<'a> {
 }
 
 /// Represents a new permission for a specific user.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct New<'a> {
     /// The creator of this permission.
     pub created_by: uuid::Uuid,

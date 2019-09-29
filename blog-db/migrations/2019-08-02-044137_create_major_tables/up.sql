@@ -37,7 +37,8 @@ CREATE TABLE posts (
     deleted_by uuid REFERENCES users(id),
     -- basic info
     title TEXT NOT NULL UNIQUE,
-    body TEXT NOT NULL
+    body TEXT NOT NULL,
+    slug VARCHAR(100) UNIQUE
 );
 
 CREATE TABLE tags (
@@ -71,7 +72,7 @@ CREATE TABLE passwords (
     user_id uuid REFERENCES users(id) NOT NULL UNIQUE,
     -- basic info
     hash TEXT NOT NULL,
-    salt VARCHAR(16) NOT NULL
+    salt VARCHAR(24) NOT NULL
 );
 CREATE TABLE google_sso (
     -- management

@@ -7,11 +7,11 @@ use serde::{Deserialize, Serialize};
 use crate::schema::*;
 
 /// Data representing a complete row in the table.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[cfg_attr(
     feature = "diesel",
     derive(Identifiable, Queryable),
-    table_name = "users",
+    table_name = "users"
 )]
 pub struct Data {
     /// Id of the record.
@@ -41,7 +41,7 @@ impl Data {
 }
 
 /// Data representing the user building_clocks()
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct DataNoMeta {
     /// Id of the record.
     pub id: uuid::Uuid,
@@ -79,12 +79,8 @@ impl From<Data> for DataNoMeta {
 }
 
 /// Represents a new user with its id.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(
-    feature = "diesel",
-    derive(Insertable),
-    table_name = "users",
-)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "diesel", derive(Insertable), table_name = "users")]
 pub struct NewWithId<'a> {
     /// User's email.
     email: &'a str,
@@ -117,7 +113,7 @@ impl<'a> From<New<'a>> for NewWithId<'a> {
 }
 
 /// Represents a new user.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct New<'a> {
     /// User's user name.
     pub user_name: &'a str,
@@ -146,7 +142,7 @@ impl<'a> From<(&'a NewNoMeta, Option<uuid::Uuid>)> for New<'a> {
 }
 
 /// Represents a new user without meta info.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct NewNoMeta {
     /// User's user name.
     pub user_name: String,
@@ -159,12 +155,8 @@ pub struct NewNoMeta {
 }
 
 /// Represents updates to the data structure.
-#[derive(Serialize, Deserialize)]
-#[cfg_attr(
-    feature = "diesel",
-    derive(AsChangeset),
-    table_name = "users",
-)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "diesel", derive(AsChangeset), table_name = "users")]
 pub struct Changed<'a> {
     /// The users's user name.
     pub user_name: Option<&'a str>,
@@ -190,7 +182,7 @@ impl<'a> From<(&'a ChangedNoMeta, Option<uuid::Uuid>)> for Changed<'a> {
 }
 
 /// A list of changes without meta information.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ChangedNoMeta {
     /// The users's user name.
     pub user_name: Option<String>,

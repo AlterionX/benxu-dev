@@ -8,14 +8,31 @@ description = "A set of migration scripts and structs for interacting with the d
 repository = "https://github.com/AlterionX/benxu-dev"
 
 [features]
-default = ["diesel", "dotenv"]
-client-side = []
+server = ["diesel", "rocket", "rocket_contrib"]
+client = []
 
-[dependencies]
-chrono = { version = "0.4.9", features = ["serde"] }
-serde = { version = "1.0.101", features = ["derive"] }
-uuid = { version = "0.7.4", features = ["serde", "v4"] }
+[dependencies.chrono]
+version = "0.4.9"
+features = ["serde"]
+[dependencies.serde]
+version = "1.0.101"
+features = ["derive"]
+[dependencies.uuid]
+version = "0.7.4"
+features = ["serde", "v4"]
+[dependencies.log]
+version = "0.4.8"
+features = ["std", "serde"]
 
-diesel = { version = "1.4.2", features = ["postgres", "chrono", "uuidv07"], optional = true }
-dotenv = { version = "0.14.1", optional = true }
-
+[dependencies.diesel]
+version = "1.4.2"
+features = ["postgres", "chrono", "uuidv07"]
+optional = true
+[dependencies.rocket_contrib]
+version = "0.4.2"
+default-features = false
+optional = true
+features = ["diesel_postgres_pool"]
+[dependencies.rocket]
+version = "0.4.2"
+optional = true

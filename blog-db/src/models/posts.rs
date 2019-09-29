@@ -8,12 +8,11 @@ use serde::{Deserialize, Serialize};
 use crate::schema::*;
 
 /// Data representing a complete row in the table.
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[cfg_attr(
     feature = "diesel",
     derive(Identifiable, Queryable),
-    table_name = "posts",
+    table_name = "posts"
 )]
 pub struct Data {
     /// The id of the record.
@@ -48,6 +47,8 @@ pub struct Data {
     pub title: String,
     /// The body of the blog post.
     pub body: String,
+    /// Friendly name for the blog post.
+    pub slug: Option<String>,
 }
 impl Data {
     /// Strips the meta data before sending it to a client.
@@ -58,9 +59,14 @@ impl Data {
 
 /// Almost the same as [`Data`](crate::models::posts::Data) but without the id, created, and
 /// updated information.
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct DataNoMeta {
+    /// The id of the record.
+    pub id: uuid::Uuid,
+    /// The time at which the record was created.
+    pub created_at: DateTime<Utc>,
+    /// The id of the user who created the record.
+    pub created_by: uuid::Uuid,
     /// The time at which the record was published. [`None`] means that the record has not been
     /// published.
     pub published_at: Option<DateTime<Utc>>,
@@ -83,10 +89,15 @@ pub struct DataNoMeta {
     pub title: String,
     /// The body of the blog post.
     pub body: String,
+    /// Friendly name for the blog post.
+    pub slug: Option<String>,
 }
 impl From<Data> for DataNoMeta {
     fn from(d: Data) -> Self {
         Self {
+            id: d.id,
+            created_at: d.created_at,
+            created_by: d.created_by,
             published_at: d.published_at,
             published_by: d.published_by,
             archived_at: d.archived_at,
@@ -95,17 +106,22 @@ impl From<Data> for DataNoMeta {
             deleted_by: d.deleted_by,
             title: d.title,
             body: d.body,
+            slug: d.slug,
         }
+    }
+}
+impl DataNoMeta {
+    pub fn is_published(&self) -> bool {
+        self.published_at.is_some() && self.archived_at.is_none() && self.deleted_at.is_none()
     }
 }
 
 /// Data representing the id, title, the publishing time, and author of a post.
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[cfg_attr(
     feature = "diesel",
     derive(Identifiable, Queryable),
-    table_name = "posts",
+    table_name = "posts"
 )]
 pub struct BasicData {
     /// The id of the record.
@@ -125,6 +141,8 @@ pub struct BasicData {
     pub title: String,
     /// The body of the blog post.
     pub body: String,
+    /// Friendly name for the blog post.
+    pub slug: Option<String>,
 }
 #[cfg(feature = "diesel")]
 impl BasicData {
@@ -136,6 +154,7 @@ impl BasicData {
         posts::deleted_at,
         posts::title,
         posts::body,
+        posts::slug,
     ) = (
         posts::id,
         posts::created_at,
@@ -144,16 +163,16 @@ impl BasicData {
         posts::deleted_at,
         posts::title,
         posts::body,
+        posts::slug,
     );
 }
 
 /// Represents a new post.
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[cfg_attr(
     feature = "diesel",
     derive(Identifiable, Insertable),
-    table_name = "posts",
+    table_name = "posts"
 )]
 pub struct NewWithId<'a> {
     /// The id of the record.
@@ -186,6 +205,8 @@ pub struct NewWithId<'a> {
     title: &'a str,
     /// The body of the blog post.
     body: &'a str,
+    /// The friendly name for the blog post.
+    slug: Option<&'a str>,
 }
 #[cfg(not(target_arch = "wasm32"))]
 impl<'a> From<New<'a>> for NewWithId<'a> {
@@ -204,13 +225,13 @@ impl<'a> From<New<'a>> for NewWithId<'a> {
 
             title: new.title,
             body: new.body,
+            slug: new.slug,
         }
     }
 }
 
 /// Represents a new post without an id.
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct New<'a> {
     /// The id of the user who created the record.
     pub created_by: uuid::Uuid,
@@ -240,6 +261,8 @@ pub struct New<'a> {
     pub title: &'a str,
     /// The body of the blog post.
     pub body: &'a str,
+    /// The friendly name for the blog post.
+    pub slug: Option<&'a str>,
 }
 impl<'a> From<(&'a NewNoMeta, uuid::Uuid)> for New<'a> {
     fn from((reference, creator): (&'a NewNoMeta, uuid::Uuid)) -> Self {
@@ -256,6 +279,7 @@ impl<'a> From<(&'a NewNoMeta, uuid::Uuid)> for New<'a> {
 
             title: reference.title.as_str(),
             body: reference.body.as_str(),
+            slug: reference.slug.as_ref().map(String::as_str),
         }
     }
 }
@@ -267,8 +291,7 @@ impl<'a> From<(&'a NewNoMeta, uuid::Uuid)> for NewWithId<'a> {
 }
 
 /// Represents a new post without an id as well as the created by and updated by fields.
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct NewNoMeta {
     /// The time at which the record was published. [`None`] means that the record has not been
     /// published.
@@ -293,6 +316,8 @@ pub struct NewNoMeta {
     pub title: String,
     /// The body of the blog post.
     pub body: String,
+    /// The friendly name for the blog post.
+    pub slug: Option<String>,
 }
 impl NewNoMeta {
     /// Default everything other than the title and body to [`None`].
@@ -307,18 +332,14 @@ impl NewNoMeta {
 
             title: title,
             body: body,
+            slug: None,
         }
     }
 }
 
 /// Struct representing changes to the body and title of the post.
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[derive(Serialize, Deserialize)]
-#[cfg_attr(
-    feature = "diesel",
-    derive(AsChangeset),
-    table_name = "posts",
-)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "diesel", derive(AsChangeset), table_name = "posts")]
 pub struct Changed<'a> {
     /// The title of the blog post.
     pub title: Option<&'a str>,
@@ -331,13 +352,8 @@ pub struct Changed<'a> {
 }
 
 /// Struct representing the editing of the blog post.
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[derive(Serialize, Deserialize)]
-#[cfg_attr(
-    feature = "diesel",
-    derive(AsChangeset),
-    table_name = "posts",
-)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "diesel", derive(AsChangeset), table_name = "posts")]
 pub struct Editing {
     /// The person who last updated the post.
     updated_by: uuid::Uuid,
@@ -352,13 +368,8 @@ impl Editing {
 }
 
 /// Struct representing the publishing of the blog post.
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[derive(Serialize, Deserialize)]
-#[cfg_attr(
-    feature = "diesel",
-    derive(AsChangeset),
-    table_name = "posts",
-)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "diesel", derive(AsChangeset), table_name = "posts")]
 pub struct Publishing {
     /// The person who last updated the post.
     updated_by: uuid::Uuid,
@@ -379,13 +390,8 @@ impl Publishing {
 }
 
 /// Struct representing the archival of the blog post.
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[derive(Serialize, Deserialize)]
-#[cfg_attr(
-    feature = "diesel",
-    derive(AsChangeset),
-    table_name = "posts",
-)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "diesel", derive(AsChangeset), table_name = "posts")]
 pub struct Archival {
     /// The person who last updated the post.
     updated_by: uuid::Uuid,
@@ -406,13 +412,8 @@ impl Archival {
 }
 
 /// Struct representing the deletion operation on the struct.
-#[derive(Debug, Clone, PartialEq, Eq)]
-#[derive(Serialize, Deserialize)]
-#[cfg_attr(
-    feature = "diesel",
-    derive(AsChangeset),
-    table_name = "posts",
-)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "diesel", derive(AsChangeset), table_name = "posts")]
 pub struct Deletion {
     /// The person who last updated the post.
     updated_by: uuid::Uuid,

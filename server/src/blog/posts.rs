@@ -1,15 +1,18 @@
 //! Handlers and functions for managing posts.
 
-use rocket::http::{Status, RawStr};
+use rocket::http::{RawStr, Status};
 use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
 use chrono::DateTime;
 
-use crate::blog::{auth, DB, db};
+use crate::blog::{auth, db::{self, PostQuery}, DB};
 use blog_db::models::*;
 
 /// Handler for getting posts with criteria.
-#[get("/posts?<offset>&<lim>&<start_time>&<stop_time>&<ord_criteria>&<ord>", format = "json")]
+#[get(
+    "/posts?<offset>&<lim>&<start_time>&<stop_time>&<ord_criteria>&<ord>",
+    format = "json"
+)]
 pub fn get(
     db: DB,
     start_time: Option<&RawStr>,
@@ -30,27 +33,15 @@ pub fn get(
         offset.is_some(),
         lim.is_some(),
     ]
-        .into_iter()
-        .filter(|b| **b)
-        .count();
+    .into_iter()
+    .filter(|b| **b)
+    .count();
     if num_passed != 2 {
         Err(Status::BadRequest)
     } else if let (Some(start_time), Some(stop_time)) = (start_time, stop_time) {
-        get_by_date_range(
-            db,
-            start_time,
-            stop_time,
-            ord_criteria,
-            ord,
-        )
+        get_by_date_range(db, start_time, stop_time, ord_criteria, ord)
     } else if let (Some(lim), Some(offset)) = (lim, offset) {
-        get_by_limit_and_offset(
-            db,
-            offset,
-            lim,
-            ord_criteria,
-            ord,
-        )
+        get_by_limit_and_offset(db, offset, lim, ord_criteria, ord)
     } else {
         Err(Status::BadRequest)
     }
@@ -63,29 +54,30 @@ pub fn get_by_date_range(
     ord_criteria: db::OrderingField,
     ord: db::SortOrdering,
 ) -> Result<Json<Vec<posts::BasicData>>, Status> {
-    let start_time = start_time.percent_decode()
+    let start_time = start_time
+        .percent_decode()
         .as_ref()
         .map(|c| &**c)
         .map(DateTime::parse_from_rfc3339)
         .map_err(|_| Status::BadRequest)?
         .map_err(|_| Status::BadRequest)?;
-    let stop_time = stop_time.percent_decode()
+    let stop_time = stop_time
+        .percent_decode()
         .as_ref()
         .map(|c| &**c)
         .map(DateTime::parse_from_rfc3339)
         .map_err(|_| Status::BadRequest)?
         .map_err(|_| Status::BadRequest)?;
     let max_posts = 500;
-    db
-        .find_posts_with_post_listing_conditions(db::PostListing::Date {
-            start: start_time.into(),
-            stop: stop_time.into(),
-            order_by: ord_criteria,
-            ord: ord,
-            limit: max_posts,
-        })
-        .map(Json)
-        .map_err(|_| Status::InternalServerError)
+    db.find_posts_with_post_listing_conditions(db::PostListing::Date {
+        start: start_time.into(),
+        stop: stop_time.into(),
+        order_by: ord_criteria,
+        ord: ord,
+        limit: max_posts,
+    })
+    .map(Json)
+    .map_err(|_| Status::InternalServerError)
 }
 
 /// Handler for getting posts with an offset and a limit.
@@ -97,15 +89,14 @@ pub fn get_by_limit_and_offset(
     ord_criteria: db::OrderingField,
     ord: db::SortOrdering,
 ) -> Result<Json<Vec<posts::BasicData>>, Status> {
-    db
-        .find_posts_with_post_listing_conditions(db::PostListing::LimAndOffset {
-            offset: offset,
-            lim: std::cmp::min(lim, 500),
-            order_by: ord_criteria,
-            ord: ord,
-        })
-        .map(Json)
-        .map_err(|_| Status::InternalServerError)
+    db.find_posts_with_post_listing_conditions(db::PostListing::LimAndOffset {
+        offset: offset,
+        lim: std::cmp::min(lim, 500),
+        order_by: ord_criteria,
+        ord: ord,
+    })
+    .map(Json)
+    .map_err(|_| Status::InternalServerError)
 }
 
 /// Handler for posting a post to the database. Requires user to be logged in and have the
@@ -158,11 +149,12 @@ pub mod post {
     /// [`CanPost`](crate::blog::auth::perms::CanEdit) permission.
     #[patch("/posts/<id>", data = "<update>")]
     pub fn patch(
-        db: DB,
         id: RUuid,
         update: Json<posts::Changed>,
         _editor: auth::Credentials<auth::perms::CanEdit>,
+        db: DB,
     ) -> Status {
+        log::debug!("Hit post patch endpoint.");
         let id = id.into_inner();
         map_to_status(db.update_post_with_id(id, &update.into_inner()))
     }

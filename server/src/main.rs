@@ -1,5 +1,4 @@
 #![feature(
-    const_str_as_bytes,
     proc_macro_hygiene,
     type_ascription,
     decl_macro,
@@ -253,7 +252,8 @@ impl Server {
 
 /// Initializes server and listens for errors that occur after launching rocket.
 fn main() {
-    simple_logger::init_with_level(log::Level::Info).expect("No problems initializing simple_logger.");
+    simple_logger::init_with_level(log::Level::Trace)
+        .expect("No problems initializing simple_logger.");
     info!("Initializing server...");
     let mut server = Server::new();
     info!("Server initialized!");

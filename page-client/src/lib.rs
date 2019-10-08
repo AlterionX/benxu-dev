@@ -2,8 +2,8 @@
 
 //! Provides a functions to generate static webpages for benxu.dev at compile time.
 
-mod data;
-mod partials;
+pub mod data;
+pub mod partials;
 
 pub fn logo() -> Option<data::Logo<'static>> {
     Some(data::Logo {
@@ -339,11 +339,12 @@ pub mod blog {
     }
 
     /// Returns a list of [`Css`](crate::data::Css) scripts that go in my blog page.
-    fn css_scripts<'a>() -> [data::Css<'a>; 3] {
+    fn css_scripts<'a>() -> [data::Css<'a>; 4] {
         [
             data::Css::Critical { src: "reset" },
             data::Css::Critical { src: "typography" },
             data::Css::Critical { src: "main" },
+            data::Css::NonCritical { src: "blog" },
         ]
     }
 
@@ -367,6 +368,6 @@ pub mod blog {
             .menu(menu.as_ref())
             .logo(logo.as_ref())
             .build();
-        partials::basic_page(html!{}, Some(&meta))
+        partials::basic_page(html!{ "Loadinggggggggggggg" }, Some(&meta))
     }
 }

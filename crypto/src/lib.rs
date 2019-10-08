@@ -1,5 +1,4 @@
 #![feature(
-    const_str_as_bytes,
     proc_macro_hygiene,
     type_ascription,
     decl_macro,

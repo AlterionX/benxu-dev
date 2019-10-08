@@ -1,43 +1,14 @@
 use std::fmt::Display;
 
-use seed::prelude::*;
-use futures::Future;
-use seed::fetch::FetchObject;
 use chrono::{DateTime, Utc};
 use serde::{Serialize, Deserialize};
 use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 
-use db_models::models::posts;
-use crate::{
-    messages::M,
-    locations::*,
-};
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum PostMarker {
-    Uuid(uuid::Uuid),
-    ShortName(String),
-}
-impl From<String> for PostMarker {
-    fn from(s: String) -> Self {
-        match uuid::Uuid::parse_str(s.as_ref()) {
-            Ok(id) => Self::Uuid(id),
-            Err(_) => Self::ShortName(s),
-        }
-    }
-}
-impl From<&str> for PostMarker {
-    fn from(s: &str) -> Self {
-        match uuid::Uuid::parse_str(s) {
-            Ok(id) => Self::Uuid(id),
-            Err(_) => Self::ShortName(s.to_owned()),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize)]
 pub enum SortOrdering {
-    Ascending, Descending
+    Ascending,
+    Descending,
 }
 impl Display for SortOrdering {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -47,7 +18,8 @@ impl Display for SortOrdering {
         }
     }
 }
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize)]
 pub enum PostSort {
     Date(SortOrdering),
     AlphabeticalTitle(SortOrdering),
@@ -60,7 +32,13 @@ impl Display for PostSort {
         }
     }
 }
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+impl Default for PostSort {
+    fn default() -> Self {
+        Self::Date(SortOrdering::Descending)
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize)]
 pub enum PostPagination {
     Ten,
     Twenty,
@@ -75,7 +53,13 @@ impl PostPagination {
         }
     }
 }
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+impl Default for PostPagination {
+    fn default() -> Self {
+        Self::Twenty
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize)]
 pub enum PostRange {
     ByDate {
         begin: DateTime<Utc>,
@@ -113,7 +97,7 @@ impl Default for PostRange {
 impl Display for PostRange {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.clone().into_offset_and_lim() {
-            Ok((lim, offset)) => write!(f, "lim={}&offset={}", lim, offset),
+            Ok((offset, lim)) => write!(f, "lim={}&offset={}", lim, offset),
             Err((begin, end)) => write!(
                 f,
                 "start_time={}&stop_time={}",
@@ -123,7 +107,8 @@ impl Display for PostRange {
         }
     }
 }
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize)]
 pub enum PostQuery {
     Structured {
         range: PostRange,
@@ -148,3 +133,4 @@ impl Default for PostQuery {
         }
     }
 }
+

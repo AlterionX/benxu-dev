@@ -294,9 +294,11 @@ pub struct Menu<'a>(pub &'a [MenuItem<'a>]);
 impl<'a> Render for Menu<'a> {
     fn render(&self) -> Markup {
         html! {
-            ul.menu {
-                @for item in self.0.iter() {
-                    (item)
+            nav.menu {
+                ul {
+                    @for item in self.0.iter() {
+                        (item)
+                    }
                 }
             }
         }
@@ -305,5 +307,10 @@ impl<'a> Render for Menu<'a> {
 impl<'a> Render for &Menu<'a> {
     fn render(&self) -> Markup {
         (*self).render()
+    }
+}
+impl<'a> Menu<'a> {
+    pub fn into_string(self) -> String {
+        self.render().into_string()
     }
 }

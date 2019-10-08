@@ -13,6 +13,7 @@ use rocket::{
     State,
 };
 use serde::{Deserialize, Deserializer, Serialize};
+use tap::*;
 use std::{marker::PhantomData, ops::Deref, str};
 
 use crate::{TokenKeyFixture, TokenKeyStore};
@@ -24,7 +25,7 @@ pub const AUTH_COOKIE_NAME: &'static str = "_atk";
 /// A struct representing the list of permissions a user has.
 ///
 /// TODO query the database for the list of permissions instead of serializing it.
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct Credentials<L> {
     #[serde(skip)]
     level: PhantomData<L>,
@@ -268,12 +269,14 @@ impl<'de> Deserialize<'de> for Credentials<perms::Any> {
         )
     }
 }
-impl<'a, 'r, L: perms::Verifiable> FromRequest<'a, 'r> for Credentials<L> {
+impl<'a, 'r, L: perms::Verifiable + std::fmt::Debug> FromRequest<'a, 'r> for Credentials<L> {
     type Error = Error;
     fn from_request(req: &'a Request<'r>) -> Outcome<Self, Self::Error> {
-        req.guard::<UnverifiedPermissionsCredential>()?
+        req.guard::<UnverifiedPermissionsCredential>()
+            .tap(|res| log::debug!("Found credentials: {:?}", res))?
             .into_inner()
             .change_level()
+            .tap(|res| log::debug!("Level changed: {:?}", res))
             .map_err(|_| Error::Unauthorized)
             .into_outcome(Status::Unauthorized)
     }
@@ -281,7 +284,7 @@ impl<'a, 'r, L: perms::Verifiable> FromRequest<'a, 'r> for Credentials<L> {
 
 /// A wrapper around [`Credential<()>`](crate::blog::auth::Credentials) for ensuring awareness of
 /// the lack of permissions.
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct UnverifiedPermissionsCredential(Credentials<perms::Any>);
 impl UnverifiedPermissionsCredential {
     /// Create a new struct, simply wrapping up the
@@ -320,6 +323,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for UnverifiedPermissionsCredential {
 }
 impl From<Credentials<perms::Any>> for UnverifiedPermissionsCredential {
     fn from(cr: Credentials<perms::Any>) -> Self {
+        log::debug!("{:?}", cr);
         Self(cr)
     }
 }

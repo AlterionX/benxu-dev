@@ -3,7 +3,7 @@ use crate::data::*;
 use maud::{html, Markup, DOCTYPE};
 
 /// The `<head>` portion of the webpage.
-fn head(meta: &MetaData) -> Markup {
+pub fn head(meta: &MetaData) -> Markup {
     html! {
         head {
             meta charset=(meta.charset);
@@ -21,7 +21,7 @@ fn head(meta: &MetaData) -> Markup {
     }
 }
 /// The `<header>` portion of the webpage. Displays logos and menus.
-fn header(meta: &MetaData) -> Markup {
+pub fn header(meta: &MetaData) -> Markup {
     html! {
         header.site-header {
             @if let Some(logo) = meta.logo {
@@ -34,7 +34,7 @@ fn header(meta: &MetaData) -> Markup {
     }
 }
 /// The `<footer>` portion of the webpage. Displays copyright and contact information.
-fn footer(meta: &MetaData) -> Markup {
+pub fn footer(meta: &MetaData) -> Markup {
     html! {
         footer.site-footer {
             @if let Some(contact) = meta.contact {
@@ -46,7 +46,7 @@ fn footer(meta: &MetaData) -> Markup {
 }
 /// The `<body>` portion of the webpage. Wraps the main content and offsets it from the header and
 /// footer.
-fn body(m: Markup, meta: &MetaData) -> Markup {
+pub fn body(m: Markup, meta: &MetaData) -> Markup {
     html! {
         body {
             div.bg-img {}
@@ -59,7 +59,7 @@ fn body(m: Markup, meta: &MetaData) -> Markup {
     }
 }
 /// A template of the page with its `<DOCTYPE>` and `<html>` tags.
-fn page(m: Markup, meta: &MetaData) -> Markup {
+pub fn page(m: Markup, meta: &MetaData) -> Markup {
     html! {
         (DOCTYPE)
         html lang=(meta.lang) {

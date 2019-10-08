@@ -1,4 +1,4 @@
-use crate::query::DBConn;
+pub use crate::query::*;
 
 use rocket::{fairing, http, logger, request, Outcome, Rocket, State};
 #[rocket_contrib::database("blog")]

@@ -3,48 +3,137 @@
     font-size: 16px;
     line-height: 1.3em;
 }
+input, textarea, button {
+    color: #000000;
+}
 
-h1, h2, h3, h4, h5, h6 {
+h1, h2, h3, h4, h5, h6, .as-h1, .as-h2, .as-h3, .as-h4, .as-h5, .as-h6 {
     font-family: Candara, Calibri, Segoe, "Segoe UI", Optima, Arial, sans-serif;
-    font-size: 23px;
     font-style: normal;
     font-variant: normal;
     font-weight: 700;
-    line-height: 23px;
+
+    font-size-adjust: 0.5;
 }
-p, li {
+
+p, li, input, textarea, button, .as-p {
     font-family: "Trebuchet MS", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", sans-serif;
-    font-size: 16px;
     font-style: normal;
     font-variant: normal;
     font-weight: 400;
-    line-height: 23px;
 }
-blockquote {
+blockquote, .as-blockquote {
     font-family: "Trebuchet MS", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", sans-serif;
-    font-size: 17px;
     font-style: normal;
     font-variant: normal;
     font-weight: 400;
-    line-height: 23px;
 }
-pre {
+pre, .as-pre {
     font-family: "Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter", monospace;
-    font-size: 11px;
     font-style: normal;
     font-variant: normal;
     font-weight: 400;
+
+    font-size: 11px;
     line-height: 23px;
 }
 
 .italic {
     font-style: italic;
 }
-
 .bold {
     font-weight: bold;
 }
 
 li, p {
     margin-bottom: 0.3em;
+}
+
+/* Font sizes drawn from https://typecast.com/blog/a-more-modern-scale-for-web-typography */
+h1, .as-h1 {
+    font-size: 2em;
+    line-height: 1.25;
+}
+@media (min-width: 43.75em) {
+    h1, .as-h1 {
+        font-size: 2.5em;
+        line-height: 1.125;
+    }
+}
+@media (min-width: 56.25em) {
+    h1, .as-h1 {
+        font-size: 3em;
+        line-height: 1.05;
+    }
+}
+
+h2, .as-h2 {
+    font-size: 1.625em;
+    line-height: 1.15384615;
+}
+@media (min-width: 43.75em) {
+    h2, .as-h2 {
+        font-size: 2em;
+        line-height: 1.25;
+    }
+}
+@media (min-width: 56.25em) {
+    h2, .as-h2 {
+        font-size: 2.25em;
+        line-height: 1.25;
+    }
+}
+
+h3, .as-h3 {
+    font-size: 1.375em;
+    line-height: 1.13636364;
+}
+@media (min-width: 43.75em) {
+    h3, .as-h3 {
+        font-size: 1.5em;
+        line-height: 1.25;
+    }
+}
+@media (min-width: 56.25em) {
+    h3, .as-h3 {
+        font-size: 1.75em;
+        line-height: 1.25;
+    }
+}
+
+h4, .as-h4 {
+    font-size: 1.125em;
+    line-height: 1.11111111;
+}
+@media (min-width: 43.75em) {
+    h4, .as-h4 {
+        line-height: 1.22222222;
+    }
+}
+
+h5, h6, .as-h5, .as-h6 {
+    font-size: 1em;
+    line-height: 1em;
+}
+
+blockquote, .as-blockquote {
+    font-size: 1.25em;
+    line-height: 1.25;
+}
+@media (min-width: 43.75em) {
+    blockquote, .as-blockquote {
+        font-size: 1.5em;
+        line-height: 1.45833333;
+    }
+}
+
+p, li, input, textarea, button, .as-p {
+    font-size: 1em;
+    line-height: 1.375;
+}
+@media (min-width: 43.75em) {
+    p, li, input, textarea, button, .as-p {
+        font-size: 1em;
+        line-height: 1.25em;
+    }
 }

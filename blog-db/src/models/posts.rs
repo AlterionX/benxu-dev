@@ -144,6 +144,11 @@ pub struct BasicData {
     /// Friendly name for the blog post.
     pub slug: Option<String>,
 }
+impl BasicData {
+    pub fn is_published(&self) -> bool {
+        self.published_at.is_some() && self.archived_at.is_none() && self.deleted_at.is_none()
+    }
+}
 #[cfg(feature = "diesel")]
 impl BasicData {
     pub const COLUMNS: (
@@ -209,6 +214,7 @@ pub struct NewWithId<'a> {
     slug: Option<&'a str>,
 }
 #[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "server")]
 impl<'a> From<New<'a>> for NewWithId<'a> {
     fn from(new: New<'a>) -> Self {
         Self {
@@ -284,6 +290,7 @@ impl<'a> From<(&'a NewNoMeta, uuid::Uuid)> for New<'a> {
     }
 }
 #[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "server")]
 impl<'a> From<(&'a NewNoMeta, uuid::Uuid)> for NewWithId<'a> {
     fn from(conv: (&'a NewNoMeta, uuid::Uuid)) -> Self {
         (conv.into(): New).into()
@@ -291,7 +298,7 @@ impl<'a> From<(&'a NewNoMeta, uuid::Uuid)> for NewWithId<'a> {
 }
 
 /// Represents a new post without an id as well as the created by and updated by fields.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct NewNoMeta {
     /// The time at which the record was published. [`None`] means that the record has not been
     /// published.

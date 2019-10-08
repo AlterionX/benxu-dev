@@ -6,7 +6,7 @@ use rocket::{http::Status, State};
 use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
 use crate::{
-    blog::{auth, credentials::data::SavableCredential, DB},
+    blog::{auth, credentials::data::SavableCredential, DB, db::PWQuery},
     PWKeyFixture,
 };
 
@@ -24,8 +24,9 @@ pub mod pws {
         db: DB,
         credentials: auth::UnverifiedPermissionsCredential,
         pw_key_store: State<PWKeyFixture>,
-        to_create: Json<data::Password>,
+        to_create: Json<data::CreatePassword>,
     ) -> Status {
+        use log::*;
         let key = pw_key_store.key();
         let to_create = data::PasswordWithBackingInfo {
             db: &db,
@@ -33,9 +34,9 @@ pub mod pws {
             argon2d_key: &key,
             pw: &to_create,
         };
-        to_create
-            .convert_and_save_with_credentials()
-            .map_or_else(|_| Status::InternalServerError, |_| Status::Ok)
+        let res = to_create.convert_and_save_with_credentials();
+        debug!("Running query resulted in: {:?}", res);
+        res.map_or_else(|_| Status::InternalServerError, |_| Status::Ok)
     }
 
     /// Handlers for manipulating password records.
@@ -72,7 +73,7 @@ pub mod pws {
                     }
                 })?
                 .into();
-            let update = data::Password {
+            let update = data::CreatePassword {
                 user_id: credentials.user_id(),
                 password: changed_pw.into_inner(),
             };

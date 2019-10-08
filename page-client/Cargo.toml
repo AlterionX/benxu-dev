@@ -7,9 +7,17 @@ license = "MIT"
 description = "Provides a set of utilities to build static pages. Built off of maud."
 repository = "https://github.com/AlterionX/benxu-dev"
 
-[dependencies]
-maud = { version = "0.21.0", features = ["rocket"] }
-chrono = { version = "0.4.9", features = ["serde"] }
-serde = { version = "1.0.101", features = ["derive"] }
-typed-builder = "0.3.0"
+[features]
+rocket = ["maud/rocket"]
+
+[dependencies.maud]
+version = "0.21.0"
+[dependencies.chrono]
+version = "0.4.9"
+features = ["serde"]
+[dependencies.serde]
+version = "1.0.101"
+features = ["derive"]
+[dependencies.typed-builder]
+version = "0.3.0"
 

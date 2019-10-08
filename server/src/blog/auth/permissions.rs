@@ -95,54 +95,63 @@ pub trait Verifiable {
 }
 
 /// This level of privlege represents at least the right to create user accounts.
+#[derive(Debug)]
 pub struct CanCreateUser;
 impl Verifiable for CanCreateUser {
     const REQUIRED_PERMS: &'static [Permission] = &[Permission::CreateUser];
 }
 
 /// This level of privlege represents at least the right to change user account information.
+#[derive(Debug)]
 pub struct CanEditUser;
 impl Verifiable for CanEditUser {
     const REQUIRED_PERMS: &'static [Permission] = &[Permission::EditUser];
 }
 
 /// This level of privlege represents at least the right to delete user accounts.
+#[derive(Debug)]
 pub struct CanDeleteUser;
 impl Verifiable for CanDeleteUser {
     const REQUIRED_PERMS: &'static [Permission] = &[Permission::DeleteUser];
 }
 
 /// This level of privlege represents at least the right to edit blog posts.
+#[derive(Debug)]
 pub struct CanEditUserCredentials;
 impl Verifiable for CanEditUserCredentials {
     const REQUIRED_PERMS: &'static [Permission] = &[Permission::EditUserCredentials];
 }
 
 /// This level of privlege represents at least the right to edit blog posts.
+#[derive(Debug)]
 pub struct CanEdit;
 impl Verifiable for CanEdit {
     const REQUIRED_PERMS: &'static [Permission] = &[Permission::EditPost];
 }
 
 /// This level of privlege represents at least the right to delete blog posts.
+#[derive(Debug)]
 pub struct CanDelete;
 impl Verifiable for CanDelete {
     const REQUIRED_PERMS: &'static [Permission] = &[Permission::DeletePost];
 }
 
 /// This level of privlege represents at least the right to create blog posts.
+#[derive(Debug)]
 pub struct CanPost;
 impl Verifiable for CanPost {
     const REQUIRED_PERMS: &'static [Permission] = &[Permission::CreatePost];
 }
 
 /// This level of privlege represents at least the right to publish blog posts.
+#[derive(Debug)]
 pub struct CanPublish;
 impl Verifiable for CanPublish {
     const REQUIRED_PERMS: &'static [Permission] = &[Permission::PublishPost];
 }
 
 /// This level of privlege represents at least the right to archive blog posts.
+#[derive(Debug)]
 pub struct CanArchive;
 impl Verifiable for CanArchive {
     const REQUIRED_PERMS: &'static [Permission] = &[Permission::ArchivePost];
@@ -151,18 +160,21 @@ impl Verifiable for CanArchive {
 /// This level of privlege represents at least the right to grant permissions.
 ///
 /// NOTE: Can only grant permissions they already have.
+#[derive(Debug)]
 pub struct CanGrantPermission;
 impl Verifiable for CanGrantPermission {
     const REQUIRED_PERMS: &'static [Permission] = &[Permission::GrantPermission];
 }
 
 /// This level of privlege represents at least the right to view permissions.
+#[derive(Debug)]
 pub struct CanViewPermission;
 impl Verifiable for CanViewPermission {
     const REQUIRED_PERMS: &'static [Permission] = &[Permission::ViewPermission];
 }
 
 /// This level of privlege represents at least the right to delete permissions.
+#[derive(Debug)]
 pub struct CanDeletePermission;
 impl Verifiable for CanDeletePermission {
     const REQUIRED_PERMS: &'static [Permission] = &[Permission::DeletePermission];

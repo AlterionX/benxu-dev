@@ -3,12 +3,12 @@
 use boolinator::Boolinator;
 
 use crate::{
-    blog::{auth, DB},
+    blog::{auth, db::{PermissionQuery, UserQuery, PWQuery}, DB},
     PWAlgo, PWKeyFixture,
 };
 use blog_db::models::*;
-pub use blog_login_enum::*;
 use crypto::algo::{hash::symmetric::Algo as HashA, Algo as A};
+pub use login_enum::*;
 
 /// Encodes a pairing of input and stored credentials of same type.
 pub enum AuthnWithStored<'a> {
@@ -20,20 +20,23 @@ impl<'a> AuthnWithStored<'a> {
         use log::*;
         match self {
             Self::Password(pw, hash_and_salt) => {
-                let pw = base64::decode(pw.password.as_bytes()).map_err(|_| ())?;
+                debug!("Decode pw from base64.");
+                let hash = base64::decode(hash_and_salt.hash.as_bytes()).map_err(|_| ())?;
+                let salt = base64::decode(hash_and_salt.salt.as_bytes()).map_err(|_| ())?;
                 let salt = {
                     let mut buf = [0; PWAlgo::SALT_LEN as usize];
-                    buf.copy_from_slice(hash_and_salt.salt.as_bytes());
+                    buf.copy_from_slice(salt.as_slice());
                     buf
                 };
                 let hash_input = <PWAlgo as HashA>::VerificationInput::new(
-                    pw,
+                    pw.password.as_bytes().to_vec(),
                     Some(salt),
-                    Some(hash_and_salt.hash.len() as u32),
+                    Some(hash.len() as u32),
                 )
                 .map_err(|_| ())?;
                 trace!("attempting verification.");
-                PWAlgo::new(None).verify(&hash_input, hash_and_salt.hash.as_bytes(), key)
+                PWAlgo::new(None)
+                    .verify(&hash_input, hash.as_slice(), key)
                     .as_result((), ())
             }
         }
@@ -78,10 +81,12 @@ impl CanAuthenticate for Authentication {
         trace!("Found secret key.");
         targeted_credential
             .verify_with_err(&*key)
-            .map(|_| (
-                user,
-                perms.iter().map(|p| auth::Permission::from(p)).collect(),
-            ))
+            .map(|_| {
+                (
+                    user,
+                    perms.iter().map(|p| auth::Permission::from(p)).collect(),
+                )
+            })
             .map_err(|_| auth::Error::BadCredentials)
     }
     fn find_targeted_user(

@@ -40,6 +40,7 @@ pub struct NewWithId<'a> {
     created_by: uuid::Uuid,
 }
 #[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "server")]
 impl<'a> From<New<'a>> for NewWithId<'a> {
     fn from(new_tag: New<'a>) -> Self {
         Self {

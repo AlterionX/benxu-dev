@@ -1,0 +1,46 @@
+.same-line-label {
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.login-wrapper {
+    flex-grow: 1;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+.login-wrapper > form {
+    max-width: 500px;
+}
+.login-wrapper > form > div > input {
+    width: 100%;
+}
+
+.editor {
+    display: flex;
+    flex-direction: column;
+}
+.editor-title {
+    display: flex;
+}
+.editor-title > input {
+    flex-grow: 1;
+}
+.editor-slug {
+    display: flex;
+}
+.editor-slug > input {
+    flex-grow: 1;
+}
+.editor-body {
+    flex-grow: 1;
+
+    display: flex;
+}
+.editor-body > textarea {
+    flex-grow: 1;
+}
+.editor-actions {
+}

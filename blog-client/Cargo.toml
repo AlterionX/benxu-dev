@@ -10,10 +10,26 @@ repository = "https://github.com/AlterionX/benxu-dev"
 [lib]
 crate-type = ["cdylib"]
 
+[dependencies]
+boolinator = "2.4.0"
+tap = "0.4.0"
+percent-encoding = "2.1.0"
+futures = "0.1.29"
+wasm-bindgen = "0.2.51"
+js-sys = "0.3.28"
+log = "0.4.8"
+console_log = "0.1.2"
+fern = "0.5.8"
+
 [dependencies.db-models]
 package = "blog-db"
 version = "0.1.0"
 path = "../blog-db"
+features = ["client"]
+[dependencies.htmlgen]
+package = "static-page-builder"
+version = "0.1.0"
+path = "../page-client"
 default-features = false
 [dependencies.login-enum]
 package = "blog-login-enum"
@@ -22,33 +38,19 @@ path = "../blog-login-enum"
 
 [dependencies.seed]
 version = "0.4.1"
-git = "https://github.com/David-OConnor/seed.git"
+# git = "https://github.com/David-OConnor/seed.git"
+path = "../../seed"
 [dependencies.serde]
 version = "1.0.101"
 features = ["derive"]
-
-[dependencies.boolinator]
-version = "2.4.0"
-[dependencies.tap]
-version = "0.4.0"
 [dependencies.uuid]
 version = "0.7.4"
-features = ["serde"]
+features = ["serde", "wasm-bindgen"]
 [dependencies.chrono]
 version = "0.4.9"
-features = ["serde"]
-[dependencies.percent-encoding]
-version = "2.1.0"
-
-[dependencies.futures]
-version = "^0.1.26"
-
-[dependencies.wasm-bindgen]
-version = "0.2.50"
-[dependencies.js-sys]
-version = "0.3.27"
+features = ["serde", "wasmbind"]
 [dependencies.web-sys]
-version = "0.3.27"
+version = "0.3.28"
 features = [
       'Document',
       'Element',

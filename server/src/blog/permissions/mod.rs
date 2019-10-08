@@ -7,7 +7,7 @@ pub mod data;
 use rocket::http::Status;
 use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
-use crate::blog::{auth, db};
+use crate::blog::{auth, db::{PermissionQuery}, DB};
 use blog_db::models::*;
 
 /// Checks if credentials allows for creation of requested permissions.
@@ -15,7 +15,7 @@ use blog_db::models::*;
 /// Only allows for requested permissions to be created if the user logged in has all the requested
 /// permissions as well as [`CanGrantPermissions`](crate::blog::auth::perms::CanGrantPermission).
 pub fn validate_and_create_all(
-    db: &db::DB,
+    db: &DB,
     credentials: auth::Credentials<auth::perms::CanGrantPermission>,
     target_user_id: uuid::Uuid,
     permissions_to_create: Json<Vec<auth::Permission>>,
@@ -42,7 +42,7 @@ pub fn validate_and_create_all(
     data = "<permissions_to_create>"
 )]
 pub fn post(
-    db: db::DB,
+    db: DB,
     credentials: auth::Credentials<auth::perms::CanGrantPermission>,
     target_user_id: RUuid,
     permissions_to_create: Json<Vec<auth::Permission>>,
@@ -57,7 +57,7 @@ pub fn post(
 /// [`CanDeletePermission`](crate::blog::auth::perms::CanDeletePermission) permission.
 #[delete("/permissions", format = "json", data = "<to_delete>")]
 pub fn delete(
-    db: db::DB,
+    db: DB,
     _credentials: auth::Credentials<auth::perms::CanDeletePermission>,
     to_delete: Json<data::Query>,
 ) -> Result<Json<Vec<permissions::Data>>, Status> {
@@ -87,14 +87,14 @@ pub mod permission {
     use rocket::http::Status;
     use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
-    use crate::blog::{auth, db, permissions::Error};
+    use crate::blog::{auth, db::PermissionQuery, DB, permissions::Error};
     use blog_db::models::*;
 
     /// Gets the permission with the requested id. Requires caller to have the
     /// [`CanViewPermission`](crate::blog::auth::perms::CanViewPermission`) permission.
     #[get("/permissions/<id>")]
     pub fn get(
-        db: db::DB,
+        db: DB,
         _credentials: auth::Credentials<auth::perms::CanViewPermission>,
         id: RUuid,
     ) -> Result<Json<permissions::Data>, Status> {
@@ -106,7 +106,7 @@ pub mod permission {
     /// [`CanDeletePermission`](crate::blog::auth::perms::CanDeletePermission`) permission.
     #[delete("/permissions/<id>")]
     pub fn delete(
-        db: db::DB,
+        db: DB,
         _credentials: auth::Credentials<auth::perms::CanDeletePermission>,
         id: RUuid,
     ) -> Result<Json<permissions::Data>, Status> {

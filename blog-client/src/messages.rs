@@ -1,58 +1,94 @@
 use boolinator::Boolinator;
+use serde::{Serialize, Deserialize};
 use crate::{
     requests::PostQuery,
     locations::*,
     model,
 };
 
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize)]
 pub enum PostAccessMethod {
     ById(uuid::Uuid),
     ByShortName(String),
 }
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum M {
+    // Menu is outside of seed, so we need a special message to swap it with the logged in vs the
+    // not logged in version.
+    UseLoggedInMenu,
+    UseLoggedOutMenu,
     // Change locations
     ChangePage(Location),
+    ChangePageAndUrl(Location),
     RenderPage(Location),
     // Globabl state
-    StoreOp(model::StoreOperations, fn(Result<Option<Location>, ()>) -> Option<M>),
+    StoreOpWithAction(
+        model::StoreOperations,
+        // Uses a pointer to get around the lack of default impls for references in functions
+        // TODO fix when this gets resolved
+        fn(*const model::Store, model::StoreOpResult) -> Option<M>,
+    ),
+    StoreOp(model::StoreOperations),
     // Location specific
     Login(login::M),
     Editor(editor::M),
     Viewer(viewer::M),
     Listing(listing::M),
+    // Empty message
+    NoOp,
+    // Chained message
+    Grouped(Vec<M>),
 }
-impl M {
-    pub fn page_change(loc: Location) -> Self {
-        Self::ChangePage(loc)
+impl Default for M {
+    fn default() -> Self {
+        Self::NoOp
+    }
+}
+impl From<model::StoreOperations> for M {
+    fn from(sop: model::StoreOperations) -> Self {
+        Self::StoreOp(sop)
     }
 }
 
+pub trait AsyncM: futures::Future<Item = M, Error = M> {}
+impl<T: futures::Future<Item = M, Error = M>> AsyncM for T {}
+
+#[derive(Default, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RouteMatch(Option<M>);
 impl RouteMatch {
     pub fn into_inner(self) -> Option<M> {
         self.0
     }
     fn to_opt_msg(mut url: seed::Url) -> Option<M> {
-        crate::log("Hello from beyond...");
         let potential_id = (url.path.len() >= 3)
             .as_some_from(|| url.path.remove(2));
         let potential_resource = (url.path.len() >= 2)
             .as_some_from(|| url.path.remove(1));
-        let potential_root = (url.path.len() >= 1)
+        let root = (url.path.len() >= 1)
             .as_some_from(|| url.path.remove(0));
-        let root = (potential_root?.as_ref(): &str == "blog")
+        let root = (root?.as_ref(): &str == "blog")
             .as_some_from(|| potential_resource)?
             .map(|s| if s == "" { "home".to_owned() } else { s })
             .unwrap_or("home".to_owned());
-        crate::log(format!("{:?}", root).as_str());
-        Some(M::ChangePage(match root.as_ref() {
-            "home" => Location::Listing(listing::S { query: url.search.map(PostQuery::Raw) }),
-            "posts" => Location::Viewer(potential_id.expect("post_id to be present").into()),
-            "editor" => Location::Editor(potential_id.expect("post_id to be present").into()),
-            "login" => Location::Login(login::S::default()),
-            _ => Location::NotFound,
+        log::info!("Proceeding to route detected root: {:?}", root);
+        Some(M::ChangePage(match (root.as_ref(), potential_id.as_ref().map(String::as_str)) {
+            // TODO convert next two patterns into or-patterns when the feature is implemented
+            ("home", None) | ("home", Some("")) =>
+                Location::Listing(listing::S { query: url.search.map(PostQuery::Raw) }),
+            ("posts", Some(id)) =>
+                Location::Viewer((id.into(): model::PostMarker).into()),
+            ("editor", id) =>
+                Location::Editor(match id {
+                    None | Some("new") => editor::S::default(),
+                    Some(id) => (id.into(): model::PostMarker).into(),
+                }),
+            ("login", None) | ("login", Some("")) =>
+                Location::Login(login::S::default()),
+            ("logout", None) | ("logout", Some("")) =>
+                Location::Logout,
+            _ =>
+                Location::NotFound,
         }))
     }
 }

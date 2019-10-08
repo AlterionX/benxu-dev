@@ -7,6 +7,7 @@ use rocket::{http::RawStr, request::FromFormValue};
 
 use crate::{models::*, schema};
 
+#[derive(Debug)]
 pub enum OrderingField {
     Date,
     AlphabeticalTitle,
@@ -21,6 +22,7 @@ impl<'v> FromFormValue<'v> for OrderingField {
         }
     }
 }
+#[derive(Debug)]
 pub enum SortOrdering {
     Ascending,
     Descending,
@@ -36,6 +38,7 @@ impl<'v> FromFormValue<'v> for SortOrdering {
     }
 }
 /// A set of conditions for obtaining a list of posts.
+#[derive(Debug)]
 pub enum PostListing {
     /// Getting posts by date.
     Date {
@@ -63,16 +66,17 @@ pub enum PostListing {
     },
 }
 
-pub(crate) trait DBConn {
+pub trait DBConn {
     fn conn(&self) -> &PgConnection;
 }
 
-pub(crate) trait PostQuery: DBConn {
+pub trait PostQuery: DBConn {
     /// Find posts based on the provided conditions.
     fn find_posts_with_post_listing_conditions(
         &self,
         conditions: PostListing,
     ) -> Result<Vec<posts::BasicData>, diesel::result::Error> {
+        log::debug!("Attempting to find posts with {:?} query.", conditions);
         match conditions {
             PostListing::Date {
                 start,
@@ -212,7 +216,7 @@ pub(crate) trait PostQuery: DBConn {
 }
 impl<T: DBConn> PostQuery for T {}
 
-pub(crate) trait UserQuery: DBConn {
+pub trait UserQuery: DBConn {
     /// Locate a user given an id.
     fn find_user_by_id(&self, id: uuid::Uuid) -> Result<users::Data, diesel::result::Error> {
         schema::users::table.find(id).get_result(self.conn())
@@ -257,7 +261,7 @@ pub(crate) trait UserQuery: DBConn {
 }
 impl<T: DBConn> UserQuery for T {}
 
-pub(crate) trait PWQuery: DBConn {
+pub trait PWQuery: DBConn {
     /// Given a user, find all matching password hashes. There should only be one.
     fn find_pw_hash_by_user(
         &self,
@@ -317,7 +321,7 @@ pub(crate) trait PWQuery: DBConn {
 }
 impl<T: DBConn> PWQuery for T {}
 
-pub(crate) trait PermissionQuery: DBConn {
+pub trait PermissionQuery: DBConn {
     /// Get permissions based on the user.
     fn get_user_permissions(
         &self,

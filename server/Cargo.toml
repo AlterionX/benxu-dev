@@ -12,15 +12,8 @@ repository = "https://github.com/AlterionX/benxu-dev"
 package = "static-page-builder"
 version = "0.1.0"
 path = "../page-client"
-[dependencies.wasm-script]
-package = "wasm-slideshow"
-version = "0.1.0"
-path = "../wasm-script"
-[dependencies.blog-client]
-package = "blog-client"
-version = "0.1.0"
-path = "../blog-client"
-[dependencies.blog-login-enum]
+features = ["rocket"]
+[dependencies.login-enum]
 package = "blog-login-enum"
 version = "0.1.0"
 path = "../blog-login-enum"
@@ -28,7 +21,7 @@ path = "../blog-login-enum"
 package = "blog-db"
 version = "0.1.0"
 path = "../blog-db"
-default-features = true
+features = ["server"]
 [dependencies.crypto]
 package = "bundled-crypto"
 version = "0.1.0"

@@ -7,7 +7,7 @@ use rocket::{
 use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
 use crate::{
-    blog::{auth, db},
+    blog::{auth, db::UserQuery, DB},
     TokenKeyFixture,
 };
 use blog_db::models::*;
@@ -24,11 +24,12 @@ use crypto::Generational;
 pub fn post(
     credentials: Option<auth::UnverifiedPermissionsCredential>,
     user_to_create: Json<users::NewNoMeta>,
-    db: db::DB,
+    db: DB,
     mut cookies: Cookies,
     tok_key_store: State<TokenKeyFixture>,
 ) -> Result<Json<users::DataNoMeta>, Status> {
     let user_to_create = user_to_create.into_inner();
+    log::debug!("Attempting to create account {:?}.", user_to_create);
     let creator = credentials
         .map(auth::UnverifiedPermissionsCredential::into_inner)
         .map(auth::Credentials::change_level::<auth::perms::CanCreateUser>)
@@ -57,7 +58,7 @@ pub fn post(
 /// created_by field will be set to the creator.
 #[must_use]
 pub fn create_account(
-    db: &db::DB,
+    db: &DB,
     creator: Option<uuid::Uuid>,
     user_to_create: users::NewNoMeta,
 ) -> Result<users::Data, diesel::result::Error> {
@@ -72,7 +73,7 @@ pub mod account {
     /// view this page if you're logged in as the correct user.
     #[get("/accounts/<id>")]
     pub fn get(
-        db: db::DB,
+        db: DB,
         id: RUuid,
         credentials: auth::UnverifiedPermissionsCredential,
     ) -> Result<Json<users::DataNoMeta>, Status> {
@@ -89,7 +90,7 @@ pub mod account {
     /// view this page if you're logged in as the correct user.
     #[get("/accounts/me")]
     pub fn get_self(
-        db: db::DB,
+        db: DB,
         credentials: Option<auth::UnverifiedPermissionsCredential>,
     ) -> Result<Json<users::DataNoMeta>, Status> {
         let credentials = credentials.ok_or(Status::Unauthorized)?;
@@ -103,7 +104,7 @@ pub mod account {
     /// to edit users.
     #[patch("/accounts/<id>", format = "json", data = "<changes>")]
     pub fn patch(
-        db: db::DB,
+        db: DB,
         id: RUuid,
         credentials: auth::UnverifiedPermissionsCredential,
         changes: Json<users::ChangedNoMeta>,
@@ -131,7 +132,7 @@ pub mod account {
     /// to delete users.
     #[delete("/accounts/<id>")]
     pub fn delete(
-        db: db::DB,
+        db: DB,
         id: RUuid,
         credentials: auth::UnverifiedPermissionsCredential,
     ) -> Result<Status, Status> {

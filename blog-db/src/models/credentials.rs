@@ -97,6 +97,7 @@ pub mod pw {
         salt: &'a str,
     }
     #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(feature = "server")]
     impl<'a> From<New<'a>> for NewWithId<'a> {
         fn from(new: New<'a>) -> Self {
             Self {

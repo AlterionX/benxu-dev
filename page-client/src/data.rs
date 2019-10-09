@@ -121,7 +121,7 @@ impl<'a> Script<'a> {
              document.addEventListener(\
                 \"DOMContentLoaded\",\
                 function(){{\
-                    var mod = wasm_bindgen(\"/public/wasm/{}_bg.wasm\");\
+                    var mod = wasm_bindgen(\"/public/wasm/{}_bg.wasm\").catch(function(e) {{ console.log(\"Promise received from wasm load.\"); e.catch(function(e) {{ console.log(e) }}) }});\
                     if (mod.load_listeners) {{\
                         var listeners = mod.load_listeners();\
                     }}\

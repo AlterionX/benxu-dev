@@ -3,6 +3,53 @@
     margin-right: 10px;
 }
 
+.site-body {
+    background-color: #101010ff;
+}
+
+/* Post listing */
+.unpublished-post-list {
+    padding-top: 1rem;
+    border-color: #ffffff;
+    border-top-width: 4px;
+    border-style: solid;
+}
+.post-list > h1:first-of-type, .unpublished-post-list > h1:first-of-type {
+    padding-bottom: .75rem;
+
+    border-color: #efefefff;
+    border-bottom-width: 3px;
+    border-style: solid;
+
+    background-color: #000000be;
+}
+.post-list > ul, .unpublished-post-list > ul {
+    background-color: #000000be;
+}
+.post-list > ul > li, .unpublished-post-list > ul > li {
+    padding: 20px 0;
+    /* margin: 20px 0; */
+    border-color: #aaaaaaff;
+    border-bottom-width: 1px;
+    border-style: solid;
+}
+
+.post-item > h2 > .post-title-link {
+    padding-bottom: 1em;
+    text-decoration: none;
+}
+.post-item > h2 > .post-title-link:hover {
+    color: #9c9c9cff;
+}
+.post-item > h2 > .post-title-link:visited {
+    color: #5f5f5fff;
+}
+.post-item > .post-published-date {
+    font-size: 0.75em;
+    line-height: 1em;
+}
+
+/* Login */
 .login-wrapper {
     flex-grow: 1;
 
@@ -18,9 +65,11 @@
     width: 100%;
 }
 
+/* Editor/Viewer */
 .editor {
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
 }
 .editor-title {
     display: flex;

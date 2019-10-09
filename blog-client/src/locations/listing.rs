@@ -3,7 +3,7 @@ use serde::{Serialize, Deserialize};
 
 use db_models::models::posts;
 use crate::{
-    model::{Store as GlobalS, StoreOperations as GSOp, StoreOpResult as GSOpResult},
+    model::{Name, Store as GlobalS, StoreOperations as GSOp, StoreOpResult as GSOpResult},
     messages::{M as GlobalM, AsyncM as GlobalAsyncM},
     requests::PostQuery,
     shared,
@@ -53,57 +53,76 @@ pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM
         // M:: => {}
     }
 }
-fn render_post(p: &posts::BasicData) -> seed::dom_types::Node<M> {
+fn render_post(p: &posts::BasicData, author: Option<&Name>) -> Node<M> {
     log::debug!("Not called");
     li![
-        p![p.published_at
-            .map(|d| d.to_string())
-            .unwrap_or("Unpublished".to_owned())
+        attrs!{
+            At::Class => "post-item";
+        },
+        h2![
+            attrs!{ At::Class => "as-h3" },
+            a![
+                attrs!{
+                    At::Href => if p.is_published() {
+                        format!("/blog/posts/{}", p.id)
+                    } else {
+                        format!("/blog/editor/{}", p.id)
+                    };
+                    At::Class => "post-title-link";
+                },
+                p.title,
+            ],
         ],
-        a![
-            attrs!{ At::Href => if p.is_published() {
-                format!("/blog/posts/{}", p.id)
-            } else {
-                format!("/blog/editor/{}", p.id)
-            } },
-            p.title,
+        p![
+            attrs!{ At::Class => "post-published-date" },
+            p.published_at
+                .map(|d| d.to_string())
+                .unwrap_or("Unpublished".to_owned())
         ],
-        // self.author.to_view(), // TODO
+        author.map_or_else(|| empty![], |n| n.to_view()), // TODO
     ]
 }
-fn render_post_list(posts: &[posts::BasicData], s: &S, gs: &GlobalS) -> seed::dom_types::Node<M> {
+fn render_post_list(empty_msg: &str, posts: &[posts::BasicData]) -> Node<M> {
     if posts.is_empty() {
         log::debug!("Calling render_post_list.");
-        p!["Coming soon!"]
+        p![empty_msg]
     } else {
         log::debug!("Not called");
         ul![
             posts
                 .iter()
-                .map(render_post)
+                .map(|p| -> Node<M> { render_post(p, None) }) // TODO load authors
         ]
     }
 }
-pub fn render(s: &S, gs: &GlobalS) -> Vec<seed::dom_types::Node<M>> {
+pub fn render(s: &S, gs: &GlobalS) -> Vec<Node<M>> {
     vec![
-        vec![h1![ "Posts" ]],
-        if let Some(posts) = gs.published_posts.as_ref() {
-            log::debug!("Calling published render.");
-            vec![render_post_list(posts.as_slice(), s, gs)]
-        } else {
-            log::debug!("Not called");
-            vec![shared::views::loading()]
-        },
+        div![
+            attrs! {
+                At::Class => "post-list";
+            },
+            h1!["Posts"],
+            if let Some(posts) = gs.published_posts.as_ref() {
+                log::debug!("Calling published render.");
+                vec![render_post_list("Coming soon.", posts.as_slice())]
+            } else {
+                log::debug!("Not called");
+                vec![shared::views::loading()]
+            },
+        ],
         match gs {
             GlobalS { user: Some(user), unpublished_posts: Some(posts), .. } if user.can_see_unpublished => {
                 log::debug!("Calling unpublished render.");
-                vec![
+                div![
+                    attrs! {
+                        At::Class => "unpublished-post-list";
+                    },
                     h1!["Unpublished Drafts"],
-                    render_post_list(posts.as_slice(), s, gs),
+                    render_post_list("None found.", posts.as_slice()),
                 ]
             },
-            _ => vec![],
+            _ => empty![],
         },
-    ].into_iter().flatten().collect()
+    ]
 }
 

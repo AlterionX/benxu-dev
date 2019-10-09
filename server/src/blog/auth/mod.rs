@@ -273,7 +273,7 @@ impl<'a, 'r, L: perms::Verifiable + std::fmt::Debug> FromRequest<'a, 'r> for Cre
     type Error = Error;
     fn from_request(req: &'a Request<'r>) -> Outcome<Self, Self::Error> {
         req.guard::<UnverifiedPermissionsCredential>()
-            .tap(|res| log::debug!("Found credentials: {:?}", res))?
+            .tap(|res| log::debug!("Found credentials? {:?}", res))?
             .into_inner()
             .change_level()
             .tap(|res| log::debug!("Level changed: {:?}", res))

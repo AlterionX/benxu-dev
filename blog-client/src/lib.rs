@@ -1,4 +1,8 @@
-#![feature(type_ascription, result_map_or_else, drain_filter)]
+#![feature(
+    type_ascription,
+    result_map_or_else,
+    drain_filter,
+)]
 
 #[macro_use]
 extern crate seed;
@@ -107,23 +111,6 @@ fn replace_nav(is_logged_in: bool) {
     header_node.replace_child(&replacement, &menu_node).unwrap();
 }
 
-fn init(_: Url, orders: &mut impl Orders<M, M>) -> Init<Model> {
-    use seed::fetch::Request;
-    // Check if logged in.
-    const SELF_URL: &'static str = "/api/accounts/me";
-    let url = SELF_URL;
-    orders.perform_cmd(Request::new(url).fetch_json(move |fo| {
-        log::debug!("Detecting if already logged in.");
-        M::StoreOpWithAction(
-            model::StoreOperations::User(fo),
-            |_, res| match res {
-                model::StoreOpResult::Success => Some(M::UseLoggedInMenu),
-                _ => None,
-            },
-        )
-    }));
-    Init::new(Model::default())
-}
 fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
     log::info!("Processing message {:?}.", msg);
     use locations::*;
@@ -173,9 +160,8 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
         M::StoreOpWithAction(op, f) => {
             log::debug!("Store operation with follow up action detected.");
             for m in f(&model.store, model.store.exec(op).into()) {
-                orders.send_msg(m);
+                update(m, model, orders);
             }
-            orders.skip();
         },
         // TODO remove boilerplate with macro?
         M::Listing(msg) => {
@@ -220,10 +206,8 @@ fn view(m: &Model) -> impl View<M> {
     m.to_view()
 }
 
-#[wasm_bindgen(start)]
-pub fn begin_app() {
+fn init_app(fo: seed::fetch::FetchObject<db_models::users::DataNoMeta>) {
     use wasm_bindgen::JsCast;
-    setup_logger();
     log::info!("Starting up application.");
     let body_tag = seed::body();
     let tag = match body_tag.query_selector("main") {
@@ -231,11 +215,37 @@ pub fn begin_app() {
         _ => body_tag,
     };
 
-    let app = seed::App::build(init, update, view)
+    let model = fo
+        .result
+        .ok()
+        .and_then(|fd| fd.data.ok())
+        .map(Model::with_user)
+        .unwrap_or_else(Model::default);
+    let app = seed::App::build(move |_, orders| {
+        if let Some(_) = model.store.user {
+            orders.send_msg(M::UseLoggedInMenu);
+        }
+        Init::new(model)
+    }, update, view)
         .sink(update)
         .mount(tag)
         .takeover_mount(true)
         .routes(routes);
     log::info!("App built. Running.");
     app.finish().run();
+}
+async fn init_with_current_user() -> Result<JsValue, JsValue> {
+    const SELF_URL: &'static str = "/api/accounts/me";
+    log::info!("Detecting if already logged in...");
+    let req = seed::Request::new(SELF_URL).fetch_json(|f: seed::fetch::FetchObject<db_models::users::DataNoMeta>| f);
+    let fo = future_futures::compat::Compat01As03::new(req).await.unwrap_or_else(|e| e);
+    init_app(fo);
+    Ok(JsValue::UNDEFINED)
+}
+
+#[wasm_bindgen(start)]
+pub fn begin_app() -> Result<(), JsValue> {
+    setup_logger();
+    // TODO change this to something more... direct. And sensible.
+    Err(wasm_bindgen_futures::future_to_promise(init_with_current_user()).into())
 }

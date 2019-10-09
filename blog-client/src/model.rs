@@ -18,7 +18,7 @@ pub struct Name {
     pub nickname: String,
 }
 impl Name {
-    fn to_view(&self) -> seed::dom_types::Node<M> {
+    pub fn to_view<M: Clone>(&self) -> seed::dom_types::Node<M> {
         p![format!("By {} {}", self.first, self.last)]
     }
 }
@@ -28,6 +28,19 @@ pub struct User {
     pub id: uuid::Uuid,
     pub name: Name,
     pub can_see_unpublished: bool,
+}
+impl From<users::DataNoMeta> for User {
+    fn from(u: users::DataNoMeta) -> User {
+        Self {
+            id: u.id,
+            name: crate::model::Name {
+                first: u.first_name.unwrap_or("unknown".to_owned()),
+                last: u.last_name.unwrap_or("unknown".to_owned()),
+                nickname: "unknown".to_owned(),
+            },
+            can_see_unpublished: true,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -166,6 +179,12 @@ pub struct Store {
     pub user: Option<User>,
 }
 impl Store {
+    pub fn with_user(user: users::DataNoMeta) -> Self {
+        Self {
+            user: Some(user.into()),
+            ..Self::default()
+        }
+    }
     pub fn exec(&mut self, op: StoreOperations) -> Result<(), FailReason> {
         use StoreOperations::*;
         match op {
@@ -190,15 +209,7 @@ impl Store {
                 let fetched = fo.response()
                     .tap_err(|e| log::warn!("Error {:?} occurred! TODO: show an error to the user.", e))?;
                 let unparsed = fetched.data;
-                let parsed = crate::model::User {
-                    id: unparsed.id,
-                    name: crate::model::Name {
-                        first: unparsed.first_name.unwrap_or("unknown".to_owned()),
-                        last: unparsed.last_name.unwrap_or("unknown".to_owned()),
-                        nickname: "unknown".to_owned(),
-                    },
-                    can_see_unpublished: true,
-                };
+                let parsed = unparsed.into();
                 self.user.replace(parsed);
             },
             Post(_, fo) | PostWithoutMarker(fo) => {
@@ -235,6 +246,12 @@ pub struct Model {
     pub loc: Location,
 }
 impl Model {
+    pub fn with_user(user: users::DataNoMeta) -> Self {
+        Self {
+            store: Store::with_user(user),
+            loc: Location::NotFound,
+        }
+    }
     pub fn to_view(&self) -> Vec<Node<M>> {
         log::info!("Rendering location {:?} with global state {:?}.", self.loc, self.store);
         self.loc.to_view(&self.store)

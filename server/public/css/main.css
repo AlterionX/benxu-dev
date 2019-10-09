@@ -91,6 +91,9 @@ li {
 .link-anchor:last-of-type {
     padding-right: 0;
 }
+.link-anchor:visited {
+    color: #eeeeeeff;
+}
 .link-logo {
     max-height: 2rem;
     filter: invert(0%);
@@ -116,6 +119,15 @@ li {
     padding: 0;
     padding-right: 2vw;
     display: inline-block;
+}
+.menu > ul > li > a {
+    text-decoration: none;
+}
+.menu > ul > li > a:visited {
+    color: #eeeeeeff;
+}
+.menu > ul > li > a:visited:hover {
+    color: #bfbfbfff;
 }
 
 .logo {

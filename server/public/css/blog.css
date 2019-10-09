@@ -38,12 +38,6 @@
     padding-bottom: 1em;
     text-decoration: none;
 }
-.post-item > h2 > .post-title-link:hover {
-    color: #9c9c9cff;
-}
-.post-item > h2 > .post-title-link:visited {
-    color: #5f5f5fff;
-}
 .post-item > .post-published-date {
     font-size: 0.75em;
     line-height: 1em;
@@ -92,4 +86,12 @@
     flex-grow: 1;
 }
 .editor-actions {
+}
+
+.post {
+}
+.post > h1 {
+    padding-bottom: 0.5em;
+}
+.post > p {
 }

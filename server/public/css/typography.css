@@ -137,3 +137,15 @@ p, li, input, textarea, button, .as-p {
         line-height: 1.25em;
     }
 }
+
+a {
+}
+a:hover {
+    color: #bfbfbfff;
+}
+a:visited {
+    color: #818181ff;
+}
+a:visited:hover {
+    color: #bfbfbfff;
+}

@@ -68,10 +68,11 @@ pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM
 }
 
 pub fn render_post(post: &posts::DataNoMeta) -> Node<M> {
-        div![
-            h1![post.title],
-            p![post.body],
-        ]
+    div![
+        attrs!{ At::Class => "post" },
+        h1![post.title],
+        p![post.body],
+    ]
 }
 pub fn render(s: &S, gs: &GlobalS) -> Node<M> {
     match gs.post.as_ref() {

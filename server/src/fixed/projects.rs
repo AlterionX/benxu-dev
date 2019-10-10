@@ -15,9 +15,6 @@ pub fn get() -> Status {
     Status::NotImplemented
 }
 
-/// Functions generating a complete list of my projects. Not yet implemented.
-pub mod projects {}
-
 /// Enum representing all possible projects to query for.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Project {
@@ -79,3 +76,7 @@ pub mod project {
         Status::NotImplemented
     }
 }
+
+/// Functions generating a complete list of my projects. Not yet implemented.
+pub mod htmlgen {}
+

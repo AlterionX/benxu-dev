@@ -68,13 +68,13 @@ pub fn delete(
             .map(|id| db.delete_permissions_by_user_id(id))
             .transpose()
             .map_err(Error::from)?
-            .unwrap_or(vec![]),
+            .unwrap_or_else(Vec::new),
         to_delete
             .permission_ids()
             .map(|id| db.delete_permissions_with_ids(id))
             .transpose()
             .map_err(Error::from)?
-            .unwrap_or(vec![]),
+            .unwrap_or_else(Vec::new),
     ]
     .into_iter()
     .flatten()
@@ -99,7 +99,7 @@ pub mod permission {
         id: RUuid,
     ) -> Result<Json<permissions::Data>, Status> {
         db.get_permission_with_id(id.into_inner())
-            .map(|p| Json(p))
+            .map(Json)
             .map_err(|e| (e.into(): Error).into())
     }
     /// Deletes the permission with the requested id. Requires caller to have the
@@ -111,7 +111,7 @@ pub mod permission {
         id: RUuid,
     ) -> Result<Json<permissions::Data>, Status> {
         db.delete_permission_with_id(id.into_inner())
-            .map(|p| Json(p))
+            .map(Json)
             .map_err(|e| (e.into(): Error).into())
     }
 }

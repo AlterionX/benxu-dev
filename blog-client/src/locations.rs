@@ -1,10 +1,9 @@
-use boolinator::Boolinator;
 use seed::prelude::*;
 use serde::{Serialize, Deserialize};
 
 use crate::{
     messages::{M as GlobalM, AsyncM as GlobalAsyncM},
-    model::{Store as GlobalS, StoreOperations as GSOp, StoreOpResult as GSOpResult},
+    model::{Store as GlobalS, StoreOperations as GSOp},
 };
 
 pub mod login;
@@ -51,7 +50,7 @@ impl Location {
             _ => Err(self),
         }
     }
-    fn get_pre_load_messages(&self, gs: &GlobalS) -> Option<GlobalM> {
+    fn get_pre_load_messages(&self, _gs: &GlobalS) -> Option<GlobalM> {
         match self {
             _ => None,
         }

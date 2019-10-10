@@ -10,9 +10,9 @@ use crate::{
     locations::Location,
 };
 
-pub fn data_load(s: S, gs: &GlobalS) -> impl GlobalAsyncM {
+pub fn data_load(s: S, _gs: &GlobalS) -> impl GlobalAsyncM {
     use seed::fetch::Request;
-    const POSTS_URL: &'static str = "/api/posts";
+    const POSTS_URL: &str = "/api/posts";
     let query = s.query.unwrap_or_else(PostQuery::default);
     let url = format!("{}?{}", POSTS_URL, query);
     // TODO figure out caching and determing if data already loaded instead of going
@@ -48,7 +48,7 @@ impl S {
     }
 }
 
-pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM>) {
+pub fn update(m: M, _s: &mut S, _gs: &GlobalS, _orders: &mut impl Orders<M, GlobalM>) {
     match m {
         // M:: => {}
     }
@@ -77,7 +77,7 @@ fn render_post(p: &posts::BasicData, author: Option<&Name>) -> Node<M> {
             attrs!{ At::Class => "post-published-date" },
             p.published_at
                 .map(|d| d.to_string())
-                .unwrap_or("Unpublished".to_owned())
+                .unwrap_or_else(|| "Unpublished".to_owned())
         ],
         author.map_or_else(|| empty![], |n| n.to_view()), // TODO
     ]
@@ -95,7 +95,7 @@ fn render_post_list(empty_msg: &str, posts: &[posts::BasicData]) -> Node<M> {
         ]
     }
 }
-pub fn render(s: &S, gs: &GlobalS) -> Vec<Node<M>> {
+pub fn render(_s: &S, gs: &GlobalS) -> Vec<Node<M>> {
     vec![
         div![
             attrs! {

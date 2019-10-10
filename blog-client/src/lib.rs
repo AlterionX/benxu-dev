@@ -159,7 +159,7 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
         },
         M::StoreOpWithAction(op, f) => {
             log::debug!("Store operation with follow up action detected.");
-            for m in f(&model.store, model.store.exec(op).into()) {
+            if let Some(m) = f(&model.store, model.store.exec(op).into()) {
                 update(m, model, orders);
             }
         },
@@ -222,7 +222,7 @@ fn init_app(fo: seed::fetch::FetchObject<db_models::users::DataNoMeta>) {
         .map(Model::with_user)
         .unwrap_or_else(Model::default);
     let app = seed::App::build(move |_, orders| {
-        if let Some(_) = model.store.user {
+        if model.store.user.is_some() {
             orders.send_msg(M::UseLoggedInMenu);
         }
         Init::new(model)
@@ -235,7 +235,7 @@ fn init_app(fo: seed::fetch::FetchObject<db_models::users::DataNoMeta>) {
     app.finish().run();
 }
 async fn init_with_current_user() -> Result<JsValue, JsValue> {
-    const SELF_URL: &'static str = "/api/accounts/me";
+    const SELF_URL: &str = "/api/accounts/me";
     log::info!("Detecting if already logged in...");
     let req = seed::Request::new(SELF_URL).fetch_json(|f: seed::fetch::FetchObject<db_models::users::DataNoMeta>| f);
     let fo = future_futures::compat::Compat01As03::new(req).await.unwrap_or_else(|e| e);

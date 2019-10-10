@@ -118,7 +118,7 @@ impl Server {
         crypto::KeyRotator::init(TokenAlgo {}, None)
     }
     /// Initializes the key store for the password's hashing secret key.
-    fn init_pw_secret<'a, S: AsRef<Path>>(secret_path: &S) -> crypto::StableKeyStore<PWAlgo> {
+    fn init_pw_secret<S: AsRef<Path>>(secret_path: &S) -> crypto::StableKeyStore<PWAlgo> {
         use std::{fs::File, io::Read};
         info!("Loading secret from disk...");
         let secret_path = secret_path.as_ref();
@@ -210,8 +210,7 @@ impl Server {
         let sodiumoxide_init = {
             info!("Initialize multithreaded crypto crate.");
             let res = crypto::multithread_init()
-                .tap_err(|_| error!("Could not initialize crate `crypto` for multithreaded use. Will now panic."))
-                .unwrap(); // TODO potentially disable multithreading instead of panicking
+                .tap_err(|_| error!("Could not initialize crate `crypto` for multithreaded use. Will panic later."));
             info!("Crypto crate initialized.");
             res
         };
@@ -244,7 +243,7 @@ impl Server {
         Server {
             _env_path: env_path,
 
-            _sodiumoxide_init: sodiumoxide_init,
+            _sodiumoxide_init: sodiumoxide_init.unwrap(),
             _paseto_key: paseto_key,
             _local_loaded_key: local_loaded_key,
 

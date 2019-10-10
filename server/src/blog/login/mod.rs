@@ -5,7 +5,6 @@ use data::CanAuthenticate;
 
 use rocket::{
     http::{Cookies, Status},
-    response::Redirect,
     State,
 };
 use rocket_contrib::json::Json;

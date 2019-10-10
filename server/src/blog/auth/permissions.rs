@@ -74,7 +74,7 @@ impl From<&permissions::Data> for Permission {
             "grant_permission" => Self::GrantPermission,
             "view_permission" => Self::ViewPermission,
             "delete_permission" => Self::DeletePermission,
-            p @ _ => Self::Custom { name: p.to_owned() },
+            p => Self::Custom { name: p.to_owned() },
         }
     }
 }

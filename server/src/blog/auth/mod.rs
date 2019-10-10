@@ -20,7 +20,7 @@ use crate::{TokenKeyFixture, TokenKeyStore};
 use crypto::{algo::Algo as A, token::paseto, Generational};
 
 /// The name of the cookie holding the credentials to be deserialized.
-pub const AUTH_COOKIE_NAME: &'static str = "_atk";
+pub const AUTH_COOKIE_NAME: &str = "_atk";
 
 /// A struct representing the list of permissions a user has.
 ///
@@ -58,9 +58,9 @@ impl<L> Credentials<L> {
             level,
         } = self;
         Credentials::new(user_id, permissions).map_err(|(user_id, permissions)| Self {
-            level: level,
-            user_id: user_id,
-            permissions: permissions,
+            level,
+            user_id,
+            permissions,
         })
     }
     /// Revert the credential back to an unverified state.
@@ -78,8 +78,8 @@ impl<L: perms::Verifiable> Credentials<L> {
         if L::verify_slice(permissions.as_slice()) {
             Ok(Self {
                 level: PhantomData,
-                user_id: user_id,
-                permissions: permissions,
+                user_id,
+                permissions,
             })
         } else {
             Err((user_id, permissions))
@@ -92,8 +92,8 @@ impl Credentials<perms::Any> {
     pub fn safe_new(user_id: uuid::Uuid, permissions: Vec<Permission>) -> Self {
         Self {
             level: PhantomData,
-            user_id: user_id,
-            permissions: permissions,
+            user_id,
+            permissions,
         }
     }
     /// Extracts an unverified credential from a provided token.
@@ -194,17 +194,17 @@ impl<'de> Deserialize<'de> for Credentials<perms::Any> {
                 A: serde::de::SeqAccess<'de>,
             {
                 let permissions = serde::de::SeqAccess::next_element::<Vec<Permission>>(&mut seq)?
-                    .ok_or(serde::de::Error::invalid_length(
+                    .ok_or_else(|| serde::de::Error::invalid_length(
                         0usize,
                         &"struct Credentials with 2 elements",
                     ))?;
-                let user_id = serde::de::SeqAccess::next_element::<uuid::Uuid>(&mut seq)?.ok_or(
+                let user_id = serde::de::SeqAccess::next_element::<uuid::Uuid>(&mut seq)?.ok_or_else(||
                     serde::de::Error::invalid_length(1usize, &"struct Credentials with 2 elements"),
                 )?;
                 Ok(Credentials {
                     level: PhantomData,
-                    permissions: permissions,
-                    user_id: user_id,
+                    permissions,
+                    user_id,
                 })
             }
             #[inline]
@@ -253,12 +253,12 @@ impl<'de> Deserialize<'de> for Credentials<perms::Any> {
                 };
                 serde::export::Ok(Credentials {
                     level: PhantomData,
-                    permissions: permissions,
-                    user_id: user_id,
+                    permissions,
+                    user_id,
                 })
             }
         }
-        const FIELDS: &'static [&'static str] = &["permissions", "user_id"];
+        const FIELDS: &[&str] = &["permissions", "user_id"];
         serde::Deserializer::deserialize_struct(
             deserializer,
             "Credentials",
@@ -313,7 +313,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for UnverifiedPermissionsCredential {
             .guard::<State<TokenKeyFixture>>()
             .map_failure(|_| Error::KeyStoreAbsent.into())?
             .get_store()
-            .map_err(|_| Error::KeyStoreAbsent.into())
+            .map_err(|_| Error::KeyStoreAbsent)
             .into_outcome(Status::InternalServerError)?;
 
         Credentials::extract(&cookies, &*key_store)

@@ -60,17 +60,17 @@ impl RouteMatch {
     pub fn into_inner(self) -> Option<M> {
         self.0
     }
-    fn to_opt_msg(mut url: seed::Url) -> Option<M> {
+    fn msg_from_url(mut url: seed::Url) -> Option<M> {
         let potential_id = (url.path.len() >= 3)
             .as_some_from(|| url.path.remove(2));
         let potential_resource = (url.path.len() >= 2)
             .as_some_from(|| url.path.remove(1));
-        let root = (url.path.len() >= 1)
+        let root = (!url.path.is_empty())
             .as_some_from(|| url.path.remove(0));
         let root = (root?.as_ref(): &str == "blog")
             .as_some_from(|| potential_resource)?
             .map(|s| if s == "" { "home".to_owned() } else { s })
-            .unwrap_or("home".to_owned());
+            .unwrap_or_else(|| "home".to_owned());
         log::info!("Proceeding to route detected root: {:?}", root);
         Some(M::ChangePage(match (root.as_ref(), potential_id.as_ref().map(String::as_str)) {
             // TODO convert next two patterns into or-patterns when the feature is implemented
@@ -94,6 +94,6 @@ impl RouteMatch {
 }
 impl From<seed::Url> for RouteMatch {
     fn from(url: seed::Url) -> Self {
-        Self(Self::to_opt_msg(url))
+        Self(Self::msg_from_url(url))
     }
 }

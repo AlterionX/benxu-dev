@@ -9,4 +9,4 @@ pub fn get() -> Status {
 }
 
 /// Functions generating a complete version of my resume. Not yet implemented.
-pub mod resume {}
+pub mod htmlgen {}

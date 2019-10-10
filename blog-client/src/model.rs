@@ -34,8 +34,8 @@ impl From<users::DataNoMeta> for User {
         Self {
             id: u.id,
             name: crate::model::Name {
-                first: u.first_name.unwrap_or("unknown".to_owned()),
-                last: u.last_name.unwrap_or("unknown".to_owned()),
+                first: u.first_name.unwrap_or_else(|| "unknown".to_owned()),
+                last: u.last_name.unwrap_or_else(|| "unknown".to_owned()),
                 nickname: "unknown".to_owned(),
             },
             can_see_unpublished: true,
@@ -89,11 +89,11 @@ impl From<&posts::DataNoMeta> for PostMarker {
 }
 impl std::fmt::Display for PostMarker {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.to_string())
+        write!(f, "{}", self.to_slug())
     }
 }
 impl PostMarker {
-    fn to_string(&self) -> String {
+    fn to_slug(&self) -> String {
         match self {
             Self::Uuid(u) => u.to_hyphenated_ref().to_string(),
             Self::Slug(s) => s.clone(),
@@ -165,7 +165,7 @@ impl From<Result<(), FailReason>> for StoreOpResult {
     fn from(res: Result<(), FailReason>) -> Self {
         match res {
             Ok(_) => Self::Success,
-            Err(e) => Self::Failure(e.into()),
+            Err(e) => Self::Failure(e),
         }
     }
 }

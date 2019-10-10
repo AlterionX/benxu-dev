@@ -84,7 +84,7 @@ impl CanAuthenticate for Authentication {
             .map(|_| {
                 (
                     user,
-                    perms.iter().map(|p| auth::Permission::from(p)).collect(),
+                    perms.iter().map(auth::Permission::from).collect(),
                 )
             })
             .map_err(|_| auth::Error::BadCredentials)

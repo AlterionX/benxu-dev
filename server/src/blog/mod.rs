@@ -20,17 +20,18 @@ pub fn get(
     c: Option<auth::UnverifiedPermissionsCredential>,
 ) -> Markup {
     // TODO set based on permissions
-    blog::index(c.is_some())
+    htmlgen::index(c.is_some())
 }
 /// Handler for serving the primary web app for when there is no path.
 #[get("/")]
 pub fn get_unadorned(c: Option<auth::UnverifiedPermissionsCredential>) -> Markup {
     // TODO set based on permissions
-    blog::index(c.is_some())
+    htmlgen::index(c.is_some())
 }
+
 /// Functions serving the initial blog page, before it gets taken over by
 /// [`blog_client`](blog_client).
-pub mod blog {
+pub mod htmlgen {
     use page_client::{data, partials};
     use maud::{Markup, html};
 

@@ -9,4 +9,4 @@ pub fn get() -> Status {
 }
 
 /// Functions generating a summary of my online presence. Not yet implemented.
-pub mod links {}
+pub mod htmlgen {}

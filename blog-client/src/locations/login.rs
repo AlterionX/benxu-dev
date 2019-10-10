@@ -12,7 +12,7 @@ use crate::{
 
 pub fn logout_trigger(_gs: &GlobalS) -> impl GlobalAsyncM {
     use seed::fetch::{Request, Method};
-    const LOGOUT_URL: &'static str = "/api/login";
+    const LOGOUT_URL: &str = "/api/login";
     Request::new(LOGOUT_URL)
         .method(Method::Delete)
         .fetch_string(|fo| GlobalM::StoreOpWithAction(
@@ -71,7 +71,7 @@ impl S {
 impl S {
     fn create_user_post(&self) -> impl GlobalAsyncM {
         use seed::fetch::{Request, Method};
-        const CREATE_USER_URL: &'static str = "/api/accounts";
+        const CREATE_USER_URL: &str = "/api/accounts";
         Request::new(CREATE_USER_URL)
             .method(Method::Post)
             .send_json(&users::NewNoMeta {
@@ -104,14 +104,14 @@ impl S {
     fn create_credential_post(&self, u: &StoreUser) -> impl GlobalAsyncM {
         use seed::fetch::{Request, Method};
         use crate::locations::*;
-        const CREDENTIAL_URL: &'static str = "/api/credentials/pws";
+        const CREDENTIAL_URL: &str = "/api/credentials/pws";
         Request::new(CREDENTIAL_URL)
             .method(Method::Post)
             .send_json(&CreatePassword {
-                user_id: u.id.clone(),
+                user_id: u.id,
                 password: self.password.clone(),
             })
-            .fetch(|fo| if let Ok(_) = fo.response() {
+            .fetch(|fo| if fo.response().is_ok() {
                 GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default()))
             } else {
                 GlobalM::NoOp
@@ -120,7 +120,7 @@ impl S {
     fn create_session_post(&self) -> impl GlobalAsyncM {
         use seed::fetch::{Request, Method};
         use crate::locations::*;
-        const LOGIN_URL: &'static str = "/api/login";
+        const LOGIN_URL: &str = "/api/login";
         Request::new(LOGIN_URL)
             .method(Method::Post)
             .send_json(&Authentication::Password(Password {
@@ -233,7 +233,7 @@ pub fn render(s: &S, _gs: &GlobalS) -> Node<M> {
                         At::Type => "password";
                         At::Name => "password";
                     },
-                    input_ev(Ev::Input, |text| M::Password(text)),
+                    input_ev(Ev::Input, M::Password),
                 ],
             ],
             if s.is_create_mode {
@@ -249,7 +249,7 @@ pub fn render(s: &S, _gs: &GlobalS) -> Node<M> {
                                 At::Type => "password";
                                 At::Name => "password_confirmation";
                             },
-                            input_ev(Ev::Input, |text| M::PasswordConfirmation(text)),
+                            input_ev(Ev::Input, M::PasswordConfirmation),
                         ],
                     ],
                     div![
@@ -263,7 +263,7 @@ pub fn render(s: &S, _gs: &GlobalS) -> Node<M> {
                                 At::Type => "text";
                                 At::Name => "first_name";
                             },
-                            input_ev(Ev::Input, |text| M::FirstName(text)),
+                            input_ev(Ev::Input, M::FirstName),
                         ],
                     ],
                     div![
@@ -277,7 +277,7 @@ pub fn render(s: &S, _gs: &GlobalS) -> Node<M> {
                                 At::Type => "text";
                                 At::Name => "last_name";
                             },
-                            input_ev(Ev::Input, |text| M::LastName(text)),
+                            input_ev(Ev::Input, M::LastName),
                         ],
                     ],
                     div![
@@ -291,7 +291,7 @@ pub fn render(s: &S, _gs: &GlobalS) -> Node<M> {
                                 At::Type => "email";
                                 At::Name => "email";
                             },
-                            input_ev(Ev::Input, |text| M::Email(text)),
+                            input_ev(Ev::Input, M::Email),
                         ],
                     ],
                 ]

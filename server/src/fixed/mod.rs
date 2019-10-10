@@ -13,11 +13,11 @@ mod resume;
 /// This simply calls [`page_client::home::index()`] from [`page_client`].
 #[get("/")]
 fn get_index() -> Markup {
-    home::index()
+    htmlgen::index()
 }
 
 /// Functions generating my home page.
-pub mod home {
+pub mod htmlgen {
     use page_client::{data, partials};
     use maud::{html, Markup, Render};
 
@@ -33,7 +33,7 @@ pub mod home {
     }
 
     /// Returns a list of links as [`Markup`].
-    fn link_group<'a>() -> Markup {
+    fn link_group() -> Markup {
         let links = vec![
             data::LogoLink {
                 url: "https://github.com/AlterionX/",

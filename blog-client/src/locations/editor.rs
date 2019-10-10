@@ -7,12 +7,11 @@ use crate::{
     model::{PostMarker, Store as GlobalS, StoreOperations as GSOp, StoreOpResult as GSOpResult, User},
     messages::{M as GlobalM, AsyncM as GlobalAsyncM},
     locations::Location,
-    shared,
 };
 
 pub fn load_post(post_marker: PostMarker) -> impl GlobalAsyncM {
     use seed::fetch::Request;
-    const POSTS_URL: &'static str = "/api/posts";
+    const POSTS_URL: &str = "/api/posts";
     let url = format!("{}/{}", POSTS_URL, post_marker);
     Request::new(url).fetch_json(move |fo|
         GlobalM::StoreOpWithAction(
@@ -126,13 +125,13 @@ impl S {
         let (url, method) = match self {
             Self::Undetermined(_) => None,
             Self::New(_) => {
-                const CREATE_POST_URL: &'static str = "/api/posts";
+                const CREATE_POST_URL: &str = "/api/posts";
                 let create_post_method = Method::Post;
                 // save
                 Some((CREATE_POST_URL.to_owned(), create_post_method))
             },
             Self::Old(post) => {
-                const UPDATE_POST_BASE_URL: &'static str = "/api/posts";
+                const UPDATE_POST_BASE_URL: &str = "/api/posts";
                 let update_post_method = Method::Patch;
                 Some((format!("{}/{}", UPDATE_POST_BASE_URL, post.id), update_post_method))
             },
@@ -177,7 +176,7 @@ impl S {
         match self {
             Self::Undetermined(_) => None,
             Self::New(post) => {
-                const CREATE_POST_URL: &'static str = "/api/posts";
+                const CREATE_POST_URL: &str = "/api/posts";
                 post.published_at = Some(chrono::Utc::now());
                 post.published_by = Some(user.id);
                 // save
@@ -192,7 +191,7 @@ impl S {
                         &gs.post,
                     ) {
                         Some(GlobalM::ChangePageAndUrl(Location::Viewer(
-                            PostMarker::Uuid(post_id.clone()).into()
+                            PostMarker::Uuid(*post_id).into()
                         )))
                     } else {
                         None
@@ -208,7 +207,7 @@ impl S {
                 Some(Box::new(req))
             },
             Self::Old(post) => {
-                let post_id = post.id.clone();
+                let post_id = post.id;
                 let (url, method) = (format!("/api/posts/{}/publish", post.id), Method::Post);
                 let reaction = move |res| match res {
                     Ok(_) => GlobalM::ChangePageAndUrl(Location::Viewer(
@@ -290,7 +289,7 @@ mod views {
     use super::{M, S};
     use crate::model::Store as GlobalS;
 
-    pub fn render(s: &S, gs: &GlobalS) -> Vec<Node<M>> {
+    pub fn render(s: &S, _gs: &GlobalS) -> Vec<Node<M>> {
         vec![
             heading(),
             editor(s).unwrap_or_else(crate::shared::views::loading),
@@ -304,7 +303,7 @@ mod views {
         ]
     }
 
-    fn get_title_slug_body<'a>(s: &'a S) -> Option<(&'a str, Option<&'a str>, &'a str)> {
+    fn get_title_slug_body(s: &S) -> Option<(&str, Option<&str>, &str)> {
         let (t, slug, b) = match s {
             S::New(post) => (&post.title, post.slug.as_ref(), &post.body),
             S::Old(post) => (&post.title, post.slug.as_ref(), &post.body),

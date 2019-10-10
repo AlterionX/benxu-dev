@@ -11,7 +11,7 @@ use crate::{
 
 pub fn load_post(post_marker: PostMarker) -> impl GlobalAsyncM {
     use seed::fetch::Request;
-    const POSTS_URL: &'static str = "/api/posts";
+    const POSTS_URL: &str = "/api/posts";
     let url = format!("{}/{}", POSTS_URL, post_marker);
     Request::new(url).fetch_json(move |fo|
         GlobalM::StoreOpWithAction(
@@ -25,7 +25,7 @@ fn after_fetch(gs: *const GlobalS, res: GSOpResult) -> Option<GlobalM> {
     let gs = unsafe { gs.as_ref() }?;
     match (res, &gs.post) {
         (Success, Some(post)) => Some(
-            GlobalM::RenderPage(Location::Viewer(S { post_marker: PostMarker::Uuid(post.id.clone()) }))
+            GlobalM::RenderPage(Location::Viewer(S { post_marker: PostMarker::Uuid(post.id) }))
         ),
         _ => None,
     }
@@ -61,7 +61,7 @@ impl S {
     }
 }
 
-pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM>) {
+pub fn update(m: M, _s: &mut S, _gs: &GlobalS, _orders: &mut impl Orders<M, GlobalM>) {
     match m {
         // M:: => {}
     }

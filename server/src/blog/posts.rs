@@ -33,7 +33,7 @@ pub fn get(
         offset.is_some(),
         lim.is_some(),
     ]
-    .into_iter()
+    .iter()
     .filter(|b| **b)
     .count();
     if num_passed != 2 {
@@ -73,7 +73,7 @@ pub fn get_by_date_range(
         start: start_time.into(),
         stop: stop_time.into(),
         order_by: ord_criteria,
-        ord: ord,
+        ord,
         limit: max_posts,
     })
     .map(Json)
@@ -90,10 +90,10 @@ pub fn get_by_limit_and_offset(
     ord: db::SortOrdering,
 ) -> Result<Json<Vec<posts::BasicData>>, Status> {
     db.find_posts_with_post_listing_conditions(db::PostListing::LimAndOffset {
-        offset: offset,
+        offset,
         lim: std::cmp::min(lim, 500),
         order_by: ord_criteria,
-        ord: ord,
+        ord,
     })
     .map(Json)
     .map_err(|_| Status::InternalServerError)
@@ -109,7 +109,7 @@ pub fn post(
 ) -> Result<Json<posts::Data>, Status> {
     let post = post.into_inner();
     db.insert_post((&post, credentials.user_id()))
-        .map(|p| Json(p))
+        .map(Json)
         .map_err(|_e| {
             // TODO log error
             Status::InternalServerError
@@ -142,7 +142,7 @@ pub mod post {
         let id = id.into_inner();
         // TODO eventually consider error messages for different DB failures
         db.find_post_with_id(id)
-            .map(|post| Json(post))
+            .map(Json)
             .map_err(|_| Status::BadRequest)
     }
     /// Handler for editing a post with a specific id. Requires user to be logged in and have the

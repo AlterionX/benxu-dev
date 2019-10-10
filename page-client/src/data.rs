@@ -148,7 +148,7 @@ impl<'a> Render for Css<'a> {
             }{} },
             Css::Critical { src } => {
                 let style = fs::read_to_string(format!("./public/css/{}.css", src).as_str())
-                    .expect(format!("./public/css/{}.css is missing", src).as_str());
+                    .unwrap_or_else(|src| panic!("./public/css/{}.css is missing", src));
                 html! { style { (PreEscaped(style)) } }
             }
         }

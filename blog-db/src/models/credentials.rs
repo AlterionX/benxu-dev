@@ -156,6 +156,6 @@ impl From<pw::Data> for Data {
 impl Data {
     /// Unifies each respective type as a credential.
     pub fn from_result<E>(result_data: Result<pw::Data, E>) -> Result<Self, E> {
-        result_data.map(|data| Self::from(data))
+        result_data.map(Self::from)
     }
 }

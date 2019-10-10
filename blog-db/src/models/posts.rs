@@ -337,8 +337,8 @@ impl NewNoMeta {
             deleted_at: None,
             deleted_by: None,
 
-            title: title,
-            body: body,
+            title,
+            body,
             slug: None,
         }
     }
@@ -369,7 +369,7 @@ impl Editing {
     /// Constructs the struct with assumed time of editing (now).
     pub fn new(updated_by: uuid::Uuid) -> Self {
         Self {
-            updated_by: updated_by,
+            updated_by,
         }
     }
 }
@@ -391,7 +391,7 @@ impl Publishing {
         Self {
             updated_by: published_by,
             published_at: Utc::now(),
-            published_by: published_by,
+            published_by,
         }
     }
 }
@@ -413,7 +413,7 @@ impl Archival {
         Self {
             updated_by: archived_by,
             archived_at: Utc::now(),
-            archived_by: archived_by,
+            archived_by,
         }
     }
 }
@@ -435,7 +435,7 @@ impl Deletion {
         Self {
             updated_by: deleted_by,
             deleted_at: Utc::now(),
-            deleted_by: deleted_by,
+            deleted_by,
         }
     }
 }

@@ -1,7 +1,10 @@
 //! Nonce related functions.
 
 use crate::algo::{
-    hash::{hmac::sha384::{Algo as HMAC_SHA384, Key as HMAC_SHA384_KEY}, symmetric::Algo as HashA},
+    hash::{
+        hmac::sha384::{Algo as HMAC_SHA384, Key as HMAC_SHA384_KEY},
+        symmetric::Algo as HashA,
+    },
     Algo as A,
 };
 use rand::{rngs::OsRng, RngCore};

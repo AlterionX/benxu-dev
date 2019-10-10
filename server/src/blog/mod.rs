@@ -32,8 +32,8 @@ pub fn get_unadorned(c: Option<auth::UnverifiedPermissionsCredential>) -> Markup
 /// Functions serving the initial blog page, before it gets taken over by
 /// [`blog_client`](blog_client).
 pub mod htmlgen {
+    use maud::{html, Markup};
     use page_client::{data, partials};
-    use maud::{Markup, html};
 
     /// Create a basic menu.
     pub fn menu() -> Option<data::Menu<'static>> {
@@ -96,7 +96,7 @@ pub mod htmlgen {
             .menu(menu.as_ref())
             .logo(logo.as_ref())
             .build();
-        partials::basic_page(html!{ "Loadinggggggggggggg" }, Some(&meta))
+        partials::basic_page(html! { "Loadinggggggggggggg" }, Some(&meta))
     }
 }
 

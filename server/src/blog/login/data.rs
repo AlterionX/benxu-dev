@@ -3,7 +3,11 @@
 use boolinator::Boolinator;
 
 use crate::{
-    blog::{auth, db::{PermissionQuery, UserQuery, PWQuery}, DB},
+    blog::{
+        auth,
+        db::{PWQuery, PermissionQuery, UserQuery},
+        DB,
+    },
     PWAlgo, PWKeyFixture,
 };
 use blog_db::models::*;
@@ -81,12 +85,7 @@ impl CanAuthenticate for Authentication {
         trace!("Found secret key.");
         targeted_credential
             .verify_with_err(&*key)
-            .map(|_| {
-                (
-                    user,
-                    perms.iter().map(auth::Permission::from).collect(),
-                )
-            })
+            .map(|_| (user, perms.iter().map(auth::Permission::from).collect()))
             .map_err(|_| auth::Error::BadCredentials)
     }
     fn find_targeted_user(

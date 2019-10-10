@@ -1,24 +1,23 @@
 use seed::prelude::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use tap::*;
 
-use login_enum::{Authentication, Password, CreatePassword};
-use db_models::models::users;
 use crate::{
-    messages::{M as GlobalM, AsyncM as GlobalAsyncM},
-    model::{Store as GlobalS, StoreOperations as GSOp, StoreOpResult as GSOpResult, User as StoreUser},
     locations::*,
+    messages::{AsyncM as GlobalAsyncM, M as GlobalM},
+    model::{
+        Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp, User as StoreUser,
+    },
 };
+use db_models::models::users;
+use login_enum::{Authentication, CreatePassword, Password};
 
 pub fn logout_trigger(_gs: &GlobalS) -> impl GlobalAsyncM {
-    use seed::fetch::{Request, Method};
+    use seed::fetch::{Method, Request};
     const LOGOUT_URL: &str = "/api/login";
     Request::new(LOGOUT_URL)
         .method(Method::Delete)
-        .fetch_string(|fo| GlobalM::StoreOpWithAction(
-            GSOp::RemoveUser(fo),
-            logout_post_fetch,
-        ))
+        .fetch_string(|fo| GlobalM::StoreOpWithAction(GSOp::RemoveUser(fo), logout_post_fetch))
 }
 fn logout_post_fetch(_gs: *const GlobalS, res: GSOpResult) -> Option<GlobalM> {
     use GSOpResult::*;
@@ -31,8 +30,7 @@ fn logout_post_fetch(_gs: *const GlobalS, res: GSOpResult) -> Option<GlobalM> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum M {
     UserName(String),
     Password(String),
@@ -51,8 +49,7 @@ pub enum M {
 
     SetFocus,
 }
-#[derive(Default, Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct S {
     is_create_mode: bool,
     username: String,
@@ -70,7 +67,7 @@ impl S {
 }
 impl S {
     fn create_user_post(&self) -> impl GlobalAsyncM {
-        use seed::fetch::{Request, Method};
+        use seed::fetch::{Method, Request};
         const CREATE_USER_URL: &str = "/api/accounts";
         Request::new(CREATE_USER_URL)
             .method(Method::Post)
@@ -80,9 +77,8 @@ impl S {
                 last_name: self.last_name.clone().unwrap(),
                 email: self.email.clone().unwrap(),
             })
-            .fetch_json(|fo| GlobalM::StoreOpWithAction(
-                GSOp::User(fo),
-                |_gs, res| {
+            .fetch_json(|fo| {
+                GlobalM::StoreOpWithAction(GSOp::User(fo), |_gs, res| {
                     use crate::model::StoreOpResult::*;
                     match res {
                         Success => {
@@ -92,18 +88,18 @@ impl S {
                                 GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default())),
                                 GlobalM::UseLoggedInMenu,
                             ]))
-                        },
+                        }
                         Failure(e) => {
                             log::error!("User failed creation due to {:?}.", e);
                             None
-                        },
+                        }
                     }
-                },
-            ))
+                })
+            })
     }
     fn create_credential_post(&self, u: &StoreUser) -> impl GlobalAsyncM {
-        use seed::fetch::{Request, Method};
         use crate::locations::*;
+        use seed::fetch::{Method, Request};
         const CREDENTIAL_URL: &str = "/api/credentials/pws";
         Request::new(CREDENTIAL_URL)
             .method(Method::Post)
@@ -111,15 +107,17 @@ impl S {
                 user_id: u.id,
                 password: self.password.clone(),
             })
-            .fetch(|fo| if fo.response().is_ok() {
-                GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default()))
-            } else {
-                GlobalM::NoOp
+            .fetch(|fo| {
+                if fo.response().is_ok() {
+                    GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default()))
+                } else {
+                    GlobalM::NoOp
+                }
             })
     }
     fn create_session_post(&self) -> impl GlobalAsyncM {
-        use seed::fetch::{Request, Method};
         use crate::locations::*;
+        use seed::fetch::{Method, Request};
         const LOGIN_URL: &str = "/api/login";
         Request::new(LOGIN_URL)
             .method(Method::Post)
@@ -127,9 +125,8 @@ impl S {
                 user_name: self.username.clone(),
                 password: self.password.clone(),
             }))
-            .fetch_json(move |fo| GlobalM::StoreOpWithAction(
-                GSOp::User(fo),
-                |_gs, res| {
+            .fetch_json(move |fo| {
+                GlobalM::StoreOpWithAction(GSOp::User(fo), |_gs, res| {
                     use crate::model::StoreOpResult::*;
                     match res {
                         Success => {
@@ -138,14 +135,14 @@ impl S {
                                 GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default())),
                                 GlobalM::UseLoggedInMenu,
                             ]))
-                        },
+                        }
                         Failure(e) => {
                             log::trace!("Attempt to create session failed with {:?} error.", e);
                             None
-                        },
+                        }
                     }
-                }
-            ))
+                })
+            })
     }
 }
 
@@ -167,17 +164,17 @@ pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM
         M::CreateUser => {
             log::trace!("Creating a user...");
             orders.perform_g_cmd(s.create_user_post());
-        },
+        }
         M::CreateSession => {
             log::trace!("Creating a session...");
             orders.perform_g_cmd(s.create_session_post());
-        },
+        }
         M::CreateCredential => {
             log::trace!("Creating credentials...");
             if let Some(u) = gs.user.as_ref() {
                 orders.perform_g_cmd(s.create_credential_post(u));
             }
-        },
+        }
         M::SetFocus => {
             use wasm_bindgen::JsCast;
             log::trace!("Setting form focus...");
@@ -185,16 +182,17 @@ pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM
                 seed::body()
                     .query_selector("input[name=username]")
                     .tap_err(|_| log::error!("Could not find username field!"))
-                    .map(|opt_n| opt_n.map(|n| (n
-                         .dyn_into(): Result<web_sys::HtmlElement, _>)
-                         .tap_err(|_| log::error!("Input field is not an HtmlElement!"))
-                    ))
+                    .map(|opt_n| {
+                        opt_n.map(|n| {
+                            (n.dyn_into(): Result<web_sys::HtmlElement, _>)
+                                .tap_err(|_| log::error!("Input field is not an HtmlElement!"))
+                        })
+                    })
             } {
-                node
-                    .focus()
+                node.focus()
                     .unwrap_or_else(|_| log::error!("Failed to focuse on the correct form input."));
             }
-        },
+        }
     }
 }
 pub fn render(s: &S, _gs: &GlobalS) -> Node<M> {
@@ -204,10 +202,8 @@ pub fn render(s: &S, _gs: &GlobalS) -> Node<M> {
         },
         form![
             div![
-                label![
-                    attrs! { At::For => "username" },
-                    "Username",
-                ], input![
+                label![attrs! { At::For => "username" }, "Username",],
+                input![
                     attrs! {
                         At::Class => "single-line-text-entry";
                         At::Placeholder => "username";
@@ -222,10 +218,7 @@ pub fn render(s: &S, _gs: &GlobalS) -> Node<M> {
                 ],
             ],
             div![
-                label![
-                    attrs! { At::For => "password" },
-                    "Password",
-                ],
+                label![attrs! { At::For => "password" }, "Password",],
                 input![
                     attrs! {
                         At::Class => "single-line-text-entry";
@@ -242,7 +235,8 @@ pub fn render(s: &S, _gs: &GlobalS) -> Node<M> {
                         label![
                             attrs! { At::For => "password_confirmation" },
                             "Confirm password",
-                        ], input![
+                        ],
+                        input![
                             attrs! {
                                 At::Class => "single-line-text-entry";
                                 At::Placeholder => "password";
@@ -253,10 +247,8 @@ pub fn render(s: &S, _gs: &GlobalS) -> Node<M> {
                         ],
                     ],
                     div![
-                        label![
-                            attrs! { At::For => "first_name" },
-                            "First name",
-                        ], input![
+                        label![attrs! { At::For => "first_name" }, "First name",],
+                        input![
                             attrs! {
                                 At::Class => "single-line-text-entry";
                                 At::Placeholder => "First Name";
@@ -267,10 +259,8 @@ pub fn render(s: &S, _gs: &GlobalS) -> Node<M> {
                         ],
                     ],
                     div![
-                        label![
-                            attrs! { At::For => "last_name" },
-                            "Last name",
-                        ], input![
+                        label![attrs! { At::For => "last_name" }, "Last name",],
+                        input![
                             attrs! {
                                 At::Class => "single-line-text-entry";
                                 At::Placeholder => "last name";
@@ -281,10 +271,8 @@ pub fn render(s: &S, _gs: &GlobalS) -> Node<M> {
                         ],
                     ],
                     div![
-                        label![
-                            attrs! { At::For => "email" },
-                            "Please enter your email.",
-                        ], input![
+                        label![attrs! { At::For => "email" }, "Please enter your email.",],
+                        input![
                             attrs! {
                                 At::Class => "single-line-text-entry";
                                 At::Placeholder => "email";
@@ -295,21 +283,25 @@ pub fn render(s: &S, _gs: &GlobalS) -> Node<M> {
                         ],
                     ],
                 ]
-            } else { vec![] },
+            } else {
+                vec![]
+            },
             {
                 let is_create_mode = s.is_create_mode;
-                div![
-                    input![
-                        attrs! {
-                            At::Type => "submit",
-                            At::Value => if is_create_mode { "Sign up" } else { "Sign in" },
-                        },
-                        raw_ev(Ev::Click, move |e| {
-                            e.prevent_default();
-                            if is_create_mode { M::CreateUser } else { M::CreateSession }
-                        }),
-                    ],
-                ]
+                div![input![
+                    attrs! {
+                        At::Type => "submit",
+                        At::Value => if is_create_mode { "Sign up" } else { "Sign in" },
+                    },
+                    raw_ev(Ev::Click, move |e| {
+                        e.prevent_default();
+                        if is_create_mode {
+                            M::CreateUser
+                        } else {
+                            M::CreateSession
+                        }
+                    }),
+                ],]
             },
             {
                 let is_create_mode = s.is_create_mode;
@@ -336,4 +328,3 @@ pub fn render(s: &S, _gs: &GlobalS) -> Node<M> {
         ],
     ]
 }
-

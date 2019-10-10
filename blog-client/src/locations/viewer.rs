@@ -1,48 +1,51 @@
 use seed::prelude::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-use db_models::posts;
 use crate::{
-    model::{PostMarker, Store as GlobalS, StoreOperations as GSOp, StoreOpResult as GSOpResult},
-    messages::{M as GlobalM, AsyncM as GlobalAsyncM},
-    shared,
     locations::Location,
+    messages::{AsyncM as GlobalAsyncM, M as GlobalM},
+    model::{PostMarker, Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp},
+    shared,
 };
+use db_models::posts;
 
 pub fn load_post(post_marker: PostMarker) -> impl GlobalAsyncM {
     use seed::fetch::Request;
     const POSTS_URL: &str = "/api/posts";
     let url = format!("{}/{}", POSTS_URL, post_marker);
-    Request::new(url).fetch_json(move |fo|
-        GlobalM::StoreOpWithAction(
-            GSOp::Post(post_marker, fo),
-            after_fetch,
-        )
-    )
+    Request::new(url)
+        .fetch_json(move |fo| GlobalM::StoreOpWithAction(GSOp::Post(post_marker, fo), after_fetch))
 }
 fn after_fetch(gs: *const GlobalS, res: GSOpResult) -> Option<GlobalM> {
     use GSOpResult::*;
     let gs = unsafe { gs.as_ref() }?;
     match (res, &gs.post) {
-        (Success, Some(post)) => Some(
-            GlobalM::RenderPage(Location::Viewer(S { post_marker: PostMarker::Uuid(post.id) }))
-        ),
+        (Success, Some(post)) => Some(GlobalM::RenderPage(Location::Viewer(S {
+            post_marker: PostMarker::Uuid(post.id),
+        }))),
         _ => None,
     }
 }
 pub fn is_restricted_from(gs: &GlobalS) -> bool {
-    if let GlobalS { post: Some(post), user, .. } = gs {
-        !post.is_published() && user.as_ref().map(|u| !u.can_see_unpublished).unwrap_or(true)
+    if let GlobalS {
+        post: Some(post),
+        user,
+        ..
+    } = gs
+    {
+        !post.is_published()
+            && user
+                .as_ref()
+                .map(|u| !u.can_see_unpublished)
+                .unwrap_or(true)
     } else {
         false
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum M {}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct S {
     pub post_marker: PostMarker,
 }
@@ -53,11 +56,7 @@ impl From<PostMarker> for S {
 }
 impl S {
     pub fn to_url(&self) -> Url {
-        Url::new(vec![
-            "blog",
-            "posts",
-            self.post_marker.to_string().as_str(),
-        ])
+        Url::new(vec!["blog", "posts", self.post_marker.to_string().as_str()])
     }
 }
 
@@ -69,7 +68,7 @@ pub fn update(m: M, _s: &mut S, _gs: &GlobalS, _orders: &mut impl Orders<M, Glob
 
 pub fn render_post(post: &posts::DataNoMeta) -> Node<M> {
     div![
-        attrs!{ At::Class => "post" },
+        attrs! { At::Class => "post" },
         h1![post.title],
         p![post.body],
     ]
@@ -80,4 +79,3 @@ pub fn render(s: &S, gs: &GlobalS) -> Node<M> {
         _ => shared::views::loading(),
     }
 }
-

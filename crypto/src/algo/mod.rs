@@ -28,9 +28,7 @@ pub trait SafeGenerateKey {
 impl<S, K: SafeGenerateKey<Settings = S>> Key for K {
     type Settings = S;
     type Error = !;
-    fn generate(
-        settings: &<Self as SafeGenerateKey>::Settings,
-    ) -> Result<Self, Self::Error> {
+    fn generate(settings: &<Self as SafeGenerateKey>::Settings) -> Result<Self, Self::Error> {
         Ok(Self::safe_generate(settings))
     }
 }

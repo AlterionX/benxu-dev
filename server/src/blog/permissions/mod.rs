@@ -7,7 +7,7 @@ pub mod data;
 use rocket::http::Status;
 use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
-use crate::blog::{auth, db::{PermissionQuery}, DB};
+use crate::blog::{auth, db::PermissionQuery, DB};
 use blog_db::models::*;
 
 /// Checks if credentials allows for creation of requested permissions.
@@ -87,7 +87,7 @@ pub mod permission {
     use rocket::http::Status;
     use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
-    use crate::blog::{auth, db::PermissionQuery, DB, permissions::Error};
+    use crate::blog::{auth, db::PermissionQuery, permissions::Error, DB};
     use blog_db::models::*;
 
     /// Gets the permission with the requested id. Requires caller to have the

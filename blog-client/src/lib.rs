@@ -1,23 +1,19 @@
-#![feature(
-    type_ascription,
-    result_map_or_else,
-    drain_filter,
-)]
+#![feature(type_ascription, result_map_or_else, drain_filter)]
 
 #[macro_use]
 extern crate seed;
 
-use wasm_bindgen::prelude::*;
 use seed::prelude::*;
+use wasm_bindgen::prelude::*;
 
 mod model;
 use model::Model;
 mod messages;
 use messages::M;
 
-mod shared;
 mod locations;
 mod requests;
+mod shared;
 
 #[cfg(not(debug_assertions))]
 #[wasm_bindgen]
@@ -30,10 +26,7 @@ extern "C" {
 mod realtime_log_change {
     #[wasm_bindgen::prelude::wasm_bindgen]
     pub fn set_log_level(level: usize) {
-        log::set_max_level([
-            log::LevelFilter::Info,
-            log::LevelFilter::Trace,
-        ][level]);
+        log::set_max_level([log::LevelFilter::Info, log::LevelFilter::Trace][level]);
     }
 }
 #[cfg(not(debug_assertions))]
@@ -90,7 +83,8 @@ pub fn nav_menu(is_logged_in: bool) -> String {
                 children: None,
             },
         ])
-    }.into_string()
+    }
+    .into_string()
 }
 fn replace_nav(is_logged_in: bool) {
     let html = nav_menu(is_logged_in);
@@ -98,16 +92,10 @@ fn replace_nav(is_logged_in: bool) {
         .get_elements_by_tag_name("nav")
         .item(0)
         .unwrap();
-    let header_node = menu_node
-        .parent_element()
-        .unwrap();
-    let mock_node = seed::document()
-        .create_element("div")
-        .unwrap();
+    let header_node = menu_node.parent_element().unwrap();
+    let mock_node = seed::document().create_element("div").unwrap();
     mock_node.set_inner_html(html.as_str());
-    let replacement = mock_node.children()
-        .item(0)
-        .unwrap();
+    let replacement = mock_node.children().item(0).unwrap();
     header_node.replace_child(&replacement, &menu_node).unwrap();
 }
 
@@ -116,38 +104,40 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
     use locations::*;
     match msg {
         M::NoOp => (),
-        M::Grouped(mm) => for m in mm {
-            log::debug!("Processing grouped message...");
-            update(m, model, orders)
-        },
+        M::Grouped(mm) => {
+            for m in mm {
+                log::debug!("Processing grouped message...");
+                update(m, model, orders)
+            }
+        }
         M::UseLoggedOutMenu => replace_nav(false),
         M::UseLoggedInMenu => replace_nav(true),
         M::ChangePage(loc) => {
             log::debug!("Running page change...");
             loc.prep_page_for_render(&model.loc, &model.store, orders);
             orders.skip();
-        },
+        }
         M::ChangePageAndUrl(loc) => {
             log::debug!("Running page change (programmatic)...");
             seed::push_route(loc.to_url());
             loc.prep_page_for_render(&model.loc, &model.store, orders);
             orders.skip();
-        },
+        }
         M::RenderPage(loc) => {
             log::debug!("Running render...");
             match loc.find_redirect(&model.store) {
                 Ok(loc) => {
                     orders.skip().send_msg(M::ChangePageAndUrl(loc));
-                },
+                }
                 Err(loc) => {
                     model.loc = loc;
                     orders.force_render_now();
                     if let Some(m) = model.loc.post_load_msgs() {
                         orders.send_msg(m);
                     }
-                },
+                }
             }
-        },
+        }
         M::StoreOp(op) => {
             log::debug!("Running store operation...");
             if let Err(e) = model.store.exec(op) {
@@ -156,13 +146,13 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
                 log::trace!("Success.");
             }
             orders.skip();
-        },
+        }
         M::StoreOpWithAction(op, f) => {
             log::debug!("Store operation with follow up action detected.");
             if let Some(m) = f(&model.store, model.store.exec(op).into()) {
                 update(m, model, orders);
             }
-        },
+        }
         // TODO remove boilerplate with macro?
         M::Listing(msg) => {
             log::debug!("Handling editor msg...");
@@ -171,7 +161,7 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
             } else {
                 orders.skip();
             }
-        },
+        }
         M::Viewer(msg) => {
             log::debug!("Handling viewer msg...");
             if let Location::Viewer(s) = &mut model.loc {
@@ -179,7 +169,7 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
             } else {
                 orders.skip();
             }
-        },
+        }
         M::Login(msg) => {
             log::debug!("Handling login msg...");
             if let Location::Login(s) = &mut model.loc {
@@ -187,7 +177,7 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
             } else {
                 orders.skip();
             }
-        },
+        }
         M::Editor(msg) => {
             log::debug!("Handling editor msg...");
             if let Location::Editor(s) = &mut model.loc {
@@ -195,7 +185,7 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
             } else {
                 orders.skip();
             }
-        },
+        }
     }
 }
 fn routes(url: Url) -> Option<M> {
@@ -221,24 +211,31 @@ fn init_app(fo: seed::fetch::FetchObject<db_models::users::DataNoMeta>) {
         .and_then(|fd| fd.data.ok())
         .map(Model::with_user)
         .unwrap_or_else(Model::default);
-    let app = seed::App::build(move |_, orders| {
-        if model.store.user.is_some() {
-            orders.send_msg(M::UseLoggedInMenu);
-        }
-        Init::new(model)
-    }, update, view)
-        .sink(update)
-        .mount(tag)
-        .takeover_mount(true)
-        .routes(routes);
+    let app = seed::App::build(
+        move |_, orders| {
+            if model.store.user.is_some() {
+                orders.send_msg(M::UseLoggedInMenu);
+            }
+            Init::new(model)
+        },
+        update,
+        view,
+    )
+    .sink(update)
+    .mount(tag)
+    .takeover_mount(true)
+    .routes(routes);
     log::info!("App built. Running.");
     app.finish().run();
 }
 async fn init_with_current_user() -> Result<JsValue, JsValue> {
     const SELF_URL: &str = "/api/accounts/me";
     log::info!("Detecting if already logged in...");
-    let req = seed::Request::new(SELF_URL).fetch_json(|f: seed::fetch::FetchObject<db_models::users::DataNoMeta>| f);
-    let fo = future_futures::compat::Compat01As03::new(req).await.unwrap_or_else(|e| e);
+    let req = seed::Request::new(SELF_URL)
+        .fetch_json(|f: seed::fetch::FetchObject<db_models::users::DataNoMeta>| f);
+    let fo = future_futures::compat::Compat01As03::new(req)
+        .await
+        .unwrap_or_else(|e| e);
     init_app(fo);
     Ok(JsValue::UNDEFINED)
 }

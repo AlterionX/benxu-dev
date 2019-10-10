@@ -1,37 +1,36 @@
 use seed::prelude::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use tap::*;
 
-use db_models::models::*;
 use crate::{
-    model::{PostMarker, Store as GlobalS, StoreOperations as GSOp, StoreOpResult as GSOpResult, User},
-    messages::{M as GlobalM, AsyncM as GlobalAsyncM},
     locations::Location,
+    messages::{AsyncM as GlobalAsyncM, M as GlobalM},
+    model::{
+        PostMarker, Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp, User,
+    },
 };
+use db_models::models::*;
 
 pub fn load_post(post_marker: PostMarker) -> impl GlobalAsyncM {
     use seed::fetch::Request;
     const POSTS_URL: &str = "/api/posts";
     let url = format!("{}/{}", POSTS_URL, post_marker);
-    Request::new(url).fetch_json(move |fo|
-        GlobalM::StoreOpWithAction(
-            GSOp::Post(post_marker, fo),
-            after_fetch,
-        )
-    )
+    Request::new(url)
+        .fetch_json(move |fo| GlobalM::StoreOpWithAction(GSOp::Post(post_marker, fo), after_fetch))
 }
 fn after_fetch(gs: *const GlobalS, res: GSOpResult) -> Option<GlobalM> {
     use GSOpResult::*;
     let gs = unsafe { gs.as_ref() }?;
     match (res, &gs.post) {
-        (Success, Some(post)) => Some(
-            GlobalM::RenderPage(Location::Editor(S::Old(post.clone())))
-        ),
+        (Success, Some(post)) => Some(GlobalM::RenderPage(Location::Editor(S::Old(post.clone())))),
         _ => None,
     }
 }
 pub fn is_restricted_from(s: &S, gs: &GlobalS) -> bool {
-    if let GlobalS { user: Some(user), .. } = gs {
+    if let GlobalS {
+        user: Some(user), ..
+    } = gs
+    {
         match s {
             S::Old(stored_post) => !stored_post.is_published() && !user.can_see_unpublished,
             S::New(_) => false,
@@ -42,8 +41,7 @@ pub fn is_restricted_from(s: &S, gs: &GlobalS) -> bool {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum M {
     Title(String),
     Body(String),
@@ -53,8 +51,7 @@ pub enum M {
 
     SyncPost,
 }
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum S {
     Undetermined(PostMarker),
     New(posts::NewNoMeta),
@@ -73,11 +70,7 @@ impl S {
             Old(post) => (post.into(): PostMarker).to_string(),
             Undetermined(pm) => pm.to_string(),
         };
-        Url::new(vec![
-            "blog",
-            "edit",
-            id.as_str(),
-        ])
+        Url::new(vec!["blog", "edit", id.as_str()])
     }
     pub fn is_loaded(&self) -> bool {
         if let Self::Undetermined(_) = self {
@@ -96,13 +89,14 @@ impl S {
                     archived_at: None,
                     deleted_at: None,
                     ..
-                } | posts::DataNoMeta {
+                }
+                | posts::DataNoMeta {
                     archived_at: Some(_),
                     deleted_at: None,
                     ..
                 } => true,
                 _ => false,
-            }
+            },
             Self::Undetermined(_) => false,
         }
     }
@@ -121,7 +115,7 @@ impl Default for S {
 
 impl S {
     fn attempt_save(&mut self) -> Option<Box<dyn GlobalAsyncM>> {
-        use seed::fetch::{Request, Method};
+        use seed::fetch::{Method, Request};
         let (url, method) = match self {
             Self::Undetermined(_) => None,
             Self::New(_) => {
@@ -129,15 +123,17 @@ impl S {
                 let create_post_method = Method::Post;
                 // save
                 Some((CREATE_POST_URL.to_owned(), create_post_method))
-            },
+            }
             Self::Old(post) => {
                 const UPDATE_POST_BASE_URL: &str = "/api/posts";
                 let update_post_method = Method::Patch;
-                Some((format!("{}/{}", UPDATE_POST_BASE_URL, post.id), update_post_method))
-            },
+                Some((
+                    format!("{}/{}", UPDATE_POST_BASE_URL, post.id),
+                    update_post_method,
+                ))
+            }
         }?;
-        let req = Request::new(url)
-            .method(method);
+        let req = Request::new(url).method(method);
         if let Self::New(post) = self {
             // save
             let followup = |_gs, res| {
@@ -146,16 +142,15 @@ impl S {
                     Success => {
                         log::debug!("Post is saved! Modifying state to be `Old` instead of `New`");
                         Some(GlobalM::Editor(M::SyncPost))
-                    },
+                    }
                     Failure(e) => {
                         log::error!("Post save failed due to {:?}.", e);
                         None
-                    },
+                    }
                 }
             };
-            let reaction = move |fo| GlobalM::StoreOpWithAction(
-                GSOp::PostWithoutMarker(fo), followup
-            );
+            let reaction =
+                move |fo| GlobalM::StoreOpWithAction(GSOp::PostWithoutMarker(fo), followup);
             Some(Box::new(req.send_json(post).fetch_json(reaction)))
         } else if let Self::Old(post) = self {
             let replacing_post = post.clone();
@@ -172,7 +167,7 @@ impl S {
         }
     }
     fn attempt_publish(&mut self, user: &User) -> Option<Box<dyn GlobalAsyncM>> {
-        use seed::fetch::{Request, Method};
+        use seed::fetch::{Method, Request};
         match self {
             Self::Undetermined(_) => None,
             Self::New(post) => {
@@ -183,43 +178,36 @@ impl S {
                 let (url, method) = (CREATE_POST_URL.to_string(), Method::Post);
                 let followup = |gs: *const GlobalS, res| {
                     let gs = unsafe { gs.as_ref() }?;
-                    if let (
-                        GSOpResult::Success,
-                        Some(posts::DataNoMeta { id: post_id, .. }),
-                    ) = (
-                        res,
-                        &gs.post,
-                    ) {
+                    if let (GSOpResult::Success, Some(posts::DataNoMeta { id: post_id, .. })) =
+                        (res, &gs.post)
+                    {
                         Some(GlobalM::ChangePageAndUrl(Location::Viewer(
-                            PostMarker::Uuid(*post_id).into()
+                            PostMarker::Uuid(*post_id).into(),
                         )))
                     } else {
                         None
                     }
                 };
-                let reaction = move |fo| GlobalM::StoreOpWithAction(
-                    GSOp::PostWithoutMarker(fo), followup
-                );
+                let reaction =
+                    move |fo| GlobalM::StoreOpWithAction(GSOp::PostWithoutMarker(fo), followup);
                 let req = Request::new(url)
                     .method(method)
                     .send_json(post)
                     .fetch_json(reaction);
                 Some(Box::new(req))
-            },
+            }
             Self::Old(post) => {
                 let post_id = post.id;
                 let (url, method) = (format!("/api/posts/{}/publish", post.id), Method::Post);
                 let reaction = move |res| match res {
                     Ok(_) => GlobalM::ChangePageAndUrl(Location::Viewer(
-                        PostMarker::Uuid(post_id).into()
+                        PostMarker::Uuid(post_id).into(),
                     )),
                     _ => GlobalM::NoOp,
                 };
-                let req = Request::new(url)
-                    .method(method)
-                    .fetch_string_data(reaction);
+                let req = Request::new(url).method(method).fetch_string_data(reaction);
                 Some(Box::new(req))
-            },
+            }
         }
     }
 }
@@ -247,10 +235,10 @@ pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM
     match m {
         Title(title) => {
             *post_title = title;
-        },
+        }
         Body(body) => {
             *post_body = body;
-        },
+        }
         Slug(slug) => match slug.trim() {
             "" => *post_slug = None,
             _ => *post_slug = Some(slug),
@@ -260,25 +248,23 @@ pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM
                 .as_ref()
                 .and_then(|u| s.attempt_publish(u))
                 .map(|req| orders.perform_g_cmd(req));
-        },
-        Save => { s.attempt_save().map(|req| orders.perform_g_cmd(req)); },
+        }
+        Save => {
+            s.attempt_save().map(|req| orders.perform_g_cmd(req));
+        }
 
-        SyncPost => if let Some(updated) = &gs.post {
-            match s {
-                S::Old(post) if post.id == updated.id => {
-                    update_post(post, updated)
-                },
-                _ => {
-                    orders.send_g_msg(
-                        GlobalM::ChangePageAndUrl(
-                            Location::Editor(
-                                S::Old(updated.clone())
-                            )
-                        )
-                    );
+        SyncPost => {
+            if let Some(updated) = &gs.post {
+                match s {
+                    S::Old(post) if post.id == updated.id => update_post(post, updated),
+                    _ => {
+                        orders.send_g_msg(GlobalM::ChangePageAndUrl(Location::Editor(S::Old(
+                            updated.clone(),
+                        ))));
+                    }
                 }
             }
-        },
+        }
     }
 }
 
@@ -297,10 +283,7 @@ mod views {
     }
 
     pub fn heading() -> Node<M> {
-        h1![
-            attrs! { At::Class => "as-h3" },
-            "Editing"
-        ]
+        h1![attrs! { At::Class => "as-h3" }, "Editing"]
     }
 
     fn get_title_slug_body(s: &S) -> Option<(&str, Option<&str>, &str)> {
@@ -342,7 +325,8 @@ mod views {
                     attrs
                 },
                 "/blog/posts/",
-            ], input![
+            ],
+            input![
                 {
                     let mut attrs = attrs! {
                         At::Placeholder => hint;
@@ -394,17 +378,17 @@ mod views {
                 }),
             ],
             if s.is_publishable() {
-                    input![
-                        attrs! {
-                            At::Class => "inline-button",
-                            At::Type => "submit",
-                            At::Value => "Publish",
-                        },
-                        raw_ev(Ev::Click, |e| {
-                            e.prevent_default();
-                            M::Publish
-                        }),
-                    ]
+                input![
+                    attrs! {
+                        At::Class => "inline-button",
+                        At::Type => "submit",
+                        At::Value => "Publish",
+                    },
+                    raw_ev(Ev::Click, |e| {
+                        e.prevent_default();
+                        M::Publish
+                    }),
+                ]
             } else {
                 empty![]
             },
@@ -429,4 +413,3 @@ mod views {
         ])
     }
 }
-

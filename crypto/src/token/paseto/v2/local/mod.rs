@@ -2,17 +2,9 @@ mod local_prelude {
     pub use crate::{
         algo::{
             cipher::{
-                symmetric::{
-                    self as symm,
-                    Algo as CipherA,
-                    CanDecrypt,
-                    CanEncrypt,
-                },
+                symmetric::{self as symm, Algo as CipherA, CanDecrypt, CanEncrypt},
                 xchacha20::poly1305::{
-                    Algo as ENC_ALGO,
-                    Key as ENC_KEY,
-                    DecryptArgs as DArgs,
-                    EncryptArgs as EArgs,
+                    Algo as ENC_ALGO, DecryptArgs as DArgs, EncryptArgs as EArgs, Key as ENC_KEY,
                     Nonce as ChaChaNonce,
                 },
             },

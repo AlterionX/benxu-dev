@@ -160,7 +160,10 @@ impl<K: SafeGenerateKey + Clone + Send + Sync, A: Algo<Key = K> + Send + Sync + 
                 } else {
                     Duration::new(0, 0)
                 };
-                info!("Scheduled key exchange for {:?} from now.", duration_to_wait);
+                info!(
+                    "Scheduled key exchange for {:?} from now.",
+                    duration_to_wait
+                );
                 match rx.recv_timeout(duration_to_wait) {
                     Err(RecvTimeoutError::Disconnected) => break,
                     _ => (), // continue if nothing

@@ -20,18 +20,13 @@ impl From<token::SerializedData> for PrimedToken {
     }
 }
 impl PrimedToken {
-    pub(super) fn encrypt(
-        self,
-        key: &ENC_KEY,
-    ) -> Result<EncryptedToken, Error> {
+    pub(super) fn encrypt(self, key: &ENC_KEY) -> Result<EncryptedToken, Error> {
         EncryptedToken::try_from((self, key)).map_err(|_| Error::Encryption)
     }
 }
 impl TryFrom<(PrimedToken, &ENC_KEY)> for EncryptedToken {
     type Error = Error;
-    fn try_from(
-        (tok, key): (PrimedToken, &ENC_KEY),
-    ) -> Result<Self, Self::Error> {
+    fn try_from((tok, key): (PrimedToken, &ENC_KEY)) -> Result<Self, Self::Error> {
         let aad = multi_part_pre_auth_encoding(&[
             HEADER.to_combined().as_slice(),
             tok.nonce.as_slice(),

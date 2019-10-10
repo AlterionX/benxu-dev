@@ -341,9 +341,7 @@ impl Unpacked {
     }
 
     /// Locate and return the positions of the periods in the payload.
-    fn find_section_dividers(
-        buf: &[u8],
-    ) -> Result<MinToMaxPeriods, UnexpectedNumberOfPeriods> {
+    fn find_section_dividers(buf: &[u8]) -> Result<MinToMaxPeriods, UnexpectedNumberOfPeriods> {
         let mut indices = Vec::with_capacity(5);
         for (idx, c) in buf.iter().enumerate() {
             if *c == b'.' {

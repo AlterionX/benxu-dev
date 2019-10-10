@@ -62,10 +62,7 @@ where
         .canonicalize()
         .pack())
 }
-pub fn decrypt<T, F>(
-    tok: token::Packed,
-    key: &RSAKey,
-) -> Result<token::Data<T, F>, error::Error>
+pub fn decrypt<T, F>(tok: token::Packed, key: &RSAKey) -> Result<token::Data<T, F>, error::Error>
 where
     T: DeserializeOwned,
     F: DeserializeOwned,
@@ -76,7 +73,6 @@ where
         .canonicalize()
         .deserialize()?)
 }
-
 
 #[cfg(test)]
 mod unit_tests {

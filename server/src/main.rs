@@ -209,8 +209,11 @@ impl Server {
         // Initializing cryptographic system.
         let sodiumoxide_init = {
             info!("Initialize multithreaded crypto crate.");
-            let res = crypto::multithread_init()
-                .tap_err(|_| error!("Could not initialize crate `crypto` for multithreaded use. Will panic later."));
+            let res = crypto::multithread_init().tap_err(|_| {
+                error!(
+                    "Could not initialize crate `crypto` for multithreaded use. Will panic later."
+                )
+            });
             info!("Crypto crate initialized.");
             res
         };

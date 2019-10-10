@@ -100,12 +100,8 @@ mod unit_test {
 
     mod key_gen {
         use crate::algo::{
-            SafeGenerateKey,
-            Algo as BaseAlgo,
-            cipher::{
-                symmetric::Algo as SymmAlgo,
-                plaintext::Algo,
-            },
+            cipher::{plaintext::Algo, symmetric::Algo as SymmAlgo},
+            Algo as BaseAlgo, SafeGenerateKey,
         };
         #[test]
         fn key_generation() {
@@ -118,80 +114,77 @@ mod unit_test {
     }
     mod symm {
         use crate::algo::{
-            SafeGenerateKey,
-            Algo as BaseAlgo,
             cipher::{
-                symmetric::{
-                    Algo as SymmAlgo,
-                    CanDecrypt,
-                    CanEncrypt,
-                },
                 plaintext::Algo,
+                symmetric::{Algo as SymmAlgo, CanDecrypt, CanEncrypt},
             },
+            Algo as BaseAlgo, SafeGenerateKey,
         };
         const KEY: () = ();
         #[test]
         fn encrypt() {
-            const TO_ENCRYPT: &'static[u8] = b"Hello World";
-            let encrypted = Algo::new(()).encrypt(&(), TO_ENCRYPT).expect("No error when encrypting.");
+            const TO_ENCRYPT: &'static [u8] = b"Hello World";
+            let encrypted = Algo::new(())
+                .encrypt(&(), TO_ENCRYPT)
+                .expect("No error when encrypting.");
             assert_eq!(encrypted, TO_ENCRYPT)
         }
         #[test]
         fn decrypt() {
-            const TO_DECRYPT: &'static[u8] = b"Hello World";
-            let decrypted = Algo::new(()).decrypt(&(), TO_DECRYPT).expect("No error when decrypting.");
+            const TO_DECRYPT: &'static [u8] = b"Hello World";
+            let decrypted = Algo::new(())
+                .decrypt(&(), TO_DECRYPT)
+                .expect("No error when decrypting.");
             assert_eq!(decrypted, TO_DECRYPT)
         }
     }
     mod asymm_public {
         use crate::algo::{
-            SafeGenerateKey,
-            Algo as BaseAlgo,
             cipher::{
-                symmetric::{
-                    Algo as SymmAlgo,
-                    CanDecrypt,
-                    CanEncrypt,
-                },
                 plaintext::Algo,
+                symmetric::{Algo as SymmAlgo, CanDecrypt, CanEncrypt},
             },
+            Algo as BaseAlgo, SafeGenerateKey,
         };
         #[test]
         fn encrypt() {
-            const TO_ENCRYPT: &'static[u8] = b"Hello World";
-            let encrypted = Algo::new(()).encrypt(&(), TO_ENCRYPT).expect("No error when encrypting.");
+            const TO_ENCRYPT: &'static [u8] = b"Hello World";
+            let encrypted = Algo::new(())
+                .encrypt(&(), TO_ENCRYPT)
+                .expect("No error when encrypting.");
             assert_eq!(encrypted, TO_ENCRYPT)
         }
         #[test]
         fn decrypt() {
-            const TO_DECRYPT: &'static[u8] = b"Hello World";
-            let decrypted = Algo::new(()).decrypt(&(), TO_DECRYPT).expect("No error when decrypting.");
+            const TO_DECRYPT: &'static [u8] = b"Hello World";
+            let decrypted = Algo::new(())
+                .decrypt(&(), TO_DECRYPT)
+                .expect("No error when decrypting.");
             assert_eq!(decrypted, TO_DECRYPT)
         }
     }
     mod asymm_private {
         use crate::algo::{
-            SafeGenerateKey,
-            Algo as BaseAlgo,
             cipher::{
-                symmetric::{
-                    Algo as SymmAlgo,
-                    CanDecrypt,
-                    CanEncrypt,
-                },
                 plaintext::Algo,
+                symmetric::{Algo as SymmAlgo, CanDecrypt, CanEncrypt},
             },
+            Algo as BaseAlgo, SafeGenerateKey,
         };
         #[test]
         fn encrypt() {
-            const TO_ENCRYPT: &'static[u8] = b"Hello World";
-            let encrypted = Algo::new(()).encrypt(&(), TO_ENCRYPT).expect("No error when encrypting.");
+            const TO_ENCRYPT: &'static [u8] = b"Hello World";
+            let encrypted = Algo::new(())
+                .encrypt(&(), TO_ENCRYPT)
+                .expect("No error when encrypting.");
             assert_eq!(encrypted, TO_ENCRYPT)
         }
         #[test]
         fn decrypt() {
-            const TO_DECRYPT: &'static[u8] = b"Hello World";
-            let decrypted = Algo::new(()).decrypt(&(), TO_DECRYPT).expect("No error when decrypting.");
+            const TO_DECRYPT: &'static [u8] = b"Hello World";
+            let decrypted = Algo::new(())
+                .decrypt(&(), TO_DECRYPT)
+                .expect("No error when decrypting.");
             assert_eq!(decrypted, TO_DECRYPT)
         }
     }

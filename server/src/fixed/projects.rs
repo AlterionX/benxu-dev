@@ -79,4 +79,3 @@ pub mod project {
 
 /// Functions generating a complete list of my projects. Not yet implemented.
 pub mod htmlgen {}
-

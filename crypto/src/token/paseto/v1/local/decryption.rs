@@ -63,11 +63,7 @@ impl BasicToken {
 }
 impl PrimedToken {
     /// Repacks the auth and encryption keys with the old token.
-    fn new(
-        tok: BasicToken,
-        auth_key: AuthKey,
-        encryption_key: EncryptionKey,
-    ) -> Self {
+    fn new(tok: BasicToken, auth_key: AuthKey, encryption_key: EncryptionKey) -> Self {
         Self {
             buffer: tok.buffer,
             message_boundary: tok.message_boundary,
@@ -97,11 +93,7 @@ impl PrimedToken {
         .map_err(|_| Error::BadSignature {})?;
 
         let signing_key = <HMAC_SHA384 as A>::Key::new(&self.auth_key);
-        if HMAC_SHA384::new(()).verify(
-            encoded.as_slice(),
-            self.signature(),
-            &signing_key,
-        ) {
+        if HMAC_SHA384::new(()).verify(encoded.as_slice(), self.signature(), &signing_key) {
             Ok(VerifiedToken::new(self))
         } else {
             Err(Error::BadSignature {})
@@ -135,4 +127,3 @@ impl VerifiedToken {
             })
     }
 }
-

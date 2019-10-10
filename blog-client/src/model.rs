@@ -1,17 +1,12 @@
-use seed::prelude::*;
 use seed::fetch::FetchObject;
-use serde::{Serialize, Deserialize};
+use seed::prelude::*;
+use serde::{Deserialize, Serialize};
 use tap::*;
 
+use crate::{locations::*, messages::M, requests};
 use db_models::models::{posts, users};
-use crate::{
-    messages::M,
-    locations::*,
-    requests,
-};
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Name {
     pub first: String,
     pub last: String,
@@ -22,8 +17,7 @@ impl Name {
         p![format!("By {} {}", self.first, self.last)]
     }
 }
-#[derive(Default, Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct User {
     pub id: uuid::Uuid,
     pub name: Name,
@@ -43,8 +37,7 @@ impl From<users::DataNoMeta> for User {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PostMarker {
     Uuid(uuid::Uuid),
     Slug(String),
@@ -62,20 +55,12 @@ impl PostMarker {
 }
 impl From<String> for PostMarker {
     fn from(s: String) -> Self {
-        uuid::Uuid::parse_str(s.as_str())
-            .map_or_else(
-                |_| Self::Slug(s),
-                Self::Uuid,
-            )
+        uuid::Uuid::parse_str(s.as_str()).map_or_else(|_| Self::Slug(s), Self::Uuid)
     }
 }
 impl From<&str> for PostMarker {
     fn from(s: &str) -> Self {
-        uuid::Uuid::parse_str(s)
-            .map_or_else(
-                |_| Self::create_slug(s),
-                Self::Uuid,
-            )
+        uuid::Uuid::parse_str(s).map_or_else(|_| Self::create_slug(s), Self::Uuid)
     }
 }
 impl From<&posts::DataNoMeta> for PostMarker {
@@ -170,8 +155,7 @@ impl From<Result<(), FailReason>> for StoreOpResult {
     }
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Store {
     pub published_posts: Option<Vec<posts::BasicData>>,
     pub unpublished_posts: Option<Vec<posts::BasicData>>,
@@ -192,46 +176,57 @@ impl Store {
                 log::trace!("Post listing store operation triggered.");
                 // TODO use query data to implement cache.
                 let fetched = fetched.response()?;
-                let mut available_posts: Vec<_> = fetched.data.into_iter().filter(|post| post.deleted_at.is_none()).collect();
-                let published = available_posts.drain_filter(|post| post.is_published()).collect();
+                let mut available_posts: Vec<_> = fetched
+                    .data
+                    .into_iter()
+                    .filter(|post| post.deleted_at.is_none())
+                    .collect();
+                let published = available_posts
+                    .drain_filter(|post| post.is_published())
+                    .collect();
                 let unpublished = available_posts;
                 self.published_posts.replace(published);
                 self.unpublished_posts.replace(unpublished);
-            },
+            }
             RemoveUser(fo) => {
                 log::trace!("User clear operation triggered.");
-                fo.response()
-                    .tap_err(|e| log::warn!("Error {:?} occurred! TODO: show an error to the user.", e))?;
+                fo.response().tap_err(|e| {
+                    log::warn!("Error {:?} occurred! TODO: show an error to the user.", e)
+                })?;
                 self.user = None;
-            },
+            }
             User(fo) => {
                 log::trace!("User store operation triggered.");
-                let fetched = fo.response()
-                    .tap_err(|e| log::warn!("Error {:?} occurred! TODO: show an error to the user.", e))?;
+                let fetched = fo.response().tap_err(|e| {
+                    log::warn!("Error {:?} occurred! TODO: show an error to the user.", e)
+                })?;
                 let unparsed = fetched.data;
                 let parsed = unparsed.into();
                 self.user.replace(parsed);
-            },
+            }
             Post(_, fo) | PostWithoutMarker(fo) => {
-                let fetched = fo.response()
-                    .tap_err(|e| log::warn!("Error {:?} occurred! TODO: show an error to the user.", e))?;
+                let fetched = fo.response().tap_err(|e| {
+                    log::warn!("Error {:?} occurred! TODO: show an error to the user.", e)
+                })?;
                 self.post.replace(fetched.data);
-            },
+            }
             PostRaw(raw_post) => {
                 self.post.replace(raw_post);
-            },
+            }
         }
         Ok(())
     }
     pub fn has_cached_post(&self, id: &PostMarker) -> bool {
         use PostMarker::*;
         match (&self.post, &id) {
+            (Some(db_models::posts::DataNoMeta { id: cached_id, .. }), Uuid(id)) => {
+                *id == *cached_id
+            }
             (
-                Some(db_models::posts::DataNoMeta { id: cached_id, .. }),
-                Uuid(id),
-            ) => *id == *cached_id,
-            (
-                Some(db_models::posts::DataNoMeta { slug: Some(cached_slug), .. }),
+                Some(db_models::posts::DataNoMeta {
+                    slug: Some(cached_slug),
+                    ..
+                }),
                 Slug(slug),
             ) => *slug == *cached_slug,
             _ => false,
@@ -239,8 +234,7 @@ impl Store {
     }
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Model {
     pub store: Store,
     pub loc: Location,
@@ -253,7 +247,11 @@ impl Model {
         }
     }
     pub fn to_view(&self) -> Vec<Node<M>> {
-        log::info!("Rendering location {:?} with global state {:?}.", self.loc, self.store);
+        log::info!(
+            "Rendering location {:?} with global state {:?}.",
+            self.loc,
+            self.store
+        );
         self.loc.to_view(&self.store)
     }
 }

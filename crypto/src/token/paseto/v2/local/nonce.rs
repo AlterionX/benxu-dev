@@ -1,5 +1,8 @@
 use crate::algo::{
-    hash::{blake::two_b::{Algo as BLAKE2B, Key as BLAKE2B_KEY}, symmetric::Algo as HashA},
+    hash::{
+        blake::two_b::{Algo as BLAKE2B, Key as BLAKE2B_KEY},
+        symmetric::Algo as HashA,
+    },
     Algo as A,
 };
 use rand::{rngs::OsRng, RngCore};

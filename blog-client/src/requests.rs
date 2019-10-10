@@ -1,11 +1,10 @@
 use std::fmt::Display;
 
 use chrono::{DateTime, Utc};
-use serde::{Serialize, Deserialize};
 use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum SortOrdering {
     Ascending,
     Descending,
@@ -18,8 +17,7 @@ impl Display for SortOrdering {
         }
     }
 }
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PostSort {
     Date(SortOrdering),
     AlphabeticalTitle(SortOrdering),
@@ -37,8 +35,7 @@ impl Default for PostSort {
         Self::Date(SortOrdering::Descending)
     }
 }
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PostPagination {
     Ten,
     Twenty,
@@ -58,8 +55,7 @@ impl Default for PostPagination {
         Self::Twenty
     }
 }
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PostRange {
     ByDate {
         begin: DateTime<Utc>,
@@ -77,7 +73,10 @@ pub enum PostRange {
 impl PostRange {
     fn into_offset_and_lim(self) -> Result<(usize, usize), (DateTime<Utc>, DateTime<Utc>)> {
         match self {
-            Self::ByPage { page_size, page_num } => Ok({
+            Self::ByPage {
+                page_size,
+                page_num,
+            } => Ok({
                 let page_size = page_size.to_usize();
                 (page_size * page_num, page_size)
             }),
@@ -107,8 +106,7 @@ impl Display for PostRange {
         }
     }
 }
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PostQuery {
     Structured {
         range: PostRange,
@@ -120,7 +118,10 @@ impl Display for PostQuery {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Raw(s) => write!(f, "{}", s),
-            Self::Structured { range, sort: Some(sort) } => write!(f, "{}&{}", range, sort),
+            Self::Structured {
+                range,
+                sort: Some(sort),
+            } => write!(f, "{}&{}", range, sort),
             Self::Structured { range, sort: None } => write!(f, "{}", range),
         }
     }
@@ -133,4 +134,3 @@ impl Default for PostQuery {
         }
     }
 }
-

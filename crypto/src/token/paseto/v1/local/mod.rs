@@ -5,15 +5,8 @@ mod local_prelude {
     pub use crate::{
         algo::{
             cipher::{
-                aes256::ctr::{
-                    Algo as ENC_ALGO,
-                    Key as ENC_KEY,
-                },
-                symmetric::{
-                    self as symm,
-                    CanDecrypt,
-                    CanEncrypt,
-                },
+                aes256::ctr::{Algo as ENC_ALGO, Key as ENC_KEY},
+                symmetric::{self as symm, CanDecrypt, CanEncrypt},
             },
             hash::{
                 hmac::sha384::Algo as HMAC_SHA384,
@@ -33,9 +26,9 @@ mod local_prelude {
         },
         BoolToResult,
     };
+    pub use boolinator::Boolinator;
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
     pub use serde_json as json;
-    pub use boolinator::Boolinator;
     pub use std::{convert::TryFrom, ops::Deref, str};
 }
 use self::{decryption::BasicToken, encryption::SerializedRandToken, local_prelude::*};
@@ -72,7 +65,8 @@ impl Deref for EncryptionKey {
 /// Takes the nonce and a static key, creating the auth and encrpytion keys.
 pub fn split_key(nonce: &Nonce, key: &[u8]) -> (EncryptionKey, AuthKey) {
     let hkdf = HKDF_SHA384::new((nonce.get_salt().to_vec(), vec![key.to_vec()]));
-    let key_deriv_key = <<HKDF_SHA384 as A>::Key as SafeGenerateKey>::safe_generate(hkdf.key_settings());
+    let key_deriv_key =
+        <<HKDF_SHA384 as A>::Key as SafeGenerateKey>::safe_generate(hkdf.key_settings());
     let mut keys = hkdf.generate(
         key_deriv_key,
         &[

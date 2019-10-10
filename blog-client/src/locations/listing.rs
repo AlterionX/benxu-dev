@@ -1,14 +1,14 @@
 use seed::prelude::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-use db_models::models::posts;
 use crate::{
-    model::{Name, Store as GlobalS, StoreOperations as GSOp, StoreOpResult as GSOpResult},
-    messages::{M as GlobalM, AsyncM as GlobalAsyncM},
+    locations::Location,
+    messages::{AsyncM as GlobalAsyncM, M as GlobalM},
+    model::{Name, Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp},
     requests::PostQuery,
     shared,
-    locations::Location,
 };
+use db_models::models::posts;
 
 pub fn data_load(s: S, _gs: &GlobalS) -> impl GlobalAsyncM {
     use seed::fetch::Request;
@@ -17,10 +17,8 @@ pub fn data_load(s: S, _gs: &GlobalS) -> impl GlobalAsyncM {
     let url = format!("{}?{}", POSTS_URL, query);
     // TODO figure out caching and determing if data already loaded instead of going
     // straight to server all the time.
-    Request::new(url).fetch_json(|fo| GlobalM::StoreOpWithAction(
-        GSOp::PostListing(query, fo),
-        after_fetch,
-    ))
+    Request::new(url)
+        .fetch_json(|fo| GlobalM::StoreOpWithAction(GSOp::PostListing(query, fo), after_fetch))
 }
 fn after_fetch(_gs: *const GlobalS, res: GSOpResult) -> Option<GlobalM> {
     use GSOpResult::*;
@@ -30,11 +28,9 @@ fn after_fetch(_gs: *const GlobalS, res: GSOpResult) -> Option<GlobalM> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum M {}
-#[derive(Default, Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct S {
     pub query: Option<PostQuery>,
 }
@@ -56,13 +52,13 @@ pub fn update(m: M, _s: &mut S, _gs: &GlobalS, _orders: &mut impl Orders<M, Glob
 fn render_post(p: &posts::BasicData, author: Option<&Name>) -> Node<M> {
     log::debug!("Not called");
     li![
-        attrs!{
+        attrs! {
             At::Class => "post-item";
         },
         h2![
-            attrs!{ At::Class => "as-h3" },
+            attrs! { At::Class => "as-h3" },
             a![
-                attrs!{
+                attrs! {
                     At::Href => if p.is_published() {
                         format!("/blog/posts/{}", p.id)
                     } else {
@@ -74,7 +70,7 @@ fn render_post(p: &posts::BasicData, author: Option<&Name>) -> Node<M> {
             ],
         ],
         p![
-            attrs!{ At::Class => "post-published-date" },
+            attrs! { At::Class => "post-published-date" },
             p.published_at
                 .map(|d| d.to_string())
                 .unwrap_or_else(|| "Unpublished".to_owned())
@@ -111,7 +107,11 @@ pub fn render(_s: &S, gs: &GlobalS) -> Vec<Node<M>> {
             },
         ],
         match gs {
-            GlobalS { user: Some(user), unpublished_posts: Some(posts), .. } if user.can_see_unpublished => {
+            GlobalS {
+                user: Some(user),
+                unpublished_posts: Some(posts),
+                ..
+            } if user.can_see_unpublished => {
                 log::debug!("Calling unpublished render.");
                 div![
                     attrs! {
@@ -120,9 +120,8 @@ pub fn render(_s: &S, gs: &GlobalS) -> Vec<Node<M>> {
                     h1!["Unpublished Drafts"],
                     render_post_list("None found.", posts.as_slice()),
                 ]
-            },
+            }
             _ => empty![],
         },
     ]
 }
-

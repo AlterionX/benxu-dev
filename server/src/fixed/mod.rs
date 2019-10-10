@@ -18,18 +18,16 @@ fn get_index() -> Markup {
 
 /// Functions generating my home page.
 pub mod htmlgen {
-    use page_client::{data, partials};
     use maud::{html, Markup, Render};
+    use page_client::{data, partials};
 
     /// Create a basic menu.
     pub fn menu() -> Option<data::Menu<'static>> {
-        Some(data::Menu(&[
-            data::MenuItem {
-                text: "Blog",
-                link: Some("/blog"),
-                children: None,
-            },
-        ]))
+        Some(data::Menu(&[data::MenuItem {
+            text: "Blog",
+            link: Some("/blog"),
+            children: None,
+        }]))
     }
 
     /// Returns a list of links as [`Markup`].

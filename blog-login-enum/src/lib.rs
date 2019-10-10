@@ -1,6 +1,6 @@
 //! Representations of auth transfer between the [`blog_client`](../blog_client) and [`server`](../server).
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// Password authentication data. Separated from AuthenticationData to allow for impl blocks. Will
 /// go away once enum variants become types.

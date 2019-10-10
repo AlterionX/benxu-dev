@@ -13,8 +13,8 @@ use rocket::{
     State,
 };
 use serde::{Deserialize, Deserializer, Serialize};
-use tap::*;
 use std::{marker::PhantomData, ops::Deref, str};
+use tap::*;
 
 use crate::{TokenKeyFixture, TokenKeyStore};
 use crypto::{algo::Algo as A, token::paseto, Generational};
@@ -194,13 +194,19 @@ impl<'de> Deserialize<'de> for Credentials<perms::Any> {
                 A: serde::de::SeqAccess<'de>,
             {
                 let permissions = serde::de::SeqAccess::next_element::<Vec<Permission>>(&mut seq)?
-                    .ok_or_else(|| serde::de::Error::invalid_length(
-                        0usize,
-                        &"struct Credentials with 2 elements",
-                    ))?;
-                let user_id = serde::de::SeqAccess::next_element::<uuid::Uuid>(&mut seq)?.ok_or_else(||
-                    serde::de::Error::invalid_length(1usize, &"struct Credentials with 2 elements"),
-                )?;
+                    .ok_or_else(|| {
+                        serde::de::Error::invalid_length(
+                            0usize,
+                            &"struct Credentials with 2 elements",
+                        )
+                    })?;
+                let user_id = serde::de::SeqAccess::next_element::<uuid::Uuid>(&mut seq)?
+                    .ok_or_else(|| {
+                        serde::de::Error::invalid_length(
+                            1usize,
+                            &"struct Credentials with 2 elements",
+                        )
+                    })?;
                 Ok(Credentials {
                     level: PhantomData,
                     permissions,

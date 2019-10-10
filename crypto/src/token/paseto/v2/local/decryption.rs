@@ -14,10 +14,7 @@ impl BasicToken {
     const NONCE_LENGTH: usize = 24;
     const NONCE_RANGE: RangeTo<usize> = (..24);
     const MSG_RANGE: RangeFrom<usize> = (24..);
-    pub(super) fn decrypt(
-        self,
-        key: &ENC_KEY,
-    ) -> Result<DecryptedToken, Error> {
+    pub(super) fn decrypt(self, key: &ENC_KEY) -> Result<DecryptedToken, Error> {
         DecryptedToken::try_from((self, key))
     }
 
@@ -47,9 +44,7 @@ impl DecryptedToken {
 }
 impl TryFrom<(BasicToken, &ENC_KEY)> for DecryptedToken {
     type Error = Error;
-    fn try_from(
-        (tok, key): (BasicToken, &ENC_KEY),
-    ) -> Result<Self, Self::Error> {
+    fn try_from((tok, key): (BasicToken, &ENC_KEY)) -> Result<Self, Self::Error> {
         let aad = multi_part_pre_auth_encoding(&[
             HEADER.to_combined().as_slice(),
             tok.nonce.as_slice(),

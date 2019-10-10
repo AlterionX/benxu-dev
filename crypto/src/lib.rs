@@ -4,7 +4,7 @@
     decl_macro,
     try_trait,
     associated_type_defaults,
-    never_type,
+    never_type
 )]
 
 //! A crate gathering various algorithms from different crypto libraries and attempting to unify

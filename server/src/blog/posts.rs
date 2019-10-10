@@ -5,7 +5,11 @@ use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
 use chrono::DateTime;
 
-use crate::blog::{auth, db::{self, PostQuery}, DB};
+use crate::blog::{
+    auth,
+    db::{self, PostQuery},
+    DB,
+};
 use blog_db::models::*;
 
 /// Handler for getting posts with criteria.

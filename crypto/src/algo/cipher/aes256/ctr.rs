@@ -51,13 +51,8 @@ impl symm::CanEncrypt for Algo {
     type Input = [u8];
     type Error = symm::EncryptError;
     fn encrypt(&self, key: &Self::EKey, msg: &Self::Input) -> Result<Vec<u8>, Self::Error> {
-        openssl::symm::encrypt(
-            self.0,
-            key.as_key(),
-            Some(key.as_nonce()),
-            msg,
-        )
-        .map_err(|_| symm::EncryptError::Base)
+        openssl::symm::encrypt(self.0, key.as_key(), Some(key.as_nonce()), msg)
+            .map_err(|_| symm::EncryptError::Base)
     }
 }
 impl symm::CanDecrypt for Algo {
@@ -65,12 +60,7 @@ impl symm::CanDecrypt for Algo {
     type Input = [u8];
     type Error = symm::DecryptError;
     fn decrypt(&self, key: &Self::DKey, msg: &Self::Input) -> Result<Vec<u8>, Self::Error> {
-        openssl::symm::decrypt(
-            self.0,
-            key.as_key(),
-            Some(key.as_nonce()),
-            msg,
-        )
-        .map_err(|_| symm::DecryptError::Base)
+        openssl::symm::decrypt(self.0, key.as_key(), Some(key.as_nonce()), msg)
+            .map_err(|_| symm::DecryptError::Base)
     }
 }

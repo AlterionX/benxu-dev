@@ -3,7 +3,7 @@
 use crate::{
     blog::{
         auth::{self, perms::Verifiable},
-        db::{UserQuery, PWQuery},
+        db::{PWQuery, UserQuery},
         DB,
     },
     PWAlgo,

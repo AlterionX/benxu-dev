@@ -6,7 +6,7 @@ use rocket::{http::Status, State};
 use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
 use crate::{
-    blog::{auth, credentials::data::SavableCredential, DB, db::PWQuery},
+    blog::{auth, credentials::data::SavableCredential, db::PWQuery, DB},
     PWKeyFixture,
 };
 

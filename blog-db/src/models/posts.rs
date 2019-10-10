@@ -368,9 +368,7 @@ pub struct Editing {
 impl Editing {
     /// Constructs the struct with assumed time of editing (now).
     pub fn new(updated_by: uuid::Uuid) -> Self {
-        Self {
-            updated_by,
-        }
+        Self { updated_by }
     }
 }
 

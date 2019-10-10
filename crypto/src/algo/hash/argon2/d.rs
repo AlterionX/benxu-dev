@@ -75,10 +75,7 @@ impl base::Algo for Algo {
         &()
     }
     fn new(secret: Self::ConstructionData) -> Self {
-        Self(
-            Argon2::default(Variant::Argon2d),
-            secret,
-        )
+        Self(Argon2::default(Variant::Argon2d), secret)
     }
 }
 impl sym::Algo for Algo {

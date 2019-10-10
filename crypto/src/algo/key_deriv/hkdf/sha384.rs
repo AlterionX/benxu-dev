@@ -45,7 +45,12 @@ impl base::Algo for Algo {
     }
 }
 impl Algo {
-    pub fn generate(&self, key: <Self as base::Algo>::Key, data: &[&[u8]], size: usize) -> Vec<Vec<u8>> {
+    pub fn generate(
+        &self,
+        key: <Self as base::Algo>::Key,
+        data: &[&[u8]],
+        size: usize,
+    ) -> Vec<Vec<u8>> {
         data.iter()
             .map(|d| {
                 let mut out_buffer = vec![0; size];

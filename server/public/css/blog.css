@@ -43,6 +43,10 @@
     line-height: 1em;
 }
 
+.no-post-text {
+    padding-top: 2em;
+}
+
 /* Login */
 .login-wrapper {
     flex-grow: 1;

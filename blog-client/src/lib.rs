@@ -77,11 +77,6 @@ pub fn nav_menu(is_logged_in: bool) -> String {
                 link: Some("/blog"),
                 children: None,
             },
-            htmlgen::data::MenuItem {
-                text: "Login",
-                link: Some("/blog/login"),
-                children: None,
-            },
         ])
     }
     .into_string()

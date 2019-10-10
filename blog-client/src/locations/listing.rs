@@ -81,7 +81,10 @@ fn render_post(p: &posts::BasicData, author: Option<&Name>) -> Node<M> {
 fn render_post_list(empty_msg: &str, posts: &[posts::BasicData]) -> Node<M> {
     if posts.is_empty() {
         log::debug!("Calling render_post_list.");
-        p![empty_msg]
+        p![
+            attrs!{At::Class => "no-post-text"},
+            empty_msg,
+        ]
     } else {
         log::debug!("Not called");
         ul![

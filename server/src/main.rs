@@ -27,6 +27,15 @@ use tap::*;
 mod blog;
 mod fixed;
 
+mod shared_html {
+    pub fn logo_markup() -> Option<page_client::data::Logo<'static>> {
+        Some(page_client::data::Logo {
+            src: "/public/img/branding.svg",
+            href: Some("/"),
+        })
+    }
+}
+
 /// Algorithm utilized for hashing passwords
 type PWAlgo = crypto::algo::hash::argon2::d::Algo;
 type PWKeyFixture = Arc<crypto::StableKeyStore<PWAlgo>>;

@@ -7,3 +7,6 @@ use rocket::http::Status;
 pub fn get() -> Status {
     Status::NotImplemented
 }
+
+/// Functions generating a complete version of my resume. Not yet implemented.
+pub mod resume {}

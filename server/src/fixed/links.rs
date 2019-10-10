@@ -7,3 +7,6 @@ use rocket::http::Status;
 pub fn get() -> Status {
     Status::NotImplemented
 }
+
+/// Functions generating a summary of my online presence. Not yet implemented.
+pub mod links {}

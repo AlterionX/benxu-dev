@@ -64,6 +64,8 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+
+    flex-grow: 1;
 }
 .editor-title {
     display: flex;
@@ -73,6 +75,11 @@
 }
 .editor-slug {
     display: flex;
+}
+.editor-slug > label {
+    margin: 0;
+    display: flex;
+    align-items: center;
 }
 .editor-slug > input {
     flex-grow: 1;

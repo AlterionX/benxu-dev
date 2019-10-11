@@ -39,13 +39,13 @@ pub mod htmlgen {
     pub fn menu() -> Option<data::Menu<'static>> {
         Some(data::Menu(&[
             data::MenuItem {
-                text: "Blog",
-                link: Some("/blog"),
+                text: "Home",
+                link: Some("/"),
                 children: None,
             },
             data::MenuItem {
-                text: "Login",
-                link: Some("/blog/login"),
+                text: "Blog",
+                link: Some("/blog"),
                 children: None,
             },
         ]))

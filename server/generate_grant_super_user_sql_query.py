@@ -14,7 +14,7 @@ inserts = [
     ("fad43fd9-6722-422e-bd3f-1ec7371d8058", "edit_user_credentials"),
     ("85101413-8494-4bcd-97fa-4725807433d3", "delete_permission")
 ]
-user_id = "a90a0d53-8b01-4752-8215-51570e38cc16"
+user_id = "835b5bc7-6117-4669-9202-1d4acd7ad204"
 
 print("""INSERT INTO permissions (
     id,

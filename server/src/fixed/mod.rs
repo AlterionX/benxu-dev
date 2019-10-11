@@ -270,7 +270,7 @@ pub mod htmlgen {
 
     /// Returns the [`Markup`] version of my home page.
     pub fn index() -> Markup {
-        let (glue, load) = data::Script::wasm_bindgen_loader("wasm_script");
+        let (glue, load) = data::Script::wasm_bindgen_loader("wasm_slideshow");
         let js_scripts = [
             data::Script::External(glue.as_str()),
             data::Script::Embedded(load.as_str()),

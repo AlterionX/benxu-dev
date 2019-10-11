@@ -131,9 +131,9 @@ impl Server {
                     Ok(vec![])
                 } else {
                     info!("Reading file...");
-                    let to_read = if meta.len() > (!0u32) as u64 {
+                    let to_read = if meta.len() > 32 {
                         warn!("Secret key far larger than expected! Truncating the secret to 2^32 - 1 bytes.");
-                        (!0u32) as u64
+                        32u64
                     } else if meta.len() < 16 {
                         warn!("Secret key far smaller than suggested 32 bytes! Please consider lengthening the secret.");
                         meta.len()

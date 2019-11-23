@@ -4,7 +4,6 @@
 extern crate seed;
 
 use seed::prelude::*;
-use wasm_bindgen::prelude::*;
 
 mod model;
 use model::Model;
@@ -211,17 +210,19 @@ fn init_app(fo: seed::fetch::FetchObject<db_models::users::DataNoMeta>) {
             if model.store.user.is_some() {
                 orders.send_msg(M::UseLoggedInMenu);
             }
-            Init::new(model)
+            Init {
+                mount_type: MountType::Takeover,
+                ..Init::new(model)
+            }
         },
         update,
         view,
     )
     .sink(update)
     .mount(tag)
-    .takeover_mount(true)
     .routes(routes);
     log::info!("App built. Running.");
-    app.finish().run();
+    app.build_and_start();
 }
 async fn init_with_current_user() -> Result<JsValue, JsValue> {
     const SELF_URL: &str = "/api/accounts/me";

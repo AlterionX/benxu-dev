@@ -48,7 +48,7 @@ version = "0.1.0"
 path = "../blog-login-enum"
 
 [dependencies.serde]
-version = "1.0.101"
+version = "1.0.102"
 features = ["derive"]
 [dependencies.uuid]
 version = "0.7.4"
@@ -59,9 +59,9 @@ features = ["serde", "wasmbind"]
 
 # Front end specific dependencies
 [dependencies.seed]
-version = "0.4.1"
+version = "0.4.2"
 # git = "https://github.com/David-OConnor/seed.git"
-path = "../../seed"
+# path = "../../seed"
 [dependencies.js-sys]
 version = "0.3.28"
 [dependencies.console_log]
@@ -71,7 +71,7 @@ version = "0.2.51"
 [dependencies.wasm-bindgen-futures]
 version = "0.4.1"
 [dependencies.web-sys]
-version = "0.3.28"
+version = "0.3.32"
 features = [
       'Document',
       'Element',

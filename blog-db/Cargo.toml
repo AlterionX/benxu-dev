@@ -15,14 +15,14 @@ client = []
 version = "0.4.9"
 features = ["serde"]
 [dependencies.serde]
-version = "1.0.101"
+version = "1.0.102"
 features = ["derive"]
 [dependencies.uuid]
 version = "0.7.4"
 features = ["serde"]
 
 [dependencies.diesel]
-version = "1.4.2"
+version = "1.4.3"
 features = ["postgres", "chrono", "uuidv07"]
 optional = true
 [dependencies.rocket_contrib]

@@ -41,6 +41,7 @@ impl Location {
             Location::Editor(editor::S::Undetermined(post_id)) if gs.has_cached_post(&post_id) => {
                 Err(Location::Editor(editor::S::Old(
                     gs.post.as_ref().unwrap().clone(),
+                    Default::default(),
                 )))
             }
             Location::Editor(editor::S::Undetermined(post_id)) if !gs.has_cached_post(&post_id) => {

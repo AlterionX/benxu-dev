@@ -1,6 +1,5 @@
 //! Models representing different aspects of posts.
 
-use crate::models::option_datefmt;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -345,17 +344,13 @@ impl NewNoMeta {
 }
 
 /// Struct representing changes to the body and title of the post.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[cfg_attr(feature = "diesel", derive(AsChangeset), table_name = "posts")]
-pub struct Changed<'a> {
+pub struct Changed {
     /// The title of the blog post.
-    pub title: Option<&'a str>,
+    pub title: Option<String>,
     /// The body of the blog post.
-    pub body: Option<&'a str>,
-    /// The time at which the record was published. [`None`] means that the record has not been
-    /// published.
-    #[serde(default, deserialize_with = "option_datefmt")]
-    pub published_at: Option<DateTime<Utc>>,
+    pub body: Option<String>,
 }
 
 /// Struct representing the editing of the blog post.

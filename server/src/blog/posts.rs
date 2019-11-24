@@ -171,13 +171,26 @@ pub mod post {
     }
     /// Handler for publishing a post with a specific id. Requires user to be logged in and have
     /// the [`CanPublish`](crate::blog::auth::perms::CanPublish) permission.
-    #[post("/posts/<id>/publish")]
+    #[post("/posts/<id>/publish", data = "<update>")]
     pub fn publish(
         id: RUuid,
         db: DB,
+        update: Option<Json<posts::Changed>>,
         publisher: auth::Credentials<auth::perms::CanPublish>,
     ) -> Status {
         let id = id.into_inner();
+        if let Some(update) = update {
+            let update = update.into_inner();
+            let changed_credential = publisher.clone().change_level::<auth::perms::CanEdit>();
+            if let Ok(_) = changed_credential {
+                let status = map_to_status(db.update_post_with_id(id, &update));
+                if status != Status::Ok {
+                    return status;
+                }
+            } else {
+                return Status::Unauthorized;
+            }
+        }
         let publisher = publisher.user_id();
         map_to_status(db.publish_post_with_id(id, posts::Publishing::new(publisher)))
     }

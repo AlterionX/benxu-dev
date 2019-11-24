@@ -22,7 +22,7 @@ fn after_fetch(gs: *const GlobalS, res: GSOpResult) -> Option<GlobalM> {
     use GSOpResult::*;
     let gs = unsafe { gs.as_ref() }?;
     match (res, &gs.post) {
-        (Success, Some(post)) => Some(GlobalM::RenderPage(Location::Editor(S::Old(post.clone())))),
+        (Success, Some(post)) => Some(GlobalM::RenderPage(Location::Editor(S::Old(post.clone(), posts::Changed::default())))),
         _ => None,
     }
 }
@@ -32,7 +32,7 @@ pub fn is_restricted_from(s: &S, gs: &GlobalS) -> bool {
     } = gs
     {
         match s {
-            S::Old(stored_post) => !stored_post.is_published() && !user.can_see_unpublished,
+            S::Old(stored_post, _) => !stored_post.is_published() && !user.can_see_unpublished,
             S::New(_) => false,
             S::Undetermined(_) => false,
         }
@@ -55,7 +55,7 @@ pub enum M {
 pub enum S {
     Undetermined(PostMarker),
     New(posts::NewNoMeta),
-    Old(posts::DataNoMeta),
+    Old(posts::DataNoMeta, posts::Changed),
 }
 impl From<PostMarker> for S {
     fn from(s: PostMarker) -> Self {
@@ -67,7 +67,7 @@ impl S {
         use S::*;
         let id = match self {
             New(_) => "new".to_owned(),
-            Old(post) => (post.into(): PostMarker).to_string(),
+            Old(post, _) => (post.into(): PostMarker).to_string(),
             Undetermined(pm) => pm.to_string(),
         };
         Url::new(vec!["blog", "edit", id.as_str()])
@@ -82,7 +82,7 @@ impl S {
     pub fn is_publishable(&self) -> bool {
         match self {
             Self::New(_) => true,
-            Self::Old(post) => match post {
+            Self::Old(post, _) => match post {
                 // If not published, or archived but not deleted, allow publish button.
                 posts::DataNoMeta {
                     published_at: None,
@@ -102,8 +102,42 @@ impl S {
     }
     pub fn old_ref(&self) -> Option<&posts::DataNoMeta> {
         match self {
-            Self::Old(p) => Some(p),
+            Self::Old(p, _) => Some(p),
             _ => None,
+        }
+    }
+    fn update_title(&mut self, title: String) {
+        match self {
+            Self::Old(_, changed) => {
+                changed.title = Some(title);
+            }
+            Self::New(post) => {
+                post.title = title;
+            }
+            _ => (),
+        }
+    }
+    fn update_body(&mut self, body: String) {
+        match self {
+            Self::Old(_, changed) => {
+                changed.body = Some(body);
+            }
+            Self::New(post) => {
+                post.body = body;
+            }
+            _ => (),
+        }
+    }
+    fn update_slug(&mut self, slug: String) {
+        let slug = match slug.trim() {
+            "" => None,
+            _ => Some(slug),
+        };
+        match self {
+            Self::New(post) => {
+                post.slug = slug;
+            }
+            _ => (),
         }
     }
 }
@@ -124,7 +158,7 @@ impl S {
                 // save
                 Some((CREATE_POST_URL.to_owned(), create_post_method))
             }
-            Self::Old(post) => {
+            Self::Old(post, changed) => {
                 const UPDATE_POST_BASE_URL: &str = "/api/posts";
                 let update_post_method = Method::Patch;
                 Some((
@@ -152,16 +186,25 @@ impl S {
             let reaction =
                 move |fo| GlobalM::StoreOpWithAction(GSOp::PostWithoutMarker(fo), followup);
             Some(Box::new(req.send_json(post).fetch_json(reaction)))
-        } else if let Self::Old(post) = self {
-            let replacing_post = post.clone();
+        } else if let Self::Old(post, changes) = self {
+            let mut closed_post = post.clone();
+            let closed_changes = changes.clone();
             let reaction = move |res: Result<_, _>| match res
                 .tap_ok(|_| log::debug!("Launching credential creation"))
                 .tap_err(|e| log::error!("Post save failed due to {:?}.", e))
             {
-                Ok(_) => GlobalM::StoreOp(GSOp::PostRaw(replacing_post)),
+                Ok(_) => {
+                    if let Some(title) = closed_changes.title {
+                        closed_post.title = title;
+                    }
+                    if let Some(body) = closed_changes.body {
+                        closed_post.body = body;
+                    }
+                    GlobalM::StoreOp(GSOp::PostRaw(closed_post))
+                }
                 Err(_) => GlobalM::NoOp,
             };
-            Some(Box::new(req.send_json(post).fetch_string_data(reaction)))
+            Some(Box::new(req.send_json(changes).fetch_string_data(reaction)))
         } else {
             None
         }
@@ -196,7 +239,7 @@ impl S {
                     .fetch_json(reaction);
                 Some(Box::new(req))
             }
-            Self::Old(post) => {
+            Self::Old(post, changed) => {
                 let post_id = post.id;
                 let (url, method) = (format!("/api/posts/{}/publish", post.id), Method::Post);
                 let reaction = move |res| match res {
@@ -205,7 +248,13 @@ impl S {
                     )),
                     _ => GlobalM::NoOp,
                 };
-                let req = Request::new(url).method(method).fetch_string_data(reaction);
+                let req = Request::new(url).method(method);
+                let req = if changed.title.is_some() || changed.body.is_some() {
+                    req.send_json(changed)
+                } else {
+                    req
+                };
+                let req = req.fetch_string_data(reaction);
                 Some(Box::new(req))
             }
         }
@@ -227,22 +276,14 @@ fn update_post(to_update: &mut posts::DataNoMeta, updated: &posts::DataNoMeta) {
 }
 pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM>) {
     use M::*;
-    let (post_title, post_body, post_slug) = match s {
-        S::New(post) => (&mut post.title, &mut post.body, &mut post.slug),
-        S::Old(post) => (&mut post.title, &mut post.body, &mut post.slug),
+    match s {
         S::Undetermined(_) => return,
+        _ => (),
     };
     match m {
-        Title(title) => {
-            *post_title = title;
-        }
-        Body(body) => {
-            *post_body = body;
-        }
-        Slug(slug) => match slug.trim() {
-            "" => *post_slug = None,
-            _ => *post_slug = Some(slug),
-        },
+        Title(title) => s.update_title(title),
+        Body(body) => s.update_body(body),
+        Slug(slug) => s.update_slug(slug),
         Publish => {
             gs.user
                 .as_ref()
@@ -256,10 +297,10 @@ pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM
         SyncPost => {
             if let Some(updated) = &gs.post {
                 match s {
-                    S::Old(post) if post.id == updated.id => update_post(post, updated),
+                    S::Old(post, _) if post.id == updated.id => update_post(post, updated),
                     _ => {
                         orders.send_g_msg(GlobalM::ChangePageAndUrl(Location::Editor(S::Old(
-                            updated.clone(),
+                            updated.clone(), posts::Changed::default()
                         ))));
                     }
                 }
@@ -289,7 +330,11 @@ mod views {
     fn get_title_slug_body(s: &S) -> Option<(&str, Option<&str>, &str)> {
         let (t, slug, b) = match s {
             S::New(post) => (&post.title, post.slug.as_ref(), &post.body),
-            S::Old(post) => (&post.title, post.slug.as_ref(), &post.body),
+            S::Old(post, changed) => (
+                changed.title.as_ref().unwrap_or(&post.title),
+                post.slug.as_ref(),
+                changed.body.as_ref().unwrap_or(&post.body),
+            ),
             _ => return None,
         };
         let slug = slug.map(String::as_str);

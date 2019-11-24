@@ -288,6 +288,16 @@ impl<'a, 'r, L: perms::Verifiable + std::fmt::Debug> FromRequest<'a, 'r> for Cre
     }
 }
 
+impl<L> Clone for Credentials<L> {
+    fn clone(&self) -> Self {
+        Credentials {
+            level: PhantomData,
+            permissions: self.permissions.clone(),
+            user_id: self.user_id.clone(),
+        }
+    }
+}
+
 /// A wrapper around [`Credential<()>`](crate::blog::auth::Credentials) for ensuring awareness of
 /// the lack of permissions.
 #[derive(Debug, Deserialize)]

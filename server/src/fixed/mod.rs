@@ -45,6 +45,12 @@ pub mod htmlgen {
                 alt_text: "Email",
                 text: "ben.xu.cs@gmail.com",
             },
+            data::LogoLink {
+                url: "public/resume/resume.pdf",
+                logo: "public/img/icon/resume.svg",
+                alt_text: "Resume",
+                text: "Resume",
+            },
         ];
         html! {
             .link-group {

@@ -146,9 +146,9 @@ pub mod htmlgen {
                     tech and interesting projects such as WASM, xi, TypeScript, Fuschia, and AR glasses.\
                 "}
                 p {"\
-                    As a note, just for fun, this entire website is built with Rust + Rust compiled to WASM (WASM. I never get tired of saying that word. Anyways...) \
-                    + around 5 lines of actual JS to fetch/load the WASM module. I don't know how many browsers it runs on, but it was definitely fun. \
-                    I'm about to add a blog section that will also be written in Rust.\
+                    As a note, just for fun, this entire website is built with Rust + WASM \
+                    (Such a fun word. Anyways...). I don't know how many browsers it runs on, \
+                    but it was definitely fun. \
                 "}
             },
             None,
@@ -165,8 +165,8 @@ pub mod htmlgen {
                     thing, reading and adding two numbers.\
                 "}
                 p {"\
-                It blew my mind.
-            "}
+                    It blew my mind.
+                "}
                 p {"\
                     Now that I think about it, it fits; I had been enchanted by the power of words so I wanted to be a novelist,\
                     but then I found something even more powerful.\
@@ -211,12 +211,7 @@ pub mod htmlgen {
                     enough about that. But I also have a string interest in game development and story writing.\
                 "}
                 p {"\
-                    In fact, by virtue of NaNoWriMo, I almost have the first version of my novel finished! I'm \
-                    about three fourths of the way and it's really heating up.\
-                "}
-                p{"\
-                    I am also working on a branching story script that I hope to turn into a simple game. Assets \
-                    are really hard to manage.\
+                    In fact, by virtue of NaNoWriMo, I have the first version of my novel finished!\
                 "}
             },
             None,

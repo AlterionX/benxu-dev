@@ -60,3 +60,9 @@ impl Algo {
             .collect()
     }
 }
+
+impl AsRef<Key> for &Key {
+    fn as_ref(&self) -> &Key {
+        self
+    }
+}

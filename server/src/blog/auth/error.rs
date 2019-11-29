@@ -3,7 +3,7 @@
 use diesel::result::Error as DieselError;
 use rocket::{http::Status, response::status};
 
-use crypto::token::paseto::v2::local::error::Error as DecryptError;
+use crypto::token::paseto::V2LocalError as DecryptError;
 
 /// Errors for authentication.
 #[derive(Debug)]

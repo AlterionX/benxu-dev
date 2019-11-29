@@ -96,11 +96,9 @@ impl asymm::CanEncryptPrivate for Algo {
 
 #[cfg(test)]
 mod unit_test {
-    use super::Algo;
-
     mod key_gen {
         use crate::algo::{
-            cipher::{plaintext::Algo, symmetric::Algo as SymmAlgo},
+            cipher::plaintext::Algo,
             Algo as BaseAlgo, SafeGenerateKey,
         };
         #[test]
@@ -116,11 +114,10 @@ mod unit_test {
         use crate::algo::{
             cipher::{
                 plaintext::Algo,
-                symmetric::{Algo as SymmAlgo, CanDecrypt, CanEncrypt},
+                symmetric::{CanDecrypt, CanEncrypt},
             },
-            Algo as BaseAlgo, SafeGenerateKey,
+            Algo as BaseAlgo,
         };
-        const KEY: () = ();
         #[test]
         fn encrypt() {
             const TO_ENCRYPT: &'static [u8] = b"Hello World";
@@ -142,9 +139,9 @@ mod unit_test {
         use crate::algo::{
             cipher::{
                 plaintext::Algo,
-                symmetric::{Algo as SymmAlgo, CanDecrypt, CanEncrypt},
+                symmetric::{CanDecrypt, CanEncrypt},
             },
-            Algo as BaseAlgo, SafeGenerateKey,
+            Algo as BaseAlgo,
         };
         #[test]
         fn encrypt() {
@@ -167,9 +164,9 @@ mod unit_test {
         use crate::algo::{
             cipher::{
                 plaintext::Algo,
-                symmetric::{Algo as SymmAlgo, CanDecrypt, CanEncrypt},
+                symmetric::{CanDecrypt, CanEncrypt},
             },
-            Algo as BaseAlgo, SafeGenerateKey,
+            Algo as BaseAlgo,
         };
         #[test]
         fn encrypt() {

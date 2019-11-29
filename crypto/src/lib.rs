@@ -3,8 +3,7 @@
     type_ascription,
     decl_macro,
     try_trait,
-    associated_type_defaults,
-    never_type
+    associated_type_defaults
 )]
 
 //! A crate gathering various algorithms from different crypto libraries and attempting to unify
@@ -19,11 +18,12 @@ pub mod encoding;
 pub mod key_rotation;
 pub mod token;
 pub use key_rotation::{
-    Generational, KeyRotator, RotatingKeyFixture, RotatingKeyStore, StableKeyStore,
+    Generational,
+    KeyRotator,
+    RotatingKeyFixture,
+    RotatingKeyStore,
+    StableKeyStore,
 };
-
-// boolean to result convenience
-pub use boolinator::Boolinator as BoolToResult;
 
 /// Always call this if you need the sodiumoxide-implemented things to work multithreaded.
 pub fn multithread_init() -> Result<(), ()> {

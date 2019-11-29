@@ -20,25 +20,25 @@ impl From<token::SerializedData> for PrimedToken {
     }
 }
 impl PrimedToken {
-    pub(super) fn encrypt(self, key: &ENC_KEY) -> Result<EncryptedToken, Error> {
+    pub(super) fn encrypt(self, key: &poly1305::Key) -> Result<EncryptedToken, Error> {
         EncryptedToken::try_from((self, key)).map_err(|_| Error::Encryption)
     }
 }
-impl TryFrom<(PrimedToken, &ENC_KEY)> for EncryptedToken {
+impl TryFrom<(PrimedToken, &poly1305::Key)> for EncryptedToken {
     type Error = Error;
-    fn try_from((tok, key): (PrimedToken, &ENC_KEY)) -> Result<Self, Self::Error> {
+    fn try_from((tok, key): (PrimedToken, &poly1305::Key)) -> Result<Self, Self::Error> {
         let aad = multi_part_pre_auth_encoding(&[
             HEADER.to_combined().as_slice(),
             tok.nonce.as_slice(),
             tok.footer.as_ref().map(|f| f.as_slice()).unwrap_or(b""),
         ])
         .map_err(|_| Error::Encryption)?;
-        let encryption_args = EArgs {
+        let encryption_args = poly1305::EncryptArgs {
             plaintext: tok.msg,
             aad: Some(aad),
-            nonce: Some(ChaChaNonce::from_slice(tok.nonce.as_slice()).ok_or(Error::Encryption)?),
+            nonce: Some(poly1305::Nonce::from_slice(tok.nonce.as_slice()).ok_or(Error::Encryption)?),
         };
-        let ciphertext = ENC_ALGO::new(()).encrypt(key, &encryption_args)?;
+        let ciphertext = poly1305::Algo::new(()).encrypt(key, &encryption_args)?;
         Ok(Self {
             msg: collapse_to_vec(&[tok.nonce.as_slice(), ciphertext.as_slice()]),
             footer: tok.footer,

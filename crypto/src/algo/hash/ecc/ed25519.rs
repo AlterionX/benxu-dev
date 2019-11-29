@@ -107,3 +107,9 @@ impl asymm::Algo for Algo {
         unimplemented!("Unimplemented by ring");
     }
 }
+
+impl AsRef<KeyPair> for &KeyPair {
+    fn as_ref(&self) -> &KeyPair {
+        self
+    }
+}

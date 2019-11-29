@@ -116,9 +116,9 @@ impl VerifiedToken {
     }
     /// Decrypts the encrypted message and repacks it into [`SerializedData`].
     pub(super) fn decrypt(self) -> Result<token::SerializedData, symm::DecryptError> {
-        ENC_ALGO::new(())
+        ctr::Algo::new(())
             .decrypt(
-                &ENC_KEY::new(&self.encryption_key, self.nonce.get_crypt_nonce()),
+                &ctr::Key::new(&self.encryption_key, self.nonce.get_crypt_nonce()),
                 self.message(),
             )
             .map(|decrypted| token::SerializedData {

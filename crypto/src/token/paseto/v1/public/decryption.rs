@@ -11,9 +11,9 @@ impl VerifiedToken {
         token::SerializedData::from(self)
     }
 }
-impl TryFrom<(token::Unpacked, &RSAKey)> for VerifiedToken {
+impl TryFrom<(token::Unpacked, &pss_sha384_mgf1_65537::KeyPair)> for VerifiedToken {
     type Error = Error;
-    fn try_from((tok, key): (token::Unpacked, &RSAKey)) -> Result<Self, Self::Error> {
+    fn try_from((tok, key): (token::Unpacked, &pss_sha384_mgf1_65537::KeyPair)) -> Result<Self, Self::Error> {
         if !tok.verify_header(HEADER) {
             return Err(Error::BadHeader);
         }
@@ -34,8 +34,11 @@ impl TryFrom<(token::Unpacked, &RSAKey)> for VerifiedToken {
         .map_err(|_| Error::Signing)?;
 
         let is_valid_signature =
-            RSA::verify_public(signed.as_slice(), sig.as_slice(), key.public_key())
-                .map_err(|_| Error::Verifying)?;
+            pss_sha384_mgf1_65537::Algo::verify_public(
+                signed.as_slice(),
+                sig.as_slice(),
+                key.public_key(),
+            ).map_err(|_| Error::Verifying)?;
 
         if !is_valid_signature {
             return Err(Error::BadSignature).unwrap();

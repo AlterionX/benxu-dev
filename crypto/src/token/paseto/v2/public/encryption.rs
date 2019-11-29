@@ -6,10 +6,10 @@ pub(super) struct SignedToken {
     footer: Option<Vec<u8>>,
 }
 
-impl TryFrom<(token::SerializedData, &<ED25519 as A>::Key)> for SignedToken {
+impl TryFrom<(token::SerializedData, &<ed25519::Algo as A>::Key)> for SignedToken {
     type Error = Error;
     fn try_from(
-        (tok, key): (token::SerializedData, &<ED25519 as A>::Key),
+        (tok, key): (token::SerializedData, &<ed25519::Algo as A>::Key),
     ) -> Result<Self, Self::Error> {
         let sign_target = multi_part_pre_auth_encoding(&[
             HEADER.to_combined().as_slice(),
@@ -17,7 +17,7 @@ impl TryFrom<(token::SerializedData, &<ED25519 as A>::Key)> for SignedToken {
             tok.footer.as_ref().map_or(b"", |f| f.as_slice()),
         ])
         .map_err(|_| Error::Signing)?;
-        let sig = <ED25519 as HashA>::sign_private(sign_target.as_slice(), key.private_key())
+        let sig = <ed25519::Algo as HashA>::sign_private(sign_target.as_slice(), key.private_key())
             .map_err(|_| Error::Signing)?;
         Ok(Self {
             sig: sig,

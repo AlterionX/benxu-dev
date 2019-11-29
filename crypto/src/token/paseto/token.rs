@@ -1,13 +1,14 @@
 //! A collection of types used throughout all four standard PASETO protocols.
 
-use crate::{
-    encoding::base64::{decode_no_padding as b64_decode, encode_no_padding as b64_encode},
-    token::paseto::collapse_to_vec,
-};
 use std::{
     convert::TryFrom,
     ops::{Bound, Deref},
     str,
+};
+
+use crate::{
+    encoding::base64::{decode_no_padding as b64_decode, encode_no_padding as b64_encode},
+    token::paseto::util::collapse_to_vec,
 };
 
 /// Maximum number of sections.

@@ -145,6 +145,12 @@ impl asymm::Algo for Algo {
     }
 }
 
+impl AsRef<KeyPair> for &KeyPair {
+    fn as_ref(&self) -> &KeyPair {
+        self
+    }
+}
+
 #[cfg(test)]
 mod unit_tests {
     use crate::algo::{

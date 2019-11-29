@@ -49,3 +49,9 @@ impl sym::Algo for Algo {
         hmac::verify_with_own_key(&key, input, signature).is_ok()
     }
 }
+
+impl AsRef<Key> for &Key {
+    fn as_ref(&self) -> &Key {
+        self
+    }
+}

@@ -2,8 +2,7 @@
     proc_macro_hygiene,
     type_ascription,
     decl_macro,
-    try_trait,
-    result_map_or_else
+    try_trait
 )]
 
 //! Server crate for marshalling and unmarshalling information between the blog-db and blog-client
@@ -40,7 +39,7 @@ mod shared_html {
 type PWAlgo = crypto::algo::hash::argon2::d::Algo;
 type PWKeyFixture = Arc<crypto::StableKeyStore<PWAlgo>>;
 /// Algorithm utilized for encrypting tokens.
-type TokenAlgo = crypto::token::paseto::v2::local::Algo;
+type TokenAlgo = <crypto::token::paseto::V2Local as crypto::token::paseto::Protocol>::CoreAlgo;
 type TokenKeyStore = crypto::RotatingKeyStore<TokenAlgo>;
 type TokenKeyFixture = crypto::RotatingKeyFixture<TokenAlgo>;
 

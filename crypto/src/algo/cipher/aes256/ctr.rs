@@ -7,7 +7,7 @@ pub struct Key {
 }
 impl base::SafeGenerateKey for Key {
     type Settings = ();
-    fn safe_generate(setting: &Self::Settings) -> Self {
+    fn safe_generate(_: &Self::Settings) -> Self {
         use rand::{rngs::OsRng, RngCore};
         let mut key = vec![0u8; 32];
         OsRng.fill_bytes(key.as_mut_slice());
@@ -62,5 +62,11 @@ impl symm::CanDecrypt for Algo {
     fn decrypt(&self, key: &Self::DKey, msg: &Self::Input) -> Result<Vec<u8>, Self::Error> {
         openssl::symm::decrypt(self.0, key.as_key(), Some(key.as_nonce()), msg)
             .map_err(|_| symm::DecryptError::Base)
+    }
+}
+
+impl AsRef<Key> for &Key {
+    fn as_ref(&self) -> &Key {
+        self
     }
 }

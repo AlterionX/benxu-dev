@@ -87,6 +87,7 @@ pub use rotating::KeyStore as RotatingKeyStore;
 
 /// A convenience
 pub type RotatingKeyFixture<A> = Arc<RwLock<Arc<RotatingKeyStore<A>>>>;
+
 /// A trait for pointers to things that can be auto generated from itself, but only one copy should
 /// exist at a time.
 pub trait Generational {
@@ -100,6 +101,7 @@ pub trait Generational {
     /// Gets the current version.
     fn get_store(&self) -> Result<Self::Datum, Self::Error>;
 }
+
 impl<K: SafeGenerateKey + Clone + Send + Sync, A: Algo<Key = K> + Send + Sync + 'static>
     Generational for RotatingKeyFixture<A>
 {
@@ -187,11 +189,11 @@ impl<K: SafeGenerateKey + Clone + Send + Sync, A: Algo<Key = K> + Send + Sync + 
         }
     }
 }
+
 impl<T: Algo> Drop for KeyRotator<T> {
     fn drop(&mut self) {
         if self.kill_handle.is_some() {
-            use log::error;
-            error!("Attempted to drop KeyRotation. Please call `cleanup` instead. Will now panic.");
+            log::error!("Attempted to drop KeyRotation. Please call `cleanup` instead. Will now panic.");
             panic!("Attempted to drop KeyRotation. Please call `cleanup` instead.");
         }
     }
@@ -203,6 +205,7 @@ impl<A: Algo> KeyRotator<A> {
         Arc::clone(&self.key_store)
     }
 }
+
 // TODO isolate Rocket compatability in a feature flag.
 impl<A: Algo> KeyRotator<A> {
     /// Gets a pointer to the key store that should be held by [`Rocket`](rocket::Rocket).

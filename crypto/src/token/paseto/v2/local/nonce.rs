@@ -16,10 +16,6 @@ impl Randomness {
         OsRng.fill_bytes(&mut nonce);
         Randomness(nonce)
     }
-    #[cfg(test)]
-    pub fn precomputed(nonce: [u8; 24]) -> Randomness {
-        Randomness(nonce)
-    }
 }
 
 #[derive(Clone)]

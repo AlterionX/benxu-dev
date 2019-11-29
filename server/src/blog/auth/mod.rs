@@ -17,7 +17,7 @@ use std::{marker::PhantomData, ops::Deref, str};
 use tap::*;
 
 use crate::{TokenKeyFixture, TokenKeyStore};
-use crypto::{algo::Algo as A, token::paseto, Generational};
+use crypto::{algo::Algo as A, token::paseto::{self, Protocol}, key_rotation::Generational};
 
 /// The name of the cookie holding the credentials to be deserialized.
 pub const AUTH_COOKIE_NAME: &str = "_atk";
@@ -107,7 +107,7 @@ impl Credentials<perms::Any> {
         // TODO no-copy once paseto is no copy on the input
         let token: TokenData = key_store.attempt_with_retry(&mut |key, _opt_err| {
             let token = paseto::token::Packed::new(auth_cookie.value().as_bytes().to_vec());
-            paseto::v2::local::Protocol::decrypt(token, key)
+            paseto::V2Local::decrypt(token, key)
         })?;
 
         Ok(token.msg)
@@ -348,7 +348,7 @@ impl From<Credentials<perms::Any>> for UnverifiedPermissionsCredential {
 /// can be verified later.
 #[must_use]
 pub fn attach_credentials_token(
-    key: &<paseto::v2::local::Algo as A>::Key,
+    key: &<<paseto::V2Local as paseto::Protocol>::CoreAlgo as A>::Key,
     credentials: Credentials<perms::Any>,
     cookies: &mut Cookies,
 ) -> Result<(), ()> {
@@ -357,8 +357,7 @@ pub fn attach_credentials_token(
         msg: credentials,
         footer: (None: Option<()>),
     };
-    let token_str = paseto::v2::local::Protocol
-        .encrypt(tok, key)
+    let token_str = paseto::V2Local::encrypt(tok, key)
         .map_err(|_| ())
         .and_then(|s| Ok(str::from_utf8(&s).map_err(|_| ())?.to_owned()))?;
     let auth_cookie = Cookie::build(AUTH_COOKIE_NAME, token_str)

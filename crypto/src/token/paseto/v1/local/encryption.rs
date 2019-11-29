@@ -86,8 +86,8 @@ impl EncryptedToken {
 impl TryFrom<PrimedToken> for EncryptedToken {
     type Error = symm::EncryptError;
     fn try_from(tok: PrimedToken) -> Result<Self, Self::Error> {
-        let key = ENC_KEY::new(&tok.encryption_key, tok.nonce.get_crypt_nonce());
-        let encrypted_msg = ENC_ALGO::new(()).encrypt(&key, tok.msg.as_slice())?;
+        let key = ctr::Key::new(&tok.encryption_key, tok.nonce.get_crypt_nonce());
+        let encrypted_msg = ctr::Algo::new(()).encrypt(&key, tok.msg.as_slice())?;
 
         Ok(EncryptedToken {
             msg: encrypted_msg,
@@ -145,7 +145,7 @@ mod unit_tests {
         let token = token.sign();
         let token = token.unwrap();
         // TODO validate
-        let token = token.canonicalize();
+        let _ = token.canonicalize();
         // TODO validate
     }
     #[test]
@@ -164,7 +164,7 @@ mod unit_tests {
         let token = token.sign();
         let token = token.unwrap();
         // TODO validate
-        let token = token.canonicalize();
+        let _ = token.canonicalize();
         // TODO validate
     }
 }

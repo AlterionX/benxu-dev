@@ -20,7 +20,7 @@ impl SeparatedToken {
         &self.source[..self.sig_msg_boundary()]
     }
 
-    pub(super) fn verify(self, key: &<ED25519 as A>::Key) -> Result<VerifiedToken, Error> {
+    pub(super) fn verify(self, key: &<ed25519::Algo as A>::Key) -> Result<VerifiedToken, Error> {
         VerifiedToken::try_from((self, key))
     }
 }
@@ -38,16 +38,16 @@ impl VerifiedToken {
         token::SerializedData::from(self)
     }
 }
-impl TryFrom<(SeparatedToken, &<ED25519 as A>::Key)> for VerifiedToken {
+impl TryFrom<(SeparatedToken, &<ed25519::Algo as A>::Key)> for VerifiedToken {
     type Error = Error;
-    fn try_from((tok, key): (SeparatedToken, &<ED25519 as A>::Key)) -> Result<Self, Self::Error> {
+    fn try_from((tok, key): (SeparatedToken, &<ed25519::Algo as A>::Key)) -> Result<Self, Self::Error> {
         let signed_plaintext = multi_part_pre_auth_encoding(&[
             HEADER.to_combined().as_slice(),
             tok.msg(),
             tok.footer.as_ref().map_or(b"", |f| f.as_slice()),
         ])
         .map_err(|_| Error::Signing)?;
-        <ED25519 as HashA>::verify_public(signed_plaintext.as_slice(), tok.sig(), key.public_key())
+        <ed25519::Algo as HashA>::verify_public(signed_plaintext.as_slice(), tok.sig(), key.public_key())
             .map_err(|_| Error::Signing)?
             .ok_or(Error::BadSignature)?;
         Ok(Self {

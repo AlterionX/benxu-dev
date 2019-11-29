@@ -14,7 +14,7 @@ impl BasicToken {
     const NONCE_LENGTH: usize = 24;
     const NONCE_RANGE: RangeTo<usize> = (..24);
     const MSG_RANGE: RangeFrom<usize> = (24..);
-    pub(super) fn decrypt(self, key: &ENC_KEY) -> Result<DecryptedToken, Error> {
+    pub(super) fn decrypt(self, key: &poly1305::Key) -> Result<DecryptedToken, Error> {
         DecryptedToken::try_from((self, key))
     }
 
@@ -42,21 +42,21 @@ impl DecryptedToken {
         token::SerializedData::from(self)
     }
 }
-impl TryFrom<(BasicToken, &ENC_KEY)> for DecryptedToken {
+impl TryFrom<(BasicToken, &poly1305::Key)> for DecryptedToken {
     type Error = Error;
-    fn try_from((tok, key): (BasicToken, &ENC_KEY)) -> Result<Self, Self::Error> {
+    fn try_from((tok, key): (BasicToken, &poly1305::Key)) -> Result<Self, Self::Error> {
         let aad = multi_part_pre_auth_encoding(&[
             HEADER.to_combined().as_slice(),
             tok.nonce.as_slice(),
             tok.footer.as_ref().map(|f| f.as_slice()).unwrap_or(b""),
         ])
         .map_err(|_| Error::Encryption)?;
-        let decryption_args = DArgs {
+        let decryption_args = poly1305::DecryptArgs {
             ciphertext: tok.msg().to_vec(),
             aad: Some(aad),
-            nonce: ChaChaNonce::from_slice(tok.nonce.as_slice()).ok_or(Error::Decryption)?,
+            nonce: poly1305::Nonce::from_slice(tok.nonce.as_slice()).ok_or(Error::Decryption)?,
         };
-        let ciphertext = ENC_ALGO::new(()).decrypt(key, &decryption_args)?;
+        let ciphertext = poly1305::Algo::new(()).decrypt(key, &decryption_args)?;
         Ok(Self {
             msg: ciphertext,
             footer: tok.footer,

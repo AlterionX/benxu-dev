@@ -83,3 +83,9 @@ impl sym::Algo for Algo {
         self.sign(msg, key).as_slice() == signature
     }
 }
+
+impl AsRef<Key> for &Key {
+    fn as_ref(&self) -> &Key {
+        self
+    }
+}

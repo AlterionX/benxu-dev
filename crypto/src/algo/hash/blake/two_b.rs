@@ -53,3 +53,9 @@ impl sym::Algo for Algo {
         blake2b(key.hash_len(), &key, msg) == *signature
     }
 }
+
+impl AsRef<Key> for &Key {
+    fn as_ref(&self) -> &Key {
+        self
+    }
+}

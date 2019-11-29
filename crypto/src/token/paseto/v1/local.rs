@@ -1,42 +1,48 @@
 //! Implementation of the PASETO version 1, opaque token.
 
-/// A private prelude for files implementing this protocol.
 mod local_prelude {
-    pub use crate::{
+    pub(super) use crate::{
         algo::{
             cipher::{
-                aes256::ctr::{Algo as ENC_ALGO, Key as ENC_KEY},
+                aes256::ctr,
                 symmetric::{self as symm, CanDecrypt, CanEncrypt},
             },
             hash::{
                 hmac::sha384::Algo as HMAC_SHA384,
-                symmetric::{Algo as SymmHashAlgo, Key as SymmHashKey},
+                symmetric::{Algo as SymmHashAlgo},
             },
             key_deriv::hkdf::sha384::Algo as HKDF_SHA384,
-            Algo as A, Key as K, SafeGenerateKey,
+            Algo as A,
         },
-        encoding::base64::{decode_no_padding as b64_decode, encode_no_padding as b64_encode},
         token::paseto::{
-            collapse_to_vec, multi_part_pre_auth_encoding, token,
+            util::{collapse_to_vec, multi_part_pre_auth_encoding}, token,
             v1::{
                 local::{error::Error, split_key, AuthKey, EncryptionKey, HEADER},
                 nonce::{Nonce, Randomness},
             },
-            KnownClaims,
         },
-        BoolToResult,
     };
-    pub use boolinator::Boolinator;
-    pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
-    pub use serde_json as json;
-    pub use std::{convert::TryFrom, ops::Deref, str};
+    pub(super) use boolinator::Boolinator;
+    pub(super) use serde::{de::DeserializeOwned, Serialize};
+    pub(super) use std::{convert::TryFrom, ops::Deref, str};
 }
-use self::{decryption::BasicToken, encryption::SerializedRandToken, local_prelude::*};
 
 mod decryption;
 mod encryption;
 
-pub mod error;
+mod error;
+
+use crate::{
+    algo::{Algo as A, Key as K, SafeGenerateKey},
+    token::paseto::{
+        Protocol as ProtocolTrait,
+        v1::local::{
+            decryption::BasicToken,
+            encryption::SerializedRandToken,
+            local_prelude::*,
+        },
+    },
+};
 
 /// The version string for this protocol.
 pub const VERSION: &'static str = "v1";
@@ -94,37 +100,75 @@ impl token::Unpacked {
     }
 }
 
-/// Encrypts, encodes, and packs a [`Data`] token into a [`Packed`] token.
-pub fn encrypt<T: Serialize + KnownClaims, F: Serialize>(
-    tok: token::Data<T, F>,
-    key: &[u8],
-) -> Result<token::Packed, Error> {
-    Ok(tok
-        .serialize()?
-        .v1_local_init()
-        .preprocess(key)
-        .encrypt()?
-        .sign()?
-        .canonicalize()
-        .pack())
+#[derive(Clone)]
+pub struct CombinedKey(Vec<u8>);
+
+impl SafeGenerateKey for CombinedKey {
+    type Settings = usize;
+    fn safe_generate(len: &Self::Settings) -> Self {
+        use rand::{RngCore, rngs::OsRng};
+        let mut buffer = vec![0; *len];
+        OsRng.fill_bytes(buffer.as_mut_slice());
+        CombinedKey(buffer)
+    }
 }
-/// Decrypts, decodes, and unpacks a [`Packed`] token into a [`Data`] token.
-pub fn decrypt<T: DeserializeOwned + KnownClaims, F: DeserializeOwned>(
-    tok: token::Packed,
-    key: &[u8],
-) -> Result<token::Data<T, F>, error::Error> {
-    Ok(tok
-        .unpack()?
-        .v1_local_to_basic()?
-        .prime(key)
-        .verify()?
-        .decrypt()?
-        .deserialize()?)
+
+impl AsRef<CombinedKey> for &CombinedKey {
+    fn as_ref(&self) -> &CombinedKey {
+        self
+    }
+}
+
+pub struct CombinedAlgo(usize);
+
+impl A for CombinedAlgo {
+    type Key = CombinedKey;
+    fn key_settings(&self) -> &<Self::Key as K>::Settings {
+        &self.0
+    }
+    fn new(_: Self::ConstructionData) -> Self {
+        Self(32)
+    }
+}
+
+pub struct Protocol;
+
+impl ProtocolTrait for Protocol {
+    type CoreAlgo = CombinedAlgo;
+    type Error = Error;
+    fn encrypt<M: Serialize, F: Serialize, K: AsRef<<Self::CoreAlgo as A>::Key>>(
+        tok: token::Data<M, F>,
+        key: K,
+    ) -> Result<token::Packed, Self::Error> {
+        let key = key.as_ref().0.as_slice();
+        Ok(tok
+            .serialize()?
+            .v1_local_init()
+            .preprocess(key)
+            .encrypt()?
+            .sign()?
+            .canonicalize()
+            .pack())
+    }
+    fn decrypt<M: DeserializeOwned, F: DeserializeOwned, K: AsRef<<Self::CoreAlgo as A>::Key>>(
+        tok: token::Packed,
+        key: K,
+    ) -> Result<token::Data<M, F>, Self::Error> {
+        let key = key.as_ref().0.as_slice();
+        Ok(tok
+            .unpack()?
+            .v1_local_to_basic()?
+            .prime(key)
+            .verify()?
+            .decrypt()?
+            .deserialize()?)
+    }
 }
 
 #[cfg(test)]
 mod unit_tests {
     use super::*;
+    use crate::token::paseto::Protocol as P;
 
     #[test]
     fn v1_local_cycle() {
@@ -133,9 +177,9 @@ mod unit_tests {
             footer: Some("weird thing".to_owned()),
         };
         let beginning = orig.clone();
-        let key = b"some arbitrary key";
-        let encrypted_tok = encrypt(beginning, &key[..]).unwrap();
-        let decrypted_tok: token::Data<String, String> = decrypt(encrypted_tok, &key[..]).unwrap();
+        let key = CombinedKey(b"some arbitrary key".to_vec());
+        let encrypted_tok = Protocol::encrypt(beginning, &key).unwrap();
+        let decrypted_tok: token::Data<String, String> = Protocol::decrypt(encrypted_tok, &key).unwrap();
         assert!(orig == decrypted_tok);
     }
 }

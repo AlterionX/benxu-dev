@@ -87,3 +87,9 @@ impl symm::CanDecrypt for Algo {
         .map_err(|_| symm::DecryptError::Base)
     }
 }
+
+impl AsRef<Key> for &Key {
+    fn as_ref(&self) -> &Key {
+        self
+    }
+}

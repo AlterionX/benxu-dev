@@ -81,7 +81,7 @@ impl base::Algo for Algo {
 impl sym::Algo for Algo {
     type SigningInput = SigningData;
     fn sign(&self, msg: &Self::SigningInput, key: &Self::Key) -> Vec<u8> {
-        let mut buffer = vec![0; Self::HASH_LEN as usize];
+        let mut buffer = vec![0; msg.hash_len as usize];
         self.0.hash(
             buffer.as_mut_slice(),
             msg.msg.as_slice(),
@@ -93,7 +93,7 @@ impl sym::Algo for Algo {
     }
     type VerificationInput = SigningData;
     fn verify(&self, msg: &Self::VerificationInput, signature: &[u8], key: &Self::Key) -> bool {
-        let mut buffer = vec![0; Self::HASH_LEN as usize];
+        let mut buffer = vec![0; msg.hash_len as usize];
         self.0.hash(
             buffer.as_mut_slice(),
             msg.msg.as_slice(),
@@ -102,5 +102,11 @@ impl sym::Algo for Algo {
             &[],
         );
         buffer.as_slice() == signature
+    }
+}
+
+impl AsRef<Key> for &Key {
+    fn as_ref(&self) -> &Key {
+        self
     }
 }

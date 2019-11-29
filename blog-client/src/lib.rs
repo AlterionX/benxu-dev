@@ -1,4 +1,4 @@
-#![feature(type_ascription, result_map_or_else, drain_filter)]
+#![feature(type_ascription, drain_filter)]
 
 #[macro_use]
 extern crate seed;

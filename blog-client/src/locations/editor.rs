@@ -158,7 +158,7 @@ impl S {
                 // save
                 Some((CREATE_POST_URL.to_owned(), create_post_method))
             }
-            Self::Old(post, changed) => {
+            Self::Old(post, _) => {
                 const UPDATE_POST_BASE_URL: &str = "/api/posts";
                 let update_post_method = Method::Patch;
                 Some((

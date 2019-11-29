@@ -2,8 +2,7 @@
 //!
 //! Here is an example usage of the v2 local PASETO protocol:
 //! ```rust
-//! use bundled_crypto::token::paseto;
-//! use bundled_crypto::token::paseto::Protocol;
+//! use bundled_crypto::token::paseto::{self, Protocol};
 //! use bundled_crypto::algo::{Algo, SafeGenerateKey};
 //!
 //! fn main() {
@@ -49,7 +48,7 @@ use serde::{Serialize, de::DeserializeOwned};
 use crate::algo::Algo;
 
 // TODO make protocol return original on failure
-/// Trait for all protocol types.
+/// Trait for interfacing with all protocol types.
 pub trait Protocol {
     type CoreAlgo: Algo;
     type Error;

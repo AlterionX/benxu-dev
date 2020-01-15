@@ -25,6 +25,7 @@
 }
 .post-list > ul, .unpublished-post-list > ul {
     background-color: #000000be;
+    list-style: none;
 }
 .post-list > ul > li, .unpublished-post-list > ul > li {
     padding: 20px 0;
@@ -34,6 +35,10 @@
     border-style: solid;
 }
 
+.post-item {
+    margin-left: 0;
+    padding-left: 2rem;
+}
 .post-item > h2 > .post-title-link {
     padding-bottom: 1em;
     text-decoration: none;

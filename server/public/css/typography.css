@@ -28,7 +28,7 @@ blockquote, .as-blockquote {
     font-variant: normal;
     font-weight: 400;
 }
-pre, .as-pre {
+code, .as-code, pre, .as-pre {
     font-family: "Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter", monospace;
     font-style: normal;
     font-variant: normal;

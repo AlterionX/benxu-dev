@@ -1,6 +1,6 @@
 [package]
 name = "static-page-builder"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["AlterionX <ben.xu.cs@gmail.com>"]
 edition = "2018"
 license = "MIT"
@@ -14,9 +14,9 @@ rocket = ["maud/rocket"]
 maud = "0.21.0"
 typed-builder = "0.3.0"
 [dependencies.chrono]
-version = "0.4.9"
+version = "0.4.11"
 features = ["serde"]
 [dependencies.serde]
-version = "1.0.102"
+version = "1.0.106"
 features = ["derive"]
 

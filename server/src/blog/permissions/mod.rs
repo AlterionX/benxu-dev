@@ -47,7 +47,7 @@ pub fn post(
     target_user_id: RUuid,
     permissions_to_create: Json<Vec<auth::Permission>>,
 ) -> Status {
-    let target_user_id = target_user_id.into_inner();
+    let target_user_id = uuid::Uuid::from_bytes(target_user_id.into_inner().as_bytes().clone());
     validate_and_create_all(&db, credentials, target_user_id, permissions_to_create)
         .map_or_else(|e| e.into(), |_| Status::Ok)
 }
@@ -98,7 +98,8 @@ pub mod permission {
         _credentials: auth::Credentials<auth::perms::CanViewPermission>,
         id: RUuid,
     ) -> Result<Json<permissions::Data>, Status> {
-        db.get_permission_with_id(id.into_inner())
+        let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
+        db.get_permission_with_id(id)
             .map(Json)
             .map_err(|e| (e.into(): Error).into())
     }
@@ -110,7 +111,8 @@ pub mod permission {
         _credentials: auth::Credentials<auth::perms::CanDeletePermission>,
         id: RUuid,
     ) -> Result<Json<permissions::Data>, Status> {
-        db.delete_permission_with_id(id.into_inner())
+        let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
+        db.delete_permission_with_id(id)
             .map(Json)
             .map_err(|e| (e.into(): Error).into())
     }

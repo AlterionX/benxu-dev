@@ -8,7 +8,7 @@ use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
 use crate::{
     blog::{auth, db::UserQuery, DB},
-    TokenKeyFixture,
+    cfg::TokenKeyFixture,
 };
 use blog_db::models::*;
 use crypto::Generational;
@@ -77,7 +77,7 @@ pub mod account {
         id: RUuid,
         credentials: auth::UnverifiedPermissionsCredential,
     ) -> Result<Json<users::DataNoMeta>, Status> {
-        let id = id.into_inner();
+        let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
         if credentials.user_id() != id {
             return Err(Status::Unauthorized);
         }
@@ -109,7 +109,7 @@ pub mod account {
         credentials: auth::UnverifiedPermissionsCredential,
         changes: Json<users::ChangedNoMeta>,
     ) -> Result<Json<users::DataNoMeta>, Status> {
-        let id = id.into_inner();
+        let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
         let changes = changes.into_inner();
         let updater = credentials
             .into_inner()
@@ -136,7 +136,7 @@ pub mod account {
         id: RUuid,
         credentials: auth::UnverifiedPermissionsCredential,
     ) -> Result<Status, Status> {
-        let id = id.into_inner();
+        let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
         credentials
             .into_inner()
             .change_level::<auth::perms::CanDeleteUser>()

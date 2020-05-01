@@ -16,7 +16,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 use std::{marker::PhantomData, ops::Deref, str};
 use tap::*;
 
-use crate::{TokenKeyFixture, TokenKeyStore};
+use crate::cfg::{TokenKeyFixture, TokenKeyStore};
 use crypto::{algo::Algo as A, token::paseto::{self, Protocol}, key_rotation::Generational};
 
 /// The name of the cookie holding the credentials to be deserialized.
@@ -353,9 +353,10 @@ pub fn attach_credentials_token(
     cookies: &mut Cookies,
 ) -> Result<(), ()> {
     detach_credentials_token_if_exists(cookies);
+    let opt_none: Option<()> = None;
     let tok = paseto::token::Data {
         msg: credentials,
-        footer: (None: Option<()>),
+        footer: opt_none,
     };
     let token_str = paseto::V2Local::encrypt(tok, key)
         .map_err(|_| ())

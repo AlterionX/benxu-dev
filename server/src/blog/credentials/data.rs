@@ -6,7 +6,7 @@ use crate::{
         db::{PWQuery, UserQuery},
         DB,
     },
-    PWAlgo,
+    cfg::PWAlgo,
 };
 use blog_db::models::*;
 use boolinator::Boolinator;

@@ -8,7 +8,7 @@ use crate::{
         db::{PWQuery, PermissionQuery, UserQuery},
         DB,
     },
-    PWAlgo, PWKeyFixture,
+    cfg::{PWAlgo, PWKeyFixture},
 };
 use blog_db::models::*;
 use crypto::algo::{hash::symmetric::Algo as HashA, Algo as A};

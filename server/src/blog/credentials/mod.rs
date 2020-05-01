@@ -7,7 +7,7 @@ use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
 use crate::{
     blog::{auth, credentials::data::SavableCredential, db::PWQuery, DB},
-    PWKeyFixture,
+    cfg::PWKeyFixture,
 };
 
 /// Handlers and functions for password credentials.
@@ -53,7 +53,7 @@ pub mod pws {
             id: RUuid,
             changed_pw: Json<String>,
         ) -> Result<Status, Status> {
-            let id = id.into_inner();
+            let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
             let target_user_id =
                 db.find_pw_by_id(id)
                     .map(|pw_rec| pw_rec.user_id)
@@ -99,7 +99,7 @@ pub mod pws {
             credentials: auth::UnverifiedPermissionsCredential,
             id: RUuid,
         ) -> Result<Status, Status> {
-            let id = id.into_inner();
+            let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
             let target_user_id =
                 db.find_pw_by_id(id)
                     .map(|pw_rec| pw_rec.user_id)

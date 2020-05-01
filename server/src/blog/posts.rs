@@ -143,7 +143,7 @@ pub mod post {
     /// Handler for retrieving a post with a specific id. No permissions needed.
     #[get("/posts/<id>")]
     pub fn get(db: DB, id: RUuid) -> Result<Json<posts::Data>, Status> {
-        let id = id.into_inner();
+        let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
         // TODO eventually consider error messages for different DB failures
         db.find_post_with_id(id)
             .map(Json)
@@ -159,14 +159,14 @@ pub mod post {
         db: DB,
     ) -> Status {
         log::debug!("Hit post patch endpoint.");
-        let id = id.into_inner();
+        let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
         map_to_status(db.update_post_with_id(id, &update.into_inner()))
     }
     /// Handler for deleting a post with a specific id. Requires user to be logged in and have
     /// the [`CanDelete`](crate::blog::auth::perms::CanDelete) permission.
     #[delete("/posts/<id>")]
     pub fn delete(id: RUuid, db: DB, deleter: auth::Credentials<auth::perms::CanDelete>) -> Status {
-        let id = id.into_inner();
+        let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
         map_to_status(db.delete_post_with_id(id, &posts::Deletion::new(deleter.user_id())))
     }
     /// Handler for publishing a post with a specific id. Requires user to be logged in and have
@@ -178,7 +178,7 @@ pub mod post {
         update: Option<Json<posts::Changed>>,
         publisher: auth::Credentials<auth::perms::CanPublish>,
     ) -> Status {
-        let id = id.into_inner();
+        let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
         if let Some(update) = update {
             let update = update.into_inner();
             let changed_credential = publisher.clone().change_level::<auth::perms::CanEdit>();
@@ -202,7 +202,7 @@ pub mod post {
         db: DB,
         archiver: auth::Credentials<auth::perms::CanArchive>,
     ) -> Status {
-        let id = id.into_inner();
+        let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
         map_to_status(db.archive_post_with_id(id, posts::Archival::new(archiver.user_id())))
     }
 }

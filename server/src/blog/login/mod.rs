@@ -11,10 +11,10 @@ use rocket_contrib::json::Json;
 
 use crate::{
     blog::{auth, db},
-    PWKeyFixture, TokenKeyFixture,
+    cfg::{PWKeyFixture, TokenKeyFixture},
 };
-use blog_db::models::*;
 use crypto::Generational;
+use blog_db::models::*;
 
 /// Route handler for creating a session. Credentials passed in will be ignored if caller is
 /// already logged in.

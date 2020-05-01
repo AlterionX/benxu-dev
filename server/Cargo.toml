@@ -9,17 +9,17 @@ description = "Joins a variety of components together to create a blog with a se
 repository = "https://github.com/AlterionX/benxu-dev"
 
 [dependencies]
-serde_json = "1.0.41"
+serde_json = "1.0.52"
 base64 = "0.11.0"
-simple_logger = "1.3.0"
+simple_logger = "1.6.0"
 tap = "0.4.0"
 boolinator = "2.4.0"
-rand = "0.7.2"
+rand = "0.7.3"
 dotenv = "0.15.0"
 
 [dependencies.page-client]
 package = "static-page-builder"
-version = "0.1.0"
+version = "0.2.0"
 path = "../page-client"
 features = ["rocket"]
 [dependencies.login-enum]
@@ -28,17 +28,17 @@ version = "0.1.0"
 path = "../blog-login-enum"
 [dependencies.blog-db]
 package = "blog-db"
-version = "0.1.0"
+version = "0.2.0"
 path = "../blog-db"
 features = ["server"]
 [dependencies.crypto]
 package = "bundled-crypto"
-version = "0.1.0"
+version = "0.2.0"
 path = "../crypto"
 
 # encoding, decoding, management
 [dependencies.serde]
-version = "1.0.102"
+version = "1.0.106"
 features = ["derive"]
 [dependencies.maud]
 version = "0.21.0"
@@ -46,22 +46,22 @@ features = ["rocket"]
 
 # server + db libs
 [dependencies.rocket]
-version = "0.4.2"
+version = "0.4.4"
 features = ["tls"]
 [dependencies.rocket_contrib]
-version = "0.4.2"
+version = "0.4.4"
 default-features = false
 features = ["uuid", "json", "serve", "diesel_postgres_pool"]
 [dependencies.diesel]
-version = "1.4.3"
+version = "1.4.4"
 features = ["postgres", "chrono", "r2d2"]
 [dependencies.log]
 version = "0.4.8"
 features = ["std", "serde"]
 [dependencies.chrono]
-version = "0.4.9"
+version = "0.4.11"
 features = ["serde"]
 [dependencies.uuid]
-version = "0.7.4"
+version = "0.8.1"
 features = ["serde"]
 

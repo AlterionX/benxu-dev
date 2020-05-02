@@ -114,14 +114,21 @@ impl<'a> Render for Script<'a> {
     }
 }
 impl<'a> Script<'a> {
-    /// A default script loading wasm glue for my wasm code.
+    /// A script for hooking in the WASM loading script
     pub fn wasm_bindgen_loader(name: &str) -> (String, String) {
         let glue = format!("wasm-bindgen-glue/{}.js", name);
         let load = format!("\
              document.addEventListener(\
                 \"DOMContentLoaded\",\
                 function(){{\
-                    var mod = wasm_bindgen(\"/public/wasm/{}_bg.wasm\").catch(function(e) {{ console.log(\"Promise received from wasm load.\"); console.log(e); e.catch(function(e) {{ console.log(e) }}) }});\
+                    var mod = wasm_bindgen(\"/public/wasm/{}_bg.wasm\")\
+                        .catch(function(e) {{\
+                            console.log(\"Promise received from wasm load.\");\
+                            console.log(e);\
+                            e.catch(function(e) {{\
+                                console.log(e);\
+                            }});
+                        }});\
                     if (mod.load_listeners) {{\
                         var listeners = mod.load_listeners();\
                     }}\

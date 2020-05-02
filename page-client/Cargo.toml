@@ -12,7 +12,7 @@ rocket = ["maud/rocket"]
 
 [dependencies]
 maud = "0.21.0"
-typed-builder = "0.3.0"
+typed-builder = "0.5.1"
 [dependencies.chrono]
 version = "0.4.11"
 features = ["serde"]

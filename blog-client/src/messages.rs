@@ -1,4 +1,4 @@
-use crate::{locations::*, model, requests::PostQuery};
+use crate::{locations::*, model, requests::PostQuery, shared::Authorization};
 use boolinator::Boolinator;
 use serde::{Deserialize, Serialize};
 
@@ -14,7 +14,7 @@ pub enum PostAccessMethod {
 pub enum M {
     // Menu is outside of seed, so we need a special message to swap it with the logged in vs the
     // not logged in version.
-    ChangeMenu(crate::shared::LoggedIn),
+    ChangeMenu(Authorization),
     // Change locations
     ChangePage(Location),
     ChangePageAndUrl(Location),

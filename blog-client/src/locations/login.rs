@@ -8,6 +8,7 @@ use crate::{
     model::{
         Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp, User as StoreUser,
     },
+    shared::Authorization,
 };
 use db_models::models::users;
 use login_enum::{Authentication, CreatePassword, Password};
@@ -24,7 +25,7 @@ fn logout_post_fetch(_gs: *const GlobalS, res: GSOpResult) -> Option<GlobalM> {
     use GSOpResult::*;
     match res {
         Success => Some(GlobalM::Grouped(vec![
-            GlobalM::ChangeMenu(crate::shared::LoggedIn::LoggedOut),
+            GlobalM::ChangeMenu(Authorization::LoggedOut),
             GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default())),
         ])),
         Failure(_) => None,
@@ -96,7 +97,7 @@ impl S {
                             Some(GlobalM::Grouped(vec![
                                 GlobalM::Login(M::CreateCredential),
                                 GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default())),
-                                GlobalM::ChangeMenu(crate::shared::LoggedIn::LoggedIn),
+                                GlobalM::ChangeMenu(Authorization::LoggedIn),
                             ]))
                         }
                         Failure(e) => {
@@ -143,7 +144,7 @@ impl S {
                             log::trace!("Logged in. Redirect to homepage.");
                             Some(GlobalM::Grouped(vec![
                                 GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default())),
-                                GlobalM::ChangeMenu(crate::shared::LoggedIn::LoggedIn),
+                                GlobalM::ChangeMenu(Authorization::LoggedIn),
                             ]))
                         }
                         Failure(e) => {

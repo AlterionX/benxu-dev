@@ -1,12 +1,12 @@
 use seed::prelude::*;
-use crate::shared::LoggedIn;
+use crate::shared::Authorization;
 
 pub fn loading<M: Clone>() -> seed::virtual_dom::Node<M> {
     p!["Loading!"]
 }
 
-fn nav_menu(is_logged_in: LoggedIn) -> String {
-    if is_logged_in == LoggedIn::LoggedIn {
+fn nav_menu(is_logged_in: Authorization) -> String {
+    if is_logged_in == Authorization::LoggedIn {
         htmlgen::data::Menu(&[
             htmlgen::data::MenuItem {
                 text: "Home",
@@ -45,7 +45,7 @@ fn nav_menu(is_logged_in: LoggedIn) -> String {
     }
     .into_string()
 }
-pub fn replace_nav(is_logged_in: LoggedIn) {
+pub fn replace_nav(is_logged_in: Authorization) {
     let html = nav_menu(is_logged_in);
     let menu_node = seed::body()
         .get_elements_by_tag_name("nav")

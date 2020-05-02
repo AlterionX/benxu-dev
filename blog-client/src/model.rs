@@ -152,6 +152,22 @@ impl From<Result<(), FailReason>> for StoreOpResult {
         }
     }
 }
+impl std::ops::Try for StoreOpResult {
+    type Ok = ();
+    type Error = FailReason;
+    fn into_result(self) -> Result<Self::Ok, Self::Error> {
+        match self {
+            Self::Success => Ok(()),
+            Self::Failure(e) => Err(e),
+        }
+    }
+    fn from_error(v: Self::Error) -> Self {
+        Self::Failure(v)
+    }
+    fn from_ok(_: Self::Ok) -> Self {
+        Self::Success
+    }
+}
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Store {
@@ -161,7 +177,7 @@ pub struct Store {
     pub user: Option<User>,
 }
 impl Store {
-    pub fn exec(&mut self, op: StoreOperations) -> Result<(), FailReason> {
+    pub fn exec(&mut self, op: StoreOperations) -> StoreOpResult {
         use StoreOperations::*;
         match op {
             PostListing(_q, fetched) => {
@@ -206,7 +222,7 @@ impl Store {
                 self.post.replace(raw_post);
             }
         }
-        Ok(())
+        StoreOpResult::Success
     }
     pub fn has_cached_post(&self, id: &PostMarker) -> bool {
         use PostMarker::*;

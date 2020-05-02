@@ -1,4 +1,4 @@
-#![feature(type_ascription, drain_filter)]
+#![feature(drain_filter, try_trait)]
 
 #[macro_use]
 extern crate seed;
@@ -79,7 +79,7 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
         }
         M::StoreOp(op) => {
             log::debug!("Running store operation...");
-            if let Err(e) = model.store.exec(op) {
+            if let model::StoreOpResult::Failure(e) = model.store.exec(op) {
                 log::error!("Store caused error {:?}.", e);
             } else {
                 log::trace!("Success.");
@@ -88,7 +88,7 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
         }
         M::StoreOpWithAction(op, f) => {
             log::debug!("Store operation with follow up action detected.");
-            if let Some(m) = f(&model.store, model.store.exec(op).into()) {
+            if let Some(m) = f(&model.store, model.store.exec(op)) {
                 update(m, model, orders);
             }
         }

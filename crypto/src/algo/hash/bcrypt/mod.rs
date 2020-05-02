@@ -34,7 +34,7 @@ pub struct SigningData {
     salt: [u8; Algo::SALT_LEN as usize],
 }
 impl SigningData {
-    fn new(&self, msg: Vec<u8>, salt: Option<[u8; Algo::SALT_LEN as usize]>) -> Self {
+    pub fn new(&self, msg: Vec<u8>, salt: Option<[u8; Algo::SALT_LEN as usize]>) -> Self {
         let salt = salt.unwrap_or_else(|| {
             use rand::{rngs::OsRng, RngCore};
             let mut generated_salt = [0; Algo::SALT_LEN as usize];

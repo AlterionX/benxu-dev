@@ -2,6 +2,9 @@ use crate::{locations::*, model, requests::PostQuery};
 use boolinator::Boolinator;
 use serde::{Deserialize, Serialize};
 
+pub trait AsyncM: std::future::Future<Output = Result<M, M>> {}
+impl<T: std::future::Future<Output = Result<M, M>>> AsyncM for T {}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PostAccessMethod {
     ById(uuid::Uuid),
@@ -11,8 +14,7 @@ pub enum PostAccessMethod {
 pub enum M {
     // Menu is outside of seed, so we need a special message to swap it with the logged in vs the
     // not logged in version.
-    UseLoggedInMenu,
-    UseLoggedOutMenu,
+    ChangeMenu(crate::shared::LoggedIn),
     // Change locations
     ChangePage(Location),
     ChangePageAndUrl(Location),
@@ -46,9 +48,6 @@ impl From<model::StoreOperations> for M {
     }
 }
 
-pub trait AsyncM: futures::Future<Item = M, Error = M> {}
-impl<T: futures::Future<Item = M, Error = M>> AsyncM for T {}
-
 #[derive(Default, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RouteMatch(Option<M>);
 impl RouteMatch {
@@ -59,7 +58,8 @@ impl RouteMatch {
         let potential_id = (url.path.len() >= 3).as_some_from(|| url.path.remove(2));
         let potential_resource = (url.path.len() >= 2).as_some_from(|| url.path.remove(1));
         let root = (!url.path.is_empty()).as_some_from(|| url.path.remove(0));
-        let root = (root?.as_ref(): &str == "blog")
+        let root_str: &str = root.as_ref()?.as_str();
+        let root = (root_str == "blog")
             .as_some_from(|| potential_resource)?
             .map(|s| if s == "" { "home".to_owned() } else { s })
             .unwrap_or_else(|| "home".to_owned());
@@ -70,10 +70,16 @@ impl RouteMatch {
                 ("home", None) | ("home", Some("")) => Location::Listing(listing::S {
                     query: url.search.map(PostQuery::Raw),
                 }),
-                ("posts", Some(id)) => Location::Viewer((id.into(): model::PostMarker).into()),
+                ("posts", Some(id)) => {
+                    let marker: model::PostMarker = id.into();
+                    Location::Viewer(marker.into())
+                },
                 ("editor", id) => Location::Editor(match id {
                     None | Some("new") => editor::S::default(),
-                    Some(id) => (id.into(): model::PostMarker).into(),
+                    Some(id) => {
+                        let marker: model::PostMarker = id.into();
+                        marker.into()
+                    },
                 }),
                 ("login", None) | ("login", Some("")) => Location::Login(login::S::default()),
                 ("logout", None) | ("logout", Some("")) => Location::Logout,

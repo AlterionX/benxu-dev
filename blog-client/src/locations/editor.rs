@@ -11,12 +11,14 @@ use crate::{
 };
 use db_models::models::*;
 
-pub fn load_post(post_marker: PostMarker) -> impl GlobalAsyncM {
-    use seed::fetch::Request;
+pub async fn load_post(post_marker: PostMarker) -> Result<GlobalM, GlobalM> {
     const POSTS_URL: &str = "/api/posts";
     let url = format!("{}/{}", POSTS_URL, post_marker);
-    Request::new(url)
-        .fetch_json(move |fo| GlobalM::StoreOpWithAction(GSOp::Post(post_marker, fo), after_fetch))
+        use seed::fetch::Request;
+        Request::new(url)
+            .fetch_json(move |fo| {
+                GlobalM::StoreOpWithAction(GSOp::Post(post_marker, fo), after_fetch)
+            }).await
 }
 fn after_fetch(gs: *const GlobalS, res: GSOpResult) -> Option<GlobalM> {
     use GSOpResult::*;
@@ -64,20 +66,19 @@ impl From<PostMarker> for S {
 }
 impl S {
     pub fn to_url(&self) -> Url {
-        use S::*;
-        let id = match self {
-            New(_) => "new".to_owned(),
-            Old(post, _) => (post.into(): PostMarker).to_string(),
-            Undetermined(pm) => pm.to_string(),
+        const DEFAULT_SLUG: &'static str = "new";
+        let opt_slug = match self {
+            S::New(_) => None,
+            S::Old(post, _) => {
+                let marker: PostMarker = post.into();
+                Some(marker.to_slug())
+            },
+            S::Undetermined(pm) => Some(pm.to_slug()),
         };
-        Url::new(vec!["blog", "edit", id.as_str()])
-    }
-    pub fn is_loaded(&self) -> bool {
-        if let Self::Undetermined(_) = self {
-            false
-        } else {
-            true
-        }
+        let slug = opt_slug
+            .as_ref()
+            .map_or(DEFAULT_SLUG, String::as_str);
+        Url::new(vec!["blog", "edit", slug])
     }
     pub fn is_publishable(&self) -> bool {
         match self {
@@ -148,7 +149,7 @@ impl Default for S {
 }
 
 impl S {
-    fn attempt_save(&mut self) -> Option<Box<dyn GlobalAsyncM>> {
+    fn attempt_save(&mut self) -> Option<std::pin::Pin<Box<dyn GlobalAsyncM>>> {
         use seed::fetch::{Method, Request};
         let (url, method) = match self {
             Self::Undetermined(_) => None,
@@ -185,7 +186,7 @@ impl S {
             };
             let reaction =
                 move |fo| GlobalM::StoreOpWithAction(GSOp::PostWithoutMarker(fo), followup);
-            Some(Box::new(req.send_json(post).fetch_json(reaction)))
+            Some(Box::pin(req.send_json(post).fetch_json(reaction)))
         } else if let Self::Old(post, changes) = self {
             let mut closed_post = post.clone();
             let closed_changes = changes.clone();
@@ -204,12 +205,12 @@ impl S {
                 }
                 Err(_) => GlobalM::NoOp,
             };
-            Some(Box::new(req.send_json(changes).fetch_string_data(reaction)))
+            Some(Box::pin(req.send_json(changes).fetch_string_data(reaction)))
         } else {
             None
         }
     }
-    fn attempt_publish(&mut self, user: &User) -> Option<Box<dyn GlobalAsyncM>> {
+    fn attempt_publish(&mut self, user: &User) -> Option<std::pin::Pin<Box<dyn GlobalAsyncM>>> {
         use seed::fetch::{Method, Request};
         match self {
             Self::Undetermined(_) => None,
@@ -237,7 +238,7 @@ impl S {
                     .method(method)
                     .send_json(post)
                     .fetch_json(reaction);
-                Some(Box::new(req))
+                Some(Box::pin(req))
             }
             Self::Old(post, changed) => {
                 let post_id = post.id;
@@ -255,7 +256,7 @@ impl S {
                     req
                 };
                 let req = req.fetch_string_data(reaction);
-                Some(Box::new(req))
+                Some(Box::pin(req))
             }
         }
     }
@@ -285,13 +286,17 @@ pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM
         Body(body) => s.update_body(body),
         Slug(slug) => s.update_slug(slug),
         Publish => {
-            gs.user
-                .as_ref()
-                .and_then(|u| s.attempt_publish(u))
-                .map(|req| orders.perform_g_cmd(req));
+            let _ = (|| {
+                let user = gs.user.as_ref()?;
+                let req = s.attempt_publish(user)?;
+                orders.perform_g_cmd(req);
+                Some(())
+            })();
         }
         Save => {
-            s.attempt_save().map(|req| orders.perform_g_cmd(req));
+            if let Some(req) = s.attempt_save() {
+                orders.perform_g_cmd(req);
+            }
         }
 
         SyncPost => {
@@ -417,7 +422,7 @@ mod views {
                     At::Type => "submit",
                     At::Value => "Save",
                 },
-                raw_ev(Ev::Click, |e| {
+                ev(Ev::Click, |e| {
                     e.prevent_default();
                     M::Save
                 }),
@@ -429,7 +434,7 @@ mod views {
                         At::Type => "submit",
                         At::Value => "Publish",
                     },
-                    raw_ev(Ev::Click, |e| {
+                    ev(Ev::Click, |e| {
                         e.prevent_default();
                         M::Publish
                     }),

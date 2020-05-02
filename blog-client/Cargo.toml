@@ -22,12 +22,6 @@ version = "0.4.0"
 
 [dependencies.percent-encoding]
 version = "2.1.0"
-[dependencies.future-futures]
-package = "futures-preview"
-version = "=0.3.0-alpha.19"
-features = ["compat"]
-[dependencies.futures]
-version = "0.1"
 [dependencies.log]
 version = "0.4.8"
 [dependencies.fern]
@@ -59,19 +53,19 @@ features = ["serde", "wasmbind"]
 
 # Front end specific dependencies
 [dependencies.seed]
-version = "0.4.2"
+version = "0.6.0"
 # git = "https://github.com/David-OConnor/seed.git"
 # path = "../../seed"
 [dependencies.js-sys]
-version = "0.3.28"
+version = "0.3.39"
 [dependencies.console_log]
-version = "0.1.2"
+version = "0.2.0"
 [dependencies.wasm-bindgen]
-version = "0.2.51"
+version = "0.2.62"
 [dependencies.wasm-bindgen-futures]
-version = "0.4.1"
+version = "0.4.12"
 [dependencies.web-sys]
-version = "0.3.32"
+version = "0.3.39"
 features = [
       'Document',
       'Element',

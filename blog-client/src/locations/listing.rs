@@ -3,14 +3,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     locations::Location,
-    messages::{AsyncM as GlobalAsyncM, M as GlobalM},
+    messages::{M as GlobalM},
     model::{Name, Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp},
     requests::PostQuery,
     shared,
 };
 use db_models::models::posts;
 
-pub fn data_load(s: S, _gs: &GlobalS) -> impl GlobalAsyncM {
+pub async fn data_load(s: S) -> Result<GlobalM, GlobalM> {
     use seed::fetch::Request;
     const POSTS_URL: &str = "/api/posts";
     let query = s.query.unwrap_or_else(PostQuery::default);
@@ -19,6 +19,7 @@ pub fn data_load(s: S, _gs: &GlobalS) -> impl GlobalAsyncM {
     // straight to server all the time.
     Request::new(url)
         .fetch_json(|fo| GlobalM::StoreOpWithAction(GSOp::PostListing(query, fo), after_fetch))
+        .await
 }
 fn after_fetch(_gs: *const GlobalS, res: GSOpResult) -> Option<GlobalM> {
     use GSOpResult::*;

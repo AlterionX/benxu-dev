@@ -12,22 +12,32 @@ use crate::{
 use db_models::models::users;
 use login_enum::{Authentication, CreatePassword, Password};
 
-pub fn logout_trigger(_gs: &GlobalS) -> impl GlobalAsyncM {
+pub async fn logout_trigger() -> Result<GlobalM, GlobalM> {
     use seed::fetch::{Method, Request};
     const LOGOUT_URL: &str = "/api/login";
     Request::new(LOGOUT_URL)
         .method(Method::Delete)
         .fetch_string(|fo| GlobalM::StoreOpWithAction(GSOp::RemoveUser(fo), logout_post_fetch))
+        .await
 }
 fn logout_post_fetch(_gs: *const GlobalS, res: GSOpResult) -> Option<GlobalM> {
     use GSOpResult::*;
     match res {
         Success => Some(GlobalM::Grouped(vec![
-            GlobalM::UseLoggedOutMenu,
+            GlobalM::ChangeMenu(crate::shared::LoggedIn::LoggedOut),
             GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default())),
         ])),
         Failure(_) => None,
     }
+}
+
+pub async fn find_current_user() -> seed::fetch::FetchObject<users::DataNoMeta> {
+    const SELF_URL: &str = "/api/accounts/me";
+    log::info!("Detecting if already logged in...");
+    seed::Request::new(SELF_URL)
+        .fetch_json(|f: seed::fetch::FetchObject<db_models::users::DataNoMeta>| f)
+        .await
+        .unwrap_or_else(|e| e)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -68,7 +78,7 @@ impl S {
 impl S {
     fn create_user_post(&self) -> impl GlobalAsyncM {
         use seed::fetch::{Method, Request};
-        const CREATE_USER_URL: &str = "/api/accounts";
+        const CREATE_USER_URL: &'static str = "/api/accounts";
         Request::new(CREATE_USER_URL)
             .method(Method::Post)
             .send_json(&users::NewNoMeta {
@@ -86,7 +96,7 @@ impl S {
                             Some(GlobalM::Grouped(vec![
                                 GlobalM::Login(M::CreateCredential),
                                 GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default())),
-                                GlobalM::UseLoggedInMenu,
+                                GlobalM::ChangeMenu(crate::shared::LoggedIn::LoggedIn),
                             ]))
                         }
                         Failure(e) => {
@@ -133,7 +143,7 @@ impl S {
                             log::trace!("Logged in. Redirect to homepage.");
                             Some(GlobalM::Grouped(vec![
                                 GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default())),
-                                GlobalM::UseLoggedInMenu,
+                                GlobalM::ChangeMenu(crate::shared::LoggedIn::LoggedIn),
                             ]))
                         }
                         Failure(e) => {
@@ -176,22 +186,22 @@ pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM
             }
         }
         M::SetFocus => {
-            use wasm_bindgen::JsCast;
-            log::trace!("Setting form focus...");
-            if let Ok(Some(Ok(node))) = {
-                seed::body()
+            let _ = (|| {
+                use wasm_bindgen::JsCast;
+                log::trace!("Setting form focus...");
+                let el: web_sys::HtmlElement = seed::body()
                     .query_selector("input[name=username]")
                     .tap_err(|_| log::error!("Could not find username field!"))
-                    .map(|opt_n| {
-                        opt_n.map(|n| {
-                            (n.dyn_into(): Result<web_sys::HtmlElement, _>)
-                                .tap_err(|_| log::error!("Input field is not an HtmlElement!"))
-                        })
-                    })
-            } {
-                node.focus()
-                    .unwrap_or_else(|_| log::error!("Failed to focuse on the correct form input."));
-            }
+                    .ok()??
+                    .dyn_into()
+                    .tap_err(|_| log::error!("Input field is not an HtmlElement!"))
+                    .ok()?;
+                el
+                    .focus()
+                    .tap_err(|_| log::error!("Failed to focus on the username form input."))
+                    .ok()?;
+                Some(())
+            })();
         }
     }
 }
@@ -293,7 +303,7 @@ pub fn render(s: &S, _gs: &GlobalS) -> Node<M> {
                         At::Type => "submit",
                         At::Value => if is_create_mode { "Sign up" } else { "Sign in" },
                     },
-                    raw_ev(Ev::Click, move |e| {
+                    ev(Ev::Click, move |e| {
                         e.prevent_default();
                         if is_create_mode {
                             M::CreateUser
@@ -318,7 +328,7 @@ pub fn render(s: &S, _gs: &GlobalS) -> Node<M> {
                     ],
                     button![
                         if is_create_mode { "Sign in" } else { "Sign up" },
-                        raw_ev(Ev::Click, move |e| {
+                        ev(Ev::Click, move |e| {
                             e.prevent_default();
                             M::SetCreateMode(!is_create_mode)
                         }),

@@ -3,18 +3,19 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     locations::Location,
-    messages::{AsyncM as GlobalAsyncM, M as GlobalM},
+    messages::{M as GlobalM},
     model::{PostMarker, Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp},
     shared,
 };
 use db_models::posts;
 
-pub fn load_post(post_marker: PostMarker) -> impl GlobalAsyncM {
+pub async fn load_post(post_marker: PostMarker) -> Result<GlobalM, GlobalM> {
     use seed::fetch::Request;
     const POSTS_URL: &str = "/api/posts";
     let url = format!("{}/{}", POSTS_URL, post_marker);
     Request::new(url)
         .fetch_json(move |fo| GlobalM::StoreOpWithAction(GSOp::Post(post_marker, fo), after_fetch))
+        .await
 }
 fn after_fetch(gs: *const GlobalS, res: GSOpResult) -> Option<GlobalM> {
     use GSOpResult::*;

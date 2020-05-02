@@ -13,7 +13,7 @@ pub struct Name {
     pub nickname: String,
 }
 impl Name {
-    pub fn to_view<M: Clone>(&self) -> seed::dom_types::Node<M> {
+    pub fn to_view<M: Clone>(&self) -> seed::virtual_dom::Node<M> {
         p![format!("By {} {}", self.first, self.last)]
     }
 }
@@ -52,6 +52,12 @@ impl PostMarker {
             Self::Slug(s) => Some(s) == post.slug.as_ref(),
         }
     }
+    pub fn to_slug(&self) -> String {
+        match self {
+            Self::Uuid(u) => u.to_hyphenated_ref().to_string(),
+            Self::Slug(s) => s.clone(),
+        }
+    }
 }
 impl From<String> for PostMarker {
     fn from(s: String) -> Self {
@@ -75,14 +81,6 @@ impl From<&posts::DataNoMeta> for PostMarker {
 impl std::fmt::Display for PostMarker {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.to_slug())
-    }
-}
-impl PostMarker {
-    fn to_slug(&self) -> String {
-        match self {
-            Self::Uuid(u) => u.to_hyphenated_ref().to_string(),
-            Self::Slug(s) => s.clone(),
-        }
     }
 }
 
@@ -163,12 +161,6 @@ pub struct Store {
     pub user: Option<User>,
 }
 impl Store {
-    pub fn with_user(user: users::DataNoMeta) -> Self {
-        Self {
-            user: Some(user.into()),
-            ..Self::default()
-        }
-    }
     pub fn exec(&mut self, op: StoreOperations) -> Result<(), FailReason> {
         use StoreOperations::*;
         match op {
@@ -240,12 +232,6 @@ pub struct Model {
     pub loc: Location,
 }
 impl Model {
-    pub fn with_user(user: users::DataNoMeta) -> Self {
-        Self {
-            store: Store::with_user(user),
-            loc: Location::NotFound,
-        }
-    }
     pub fn to_view(&self) -> Vec<Node<M>> {
         log::info!(
             "Rendering location {:?} with global state {:?}.",

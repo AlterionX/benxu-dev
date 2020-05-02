@@ -34,10 +34,10 @@ impl Location {
             _ => Err(self),
         }
     }
-    pub fn fetch_req(self, gs: &GlobalS) -> Result<Box<dyn GlobalAsyncM>, Self> {
+    pub fn fetch_req(self, gs: &GlobalS) -> Result<std::pin::Pin<Box<dyn GlobalAsyncM>>, Self> {
         match self {
-            Location::Listing(store) => Ok(Box::new(listing::data_load(store, gs))),
-            Location::Logout => Ok(Box::new(login::logout_trigger(gs))),
+            Location::Listing(store) => Ok(Box::pin(listing::data_load(store))),
+            Location::Logout => Ok(Box::pin(login::logout_trigger())),
             Location::Editor(editor::S::Undetermined(post_id)) if gs.has_cached_post(&post_id) => {
                 Err(Location::Editor(editor::S::Old(
                     gs.post.as_ref().unwrap().clone(),
@@ -45,14 +45,15 @@ impl Location {
                 )))
             }
             Location::Editor(editor::S::Undetermined(post_id)) if !gs.has_cached_post(&post_id) => {
-                Ok(Box::new(editor::load_post(post_id)))
+                Ok(Box::pin(editor::load_post(post_id.clone())))
             }
             Location::Viewer(viewer::S {
                 post_marker: pm, ..
-            }) if gs.has_cached_post(&pm) => Err(Location::Viewer(pm.into())),
-            Location::Viewer(viewer::S {
-                post_marker: pm, ..
-            }) if !gs.has_cached_post(&pm) => Ok(Box::new(viewer::load_post(pm.clone()))),
+            }) => if gs.has_cached_post(&pm) { 
+                Err(Location::Viewer(pm.into()))
+            } else {
+                Ok(Box::pin(viewer::load_post(pm.clone())))
+            },
             _ => Err(self),
         }
     }
@@ -108,10 +109,10 @@ impl Location {
     pub fn to_view(&self, gs: &GlobalS) -> Vec<Node<GlobalM>> {
         match self {
             Location::Logout => vec![h1!["Logging out..."]],
-            Location::Listing(s) => listing::render(s, gs).map_message(GlobalM::Listing),
-            Location::Login(s) => vec![login::render(s, gs).map_message(GlobalM::Login)],
-            Location::Viewer(s) => vec![viewer::render(s, gs).map_message(GlobalM::Viewer)],
-            Location::Editor(s) => editor::render(s, gs).map_message(GlobalM::Editor),
+            Location::Listing(s) => listing::render(s, gs).map_msg(GlobalM::Listing),
+            Location::Login(s) => vec![login::render(s, gs).map_msg(GlobalM::Login)],
+            Location::Viewer(s) => vec![viewer::render(s, gs).map_msg(GlobalM::Viewer)],
+            Location::Editor(s) => editor::render(s, gs).map_msg(GlobalM::Editor),
             Location::NotFound => vec![p!["Page not found!"]],
         }
     }

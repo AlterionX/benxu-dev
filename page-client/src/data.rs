@@ -37,7 +37,7 @@ pub struct MetaData<'a> {
     #[builder(default = "UTF-8")]
     pub charset: &'a str,
     /// Scripts to include in the website.
-    #[builder(default_code = "&[]")]
+    #[builder(default = &[])]
     pub scripts: &'a [Script<'a>],
     /// CSS to include in the website.
     #[builder(default=&[])]
@@ -49,7 +49,7 @@ pub struct MetaData<'a> {
     #[builder(default = "Benjamin Xu's personal site.")]
     pub description: &'a str,
     /// The copyright data of the website.
-    #[builder(default_code = r#"Copyright {
+    #[builder(default = Copyright {
         name: &Name {
             first: "Benjamin",
             middle: Some("Peiyan"),
@@ -58,7 +58,7 @@ pub struct MetaData<'a> {
         },
         icon: "©",
         rights_clause: "All rights reserved",
-    }"#)]
+    })]
     pub copyright: Copyright<'a>,
     /// The menu of the website.
     #[builder(default)]

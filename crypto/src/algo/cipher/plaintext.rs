@@ -97,10 +97,7 @@ impl asymm::CanEncryptPrivate for Algo {
 #[cfg(test)]
 mod unit_test {
     mod key_gen {
-        use crate::algo::{
-            cipher::plaintext::Algo,
-            Algo as BaseAlgo, SafeGenerateKey,
-        };
+        use crate::algo::{cipher::plaintext::Algo, Algo as BaseAlgo, SafeGenerateKey};
         #[test]
         fn key_generation() {
             let alg = Algo;

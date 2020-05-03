@@ -73,13 +73,13 @@ impl RouteMatch {
                 ("posts", Some(id)) => {
                     let marker: model::PostMarker = id.into();
                     Location::Viewer(marker.into())
-                },
+                }
                 ("editor", id) => Location::Editor(match id {
                     None | Some("new") => editor::S::default(),
                     Some(id) => {
                         let marker: model::PostMarker = id.into();
                         marker.into()
-                    },
+                    }
                 }),
                 ("login", None) | ("login", Some("")) => Location::Login(login::S::default()),
                 ("logout", None) | ("logout", Some("")) => Location::Logout,

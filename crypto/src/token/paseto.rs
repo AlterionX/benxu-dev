@@ -30,20 +30,17 @@
 //!  - \[ \] Built in footer validation + key id support.
 
 mod v1;
-pub use v1::{
-    local::Protocol as V1Local,
-    public::Protocol as V1Public,
-};
+pub use v1::{local::Protocol as V1Local, public::Protocol as V1Public};
 mod v2;
 pub use v2::{
-    local::{Protocol as V2Local, error::Error as V2LocalError},
+    local::{error::Error as V2LocalError, Protocol as V2Local},
     public::Protocol as V2Public,
 };
 
 pub mod error;
 pub mod token;
 
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Serialize};
 
 use crate::algo::Algo;
 
@@ -147,55 +144,55 @@ mod util {
     }
 
     #[cfg(test)]
-mod unit_test {
-    use super::*;
-    #[test]
-    fn test_le64() {
-        let mut buffer = [0u8; 8];
-        append_u64_to_little_endian_byte_array(0, &mut buffer).unwrap();
-        assert_eq!(vec![0, 0, 0, 0, 0, 0, 0, 0], buffer,);
-        append_u64_to_little_endian_byte_array(!0u64, &mut buffer).unwrap();
-        assert_eq!(
-            vec![0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0b01111111],
-            buffer,
-        );
-    }
-    #[cfg(test)]
-    fn as_u8_vec(hex_str: &str) -> Result<Vec<u8>, ()> {
-        let digits = (hex_str
-            .chars()
-            .map(|hex_char| hex_char.to_digit(16).map(|i| i as u8).ok_or(()))
-            .collect::<Result<Vec<_>, _>>())?;
-        let starting_idx = digits.len() % 2;
-        let mut bytes: Vec<u8> = (starting_idx..digits.len())
-            .step_by(2)
-            .map(|idx| ((digits[idx] << 4) + digits[idx + 1]) as u8)
-            .collect();
-        if starting_idx == 1 {
-            bytes.insert(0, digits[0]);
+    mod unit_test {
+        use super::*;
+        #[test]
+        fn test_le64() {
+            let mut buffer = [0u8; 8];
+            append_u64_to_little_endian_byte_array(0, &mut buffer).unwrap();
+            assert_eq!(vec![0, 0, 0, 0, 0, 0, 0, 0], buffer,);
+            append_u64_to_little_endian_byte_array(!0u64, &mut buffer).unwrap();
+            assert_eq!(
+                vec![0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0b01111111],
+                buffer,
+            );
         }
-        Ok(bytes)
-    }
-    #[test]
-    fn test_pae() {
-        let test_cases = vec![
+        #[cfg(test)]
+        fn as_u8_vec(hex_str: &str) -> Result<Vec<u8>, ()> {
+            let digits = (hex_str
+                .chars()
+                .map(|hex_char| hex_char.to_digit(16).map(|i| i as u8).ok_or(()))
+                .collect::<Result<Vec<_>, _>>())?;
+            let starting_idx = digits.len() % 2;
+            let mut bytes: Vec<u8> = (starting_idx..digits.len())
+                .step_by(2)
+                .map(|idx| ((digits[idx] << 4) + digits[idx + 1]) as u8)
+                .collect();
+            if starting_idx == 1 {
+                bytes.insert(0, digits[0]);
+            }
+            Ok(bytes)
+        }
+        #[test]
+        fn test_pae() {
+            let test_cases = vec![
             ("0000000000000000", vec![]),
             ("01000000000000000000000000000000", vec![""]),
             ("020000000000000000000000000000000000000000000000", vec!["", ""]),
             ("0100000000000000070000000000000050617261676f6e", vec!["Paragon"]),
             ("0200000000000000070000000000000050617261676f6e0a00000000000000496e6974696174697665", vec!["Paragon", "Initiative"]),
         ];
-        // Constants taken from paseto source.
-        for (solution, input) in test_cases {
-            let data = &input
-                .iter()
-                .map(|string| string.as_bytes())
-                .collect::<Vec<&[u8]>>()[..];
-            assert_eq!(
-                as_u8_vec(solution).unwrap(),
-                multi_part_pre_auth_encoding(&data).unwrap(),
-            );
+            // Constants taken from paseto source.
+            for (solution, input) in test_cases {
+                let data = &input
+                    .iter()
+                    .map(|string| string.as_bytes())
+                    .collect::<Vec<&[u8]>>()[..];
+                assert_eq!(
+                    as_u8_vec(solution).unwrap(),
+                    multi_part_pre_auth_encoding(&data).unwrap(),
+                );
+            }
         }
     }
-}
 }

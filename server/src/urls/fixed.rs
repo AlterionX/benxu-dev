@@ -16,6 +16,18 @@ fn get_index() -> Markup {
     htmlgen::index()
 }
 
+/// Provides a [`Vec`] of [`Route`]s to be attached with [`rocket::Rocket::mount()`].
+pub fn routes() -> Vec<Route> {
+    routes![
+        get_index,
+        resume::get,
+        links::get,
+        contacts::get,
+        projects::get,
+        projects::project::get,
+    ]
+}
+
 /// Functions generating my home page.
 pub mod htmlgen {
     use maud::{html, Markup, Render};
@@ -297,16 +309,4 @@ pub mod htmlgen {
             Some(&meta),
         )
     }
-}
-
-/// Provides a [`Vec`] of [`Route`]s to be attached with [`rocket::Rocket::mount()`].
-pub fn routes() -> Vec<Route> {
-    routes![
-        get_index,
-        resume::get,
-        links::get,
-        contacts::get,
-        projects::get,
-        projects::project::get,
-    ]
 }

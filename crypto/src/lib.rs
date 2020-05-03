@@ -19,11 +19,7 @@ pub mod encoding;
 pub mod key_rotation;
 pub mod token;
 pub use key_rotation::{
-    Generational,
-    KeyRotator,
-    RotatingKeyFixture,
-    RotatingKeyStore,
-    StableKeyStore,
+    Generational, KeyRotator, RotatingKeyFixture, RotatingKeyStore, StableKeyStore,
 };
 
 /// Always call this if you need the sodiumoxide-implemented things to work multithreaded.

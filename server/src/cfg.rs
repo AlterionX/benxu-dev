@@ -120,8 +120,5 @@ pub fn init_pw_secret<S: AsRef<Path>>(secret_path: &S) -> crypto::StableKeyStore
         })
         .expect("Located secret key file.");
     use crypto::algo::Algo as A;
-    crypto::key_rotation::StableKeyStore::new(
-        PWAlgo::new(None),
-        <PWAlgo as A>::Key::new(secret),
-    )
+    crypto::key_rotation::StableKeyStore::new(PWAlgo::new(None), <PWAlgo as A>::Key::new(secret))
 }

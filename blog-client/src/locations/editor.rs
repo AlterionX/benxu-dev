@@ -14,25 +14,29 @@ use db_models::models::*;
 pub async fn load_post(post_marker: PostMarker) -> Result<GlobalM, GlobalM> {
     const POSTS_URL: &str = "/api/posts";
     let url = format!("{}/{}", POSTS_URL, post_marker);
-        use seed::fetch::Request;
-        Request::new(url)
-            .fetch_json(move |fo| {
-                GlobalM::StoreOpWithAction(GSOp::Post(post_marker, fo), after_fetch)
-            }).await
-}
-fn after_fetch(gs: *const GlobalS, res: GSOpResult) -> Option<GlobalM> {
-    use GSOpResult::*;
-    let gs = unsafe { gs.as_ref() }?;
-    match (res, &gs.post) {
-        (Success, Some(post)) => Some(GlobalM::RenderPage(Location::Editor(S::Old(post.clone(), posts::Changed::default())))),
-        _ => None,
-    }
+    use seed::fetch::Request;
+    Request::new(url)
+        .fetch_json(move |fo| {
+            GlobalM::StoreOpWithAction(GSOp::Post(post_marker, fo), |gs, res| {
+                use GSOpResult::*;
+                let gs = unsafe { gs.as_ref() }?;
+                match (res, &gs.post) {
+                    (Success, Some(post)) => Some(GlobalM::RenderPage(Location::Editor(S::Old(
+                        post.clone(),
+                        posts::Changed::default(),
+                    )))),
+                    _ => None,
+                }
+            })
+        })
+        .await
 }
 pub fn is_restricted_from(s: &S, gs: &GlobalS) -> bool {
     if let GlobalS {
         user: Some(user), ..
     } = gs
     {
+        // TODO move this check onto the server for security
         match s {
             S::Old(stored_post, _) => !stored_post.is_published() && !user.can_see_unpublished,
             S::New(_) => false,
@@ -72,12 +76,10 @@ impl S {
             S::Old(post, _) => {
                 let marker: PostMarker = post.into();
                 Some(marker.to_slug())
-            },
+            }
             S::Undetermined(pm) => Some(pm.to_slug()),
         };
-        let slug = opt_slug
-            .as_ref()
-            .map_or(DEFAULT_SLUG, String::as_str);
+        let slug = opt_slug.as_ref().map_or(DEFAULT_SLUG, String::as_str);
         Url::new(vec!["blog", "edit", slug])
     }
     pub fn is_publishable(&self) -> bool {
@@ -171,41 +173,44 @@ impl S {
         let req = Request::new(url).method(method);
         if let Self::New(post) = self {
             // save
-            let followup = |_gs, res| {
-                use crate::model::StoreOpResult::*;
-                match res {
-                    Success => {
-                        log::debug!("Post is saved! Modifying state to be `Old` instead of `New`");
-                        Some(GlobalM::Editor(M::SyncPost))
+            Some(Box::pin(req.send_json(post).fetch_json(move |fo| {
+                GlobalM::StoreOpWithAction(GSOp::PostWithoutMarker(fo), |_gs, res| {
+                    use crate::model::StoreOpResult::*;
+                    match res {
+                        Success => {
+                            log::debug!(
+                                "Post is saved! Modifying state to be `Old` instead of `New`"
+                            );
+                            Some(GlobalM::Editor(M::SyncPost))
+                        }
+                        Failure(e) => {
+                            log::error!("Post save failed due to {:?}.", e);
+                            None
+                        }
                     }
-                    Failure(e) => {
-                        log::error!("Post save failed due to {:?}.", e);
-                        None
-                    }
-                }
-            };
-            let reaction =
-                move |fo| GlobalM::StoreOpWithAction(GSOp::PostWithoutMarker(fo), followup);
-            Some(Box::pin(req.send_json(post).fetch_json(reaction)))
+                })
+            })))
         } else if let Self::Old(post, changes) = self {
             let mut closed_post = post.clone();
             let closed_changes = changes.clone();
-            let reaction = move |res: Result<_, _>| match res
-                .tap_ok(|_| log::debug!("Launching credential creation"))
-                .tap_err(|e| log::error!("Post save failed due to {:?}.", e))
-            {
-                Ok(_) => {
-                    if let Some(title) = closed_changes.title {
-                        closed_post.title = title;
+            Some(Box::pin(req.send_json(changes).fetch_string_data(
+                move |res| match res {
+                    Ok(_) => {
+                        log::debug!("Launching credential creation");
+                        if let Some(title) = closed_changes.title {
+                            closed_post.title = title;
+                        }
+                        if let Some(body) = closed_changes.body {
+                            closed_post.body = body;
+                        }
+                        GlobalM::StoreOp(GSOp::PostRaw(closed_post))
                     }
-                    if let Some(body) = closed_changes.body {
-                        closed_post.body = body;
+                    Err(e) => {
+                        log::error!("Post save failed due to {:?}.", e);
+                        GlobalM::NoOp
                     }
-                    GlobalM::StoreOp(GSOp::PostRaw(closed_post))
-                }
-                Err(_) => GlobalM::NoOp,
-            };
-            Some(Box::pin(req.send_json(changes).fetch_string_data(reaction)))
+                },
+            )))
         } else {
             None
         }
@@ -305,7 +310,8 @@ pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM
                     S::Old(post, _) if post.id == updated.id => update_post(post, updated),
                     _ => {
                         orders.send_g_msg(GlobalM::ChangePageAndUrl(Location::Editor(S::Old(
-                            updated.clone(), posts::Changed::default()
+                            updated.clone(),
+                            posts::Changed::default(),
                         ))));
                     }
                 }

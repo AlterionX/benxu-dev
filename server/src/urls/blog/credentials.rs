@@ -1,13 +1,17 @@
 //! Handlers and functions for each of the various different ways to log into a site.
 
-pub mod data;
+mod data;
 
 use rocket::{http::Status, State};
 use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
 use crate::{
-    blog::{auth, credentials::data::SavableCredential, db::PWQuery, DB},
     cfg::PWKeyFixture,
+    urls::blog::credentials::data::SavableCredential,
+    util::{
+        auth,
+        blog::{db::PWQuery, DB},
+    },
 };
 
 /// Handlers and functions for password credentials.

@@ -5,10 +5,12 @@ use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
 use chrono::DateTime;
 
-use crate::blog::{
+use crate::util::{
     auth,
-    db::{self, PostQuery},
-    DB,
+    blog::{
+        db::{self, PostQuery},
+        DB,
+    },
 };
 use blog_db::models::*;
 

@@ -3,12 +3,14 @@
 use boolinator::Boolinator;
 
 use crate::{
-    blog::{
-        auth,
-        db::{PWQuery, PermissionQuery, UserQuery},
-        DB,
-    },
     cfg::{PWAlgo, PWKeyFixture},
+    util::{
+        auth,
+        blog::{
+            db::{PWQuery, PermissionQuery, UserQuery},
+            DB,
+        },
+    },
 };
 use blog_db::models::*;
 use crypto::algo::{hash::symmetric::Algo as HashA, Algo as A};

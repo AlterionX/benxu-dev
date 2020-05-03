@@ -7,15 +7,13 @@ mod local_prelude {
                 aes256::ctr,
                 symmetric::{self as symm, CanDecrypt, CanEncrypt},
             },
-            hash::{
-                hmac::sha384::Algo as HMAC_SHA384,
-                symmetric::{Algo as SymmHashAlgo},
-            },
+            hash::{hmac::sha384::Algo as HMAC_SHA384, symmetric::Algo as SymmHashAlgo},
             key_deriv::hkdf::sha384::Algo as HKDF_SHA384,
             Algo as A,
         },
         token::paseto::{
-            util::{collapse_to_vec, multi_part_pre_auth_encoding}, token,
+            token,
+            util::{collapse_to_vec, multi_part_pre_auth_encoding},
             v1::{
                 local::{error::Error, split_key, AuthKey, EncryptionKey, HEADER},
                 nonce::{Nonce, Randomness},
@@ -35,12 +33,8 @@ mod error;
 use crate::{
     algo::{Algo as A, Key as K, SafeGenerateKey},
     token::paseto::{
+        v1::local::{decryption::BasicToken, encryption::SerializedRandToken, local_prelude::*},
         Protocol as ProtocolTrait,
-        v1::local::{
-            decryption::BasicToken,
-            encryption::SerializedRandToken,
-            local_prelude::*,
-        },
     },
 };
 
@@ -106,7 +100,7 @@ pub struct CombinedKey(Vec<u8>);
 impl SafeGenerateKey for CombinedKey {
     type Settings = usize;
     fn safe_generate(len: &Self::Settings) -> Self {
-        use rand::{RngCore, rngs::OsRng};
+        use rand::{rngs::OsRng, RngCore};
         let mut buffer = vec![0; *len];
         OsRng.fill_bytes(buffer.as_mut_slice());
         CombinedKey(buffer)
@@ -179,7 +173,8 @@ mod unit_tests {
         let beginning = orig.clone();
         let key = CombinedKey(b"some arbitrary key".to_vec());
         let encrypted_tok = Protocol::encrypt(beginning, &key).unwrap();
-        let decrypted_tok: token::Data<String, String> = Protocol::decrypt(encrypted_tok, &key).unwrap();
+        let decrypted_tok: token::Data<String, String> =
+            Protocol::decrypt(encrypted_tok, &key).unwrap();
         assert!(orig == decrypted_tok);
     }
 }

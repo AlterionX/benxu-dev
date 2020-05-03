@@ -36,7 +36,9 @@ impl TryFrom<(PrimedToken, &poly1305::Key)> for EncryptedToken {
         let encryption_args = poly1305::EncryptArgs {
             plaintext: tok.msg,
             aad: Some(aad),
-            nonce: Some(poly1305::Nonce::from_slice(tok.nonce.as_slice()).ok_or(Error::Encryption)?),
+            nonce: Some(
+                poly1305::Nonce::from_slice(tok.nonce.as_slice()).ok_or(Error::Encryption)?,
+            ),
         };
         let ciphertext = poly1305::Algo::new(()).encrypt(key, &encryption_args)?;
         Ok(Self {

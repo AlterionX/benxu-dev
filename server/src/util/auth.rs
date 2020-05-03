@@ -17,7 +17,11 @@ use std::{marker::PhantomData, ops::Deref, str};
 use tap::*;
 
 use crate::cfg::{TokenKeyFixture, TokenKeyStore};
-use crypto::{algo::Algo as A, token::paseto::{self, Protocol}, key_rotation::Generational};
+use crypto::{
+    algo::Algo as A,
+    key_rotation::Generational,
+    token::paseto::{self, Protocol},
+};
 
 /// The name of the cookie holding the credentials to be deserialized.
 pub const AUTH_COOKIE_NAME: &str = "_atk";

@@ -1,12 +1,14 @@
 //! Data structures holding pertinent login information per request.
 
 use crate::{
-    blog::{
-        auth::{self, perms::Verifiable},
-        db::{PWQuery, UserQuery},
-        DB,
-    },
     cfg::PWAlgo,
+    util::{
+        auth::{self, perms::Verifiable},
+        blog::{
+            db::{PWQuery, UserQuery},
+            DB,
+        },
+    },
 };
 use blog_db::models::*;
 use boolinator::Boolinator;

@@ -49,11 +49,13 @@ impl Location {
             }
             Location::Viewer(viewer::S {
                 post_marker: pm, ..
-            }) => if gs.has_cached_post(&pm) { 
-                Err(Location::Viewer(pm.into()))
-            } else {
-                Ok(Box::pin(viewer::load_post(pm.clone())))
-            },
+            }) => {
+                if gs.has_cached_post(&pm) {
+                    Err(Location::Viewer(pm.into()))
+                } else {
+                    Ok(Box::pin(viewer::load_post(pm.clone())))
+                }
+            }
             _ => Err(self),
         }
     }

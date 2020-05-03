@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     locations::Location,
-    messages::{M as GlobalM},
+    messages::M as GlobalM,
     model::{Name, Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp},
     requests::PostQuery,
     shared,
@@ -82,10 +82,7 @@ fn render_post(p: &posts::BasicData, author: Option<&Name>) -> Node<M> {
 fn render_post_list(empty_msg: &str, posts: &[posts::BasicData]) -> Node<M> {
     if posts.is_empty() {
         log::debug!("Calling render_post_list.");
-        p![
-            attrs!{At::Class => "no-post-text"},
-            empty_msg,
-        ]
+        p![attrs! {At::Class => "no-post-text"}, empty_msg,]
     } else {
         log::debug!("Not called");
         ul![

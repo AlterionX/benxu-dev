@@ -13,7 +13,9 @@ impl SignedToken {
 }
 impl TryFrom<(token::SerializedData, &pss_sha384_mgf1_65537::KeyPair)> for SignedToken {
     type Error = Error;
-    fn try_from((tok, key): (token::SerializedData, &pss_sha384_mgf1_65537::KeyPair)) -> Result<Self, Self::Error> {
+    fn try_from(
+        (tok, key): (token::SerializedData, &pss_sha384_mgf1_65537::KeyPair),
+    ) -> Result<Self, Self::Error> {
         let to_sign = multi_part_pre_auth_encoding(&[
             HEADER.to_combined().as_slice(),
             tok.msg.as_slice(),
@@ -22,10 +24,8 @@ impl TryFrom<(token::SerializedData, &pss_sha384_mgf1_65537::KeyPair)> for Signe
         .map_err(|_| Error::Signing)?;
 
         let signature =
-            pss_sha384_mgf1_65537::Algo::sign_private(
-                to_sign.as_slice(),
-                key.private_key(),
-            ).map_err(|_| Error::Signing)?;
+            pss_sha384_mgf1_65537::Algo::sign_private(to_sign.as_slice(), key.private_key())
+                .map_err(|_| Error::Signing)?;
 
         Ok(SignedToken {
             msg: tok.msg,

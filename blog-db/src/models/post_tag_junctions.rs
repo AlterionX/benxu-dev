@@ -2,11 +2,8 @@
 
 #[cfg(feature = "diesel")]
 use crate::{
+    models::{posts::Data as Post, tags::Data as Tag},
     schema::*,
-    models::{
-        posts::Data as Post,
-        tags::Data as Tag,
-    },
 };
 use serde::{Deserialize, Serialize};
 

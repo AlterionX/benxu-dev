@@ -1,9 +1,4 @@
-#![feature(
-    proc_macro_hygiene,
-    type_ascription,
-    decl_macro,
-    try_trait
-)]
+#![feature(proc_macro_hygiene, type_ascription, decl_macro, try_trait)]
 
 //! Server crate for marshalling and unmarshalling information between the blog-db and blog-client
 //! crates as well as serving a set of static pages.
@@ -25,8 +20,13 @@ use tap::*;
 
 mod cfg;
 
-mod blog;
-mod fixed;
+mod urls;
+mod util;
+
+use crate::{
+    urls::{blog_api_routes, blog_spa_routes, fixed_routes},
+    util::blog::DB as BlogDB,
+};
 
 mod shared_html {
     pub fn logo_markup() -> Option<page_client::data::Logo<'static>> {
@@ -110,13 +110,13 @@ impl Server {
         let rocket = {
             info!("Prepping Rocket...");
             let rocket = rocket::ignite()
-                .mount(cfg::STATIC_ROOT, fixed::routes())
+                .mount(cfg::STATIC_ROOT, fixed_routes())
                 .mount(cfg::PUBLIC_ROOT, StaticFiles::from(public_path))
-                .attach(blog::DB::fairing())
+                .attach(BlogDB::fairing())
                 .manage(Arc::clone(&local_loaded_key))
                 .manage(paseto_key.get_key_fixture())
-                .mount(cfg::BLOG_API_ROOT, blog::api_routes())
-                .mount(cfg::BLOG_SPA_ROOT, blog::spa_routes());
+                .mount(cfg::BLOG_API_ROOT, blog_api_routes())
+                .mount(cfg::BLOG_SPA_ROOT, blog_spa_routes());
             info!("Rocket ready for launch!");
             rocket
         };

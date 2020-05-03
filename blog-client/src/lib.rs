@@ -3,15 +3,15 @@
 #[macro_use]
 extern crate seed;
 
-mod model;
-mod messages;
 mod locations;
+mod messages;
+mod model;
 mod requests;
 mod shared;
 
-use seed::prelude::*;
-use model::Model;
 use messages::M;
+use model::Model;
+use seed::prelude::*;
 
 #[cfg(not(debug_assertions))]
 #[wasm_bindgen]

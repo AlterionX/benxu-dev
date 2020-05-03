@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     locations::Location,
-    messages::{M as GlobalM},
+    messages::M as GlobalM,
     model::{PostMarker, Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp},
     shared,
 };

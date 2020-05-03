@@ -193,7 +193,9 @@ impl<K: SafeGenerateKey + Clone + Send + Sync, A: Algo<Key = K> + Send + Sync + 
 impl<T: Algo> Drop for KeyRotator<T> {
     fn drop(&mut self) {
         if self.kill_handle.is_some() {
-            log::error!("Attempted to drop KeyRotation. Please call `cleanup` instead. Will now panic.");
+            log::error!(
+                "Attempted to drop KeyRotation. Please call `cleanup` instead. Will now panic."
+            );
             panic!("Attempted to drop KeyRotation. Please call `cleanup` instead.");
         }
     }

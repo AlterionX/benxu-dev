@@ -7,8 +7,11 @@ use rocket::{
 use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
 use crate::{
-    blog::{auth, db::UserQuery, DB},
     cfg::TokenKeyFixture,
+    util::{
+        auth,
+        blog::{db::UserQuery, DB},
+    },
 };
 use blog_db::models::*;
 use crypto::Generational;

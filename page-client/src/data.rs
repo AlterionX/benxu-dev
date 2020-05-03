@@ -117,7 +117,8 @@ impl<'a> Script<'a> {
     /// A script for hooking in the WASM loading script
     pub fn wasm_bindgen_loader(name: &str) -> (String, String) {
         let glue = format!("wasm-bindgen-glue/{}.js", name);
-        let load = format!("\
+        let load = format!(
+            "\
              document.addEventListener(\
                 \"DOMContentLoaded\",\
                 function(){{\

@@ -1,15 +1,12 @@
-//! Marshalls the data between the [`blog_client`](../blog_client) and [`blog_db`](../blog_db) as well as performing
-//! authentication and authorization through the [`auth`](crate::blog::auth) module.
+//! Marshalls the data between the [`blog_client`](../blog_client) and [`blog_db`](../blog_db).
 
-pub use blog_db::rocket as db;
-pub use db::DB;
 pub mod accounts;
-pub mod auth;
 pub mod credentials;
 pub mod login;
 pub mod permissions;
 pub mod posts;
 
+use crate::util::auth;
 use maud::Markup;
 use rocket::Route;
 
@@ -22,11 +19,46 @@ pub fn get(
     // TODO set based on permissions
     htmlgen::index(c.is_some())
 }
+
 /// Handler for serving the primary web app for when there is no path.
 #[get("/")]
 pub fn get_unadorned(c: Option<auth::UnverifiedPermissionsCredential>) -> Markup {
     // TODO set based on permissions
     htmlgen::index(c.is_some())
+}
+
+/// Provides a [`Vec`] of [`Route`]s to be attached with [`rocket::Rocket::mount()`]. Used for the
+/// SPA endpoints.
+pub fn spa_routes() -> Vec<Route> {
+    routes![get, get_unadorned]
+}
+/// Provides a [`Vec`] of [`Route`]s to be attached with [`rocket::Rocket::mount()`]. Used for the
+/// api endpoints.
+pub fn api_routes() -> Vec<Route> {
+    routes![
+        posts::get,
+        posts::post,
+        posts::post::get,
+        posts::post::patch,
+        posts::post::delete,
+        posts::post::publish,
+        posts::post::archive,
+        editor::get,
+        accounts::post,
+        accounts::account::get,
+        accounts::account::get_self,
+        accounts::account::patch,
+        accounts::account::delete,
+        login::post,
+        login::delete,
+        credentials::pws::post,
+        credentials::pws::pw::patch,
+        credentials::pws::pw::delete,
+        permissions::post,
+        permissions::delete,
+        permissions::permission::get,
+        permissions::permission::delete,
+    ]
 }
 
 /// Functions serving the initial blog page, before it gets taken over by
@@ -96,7 +128,7 @@ pub mod htmlgen {
             .menu(menu.as_ref())
             .logo(logo.as_ref())
             .build();
-        partials::basic_page(html! { "Loadinggggggggggggg" }, Some(&meta))
+        partials::basic_page(html! { "Loading. Please wait..." }, Some(&meta))
     }
 }
 
@@ -108,38 +140,4 @@ pub mod editor {
     pub fn get() -> Status {
         Status::NotImplemented
     }
-}
-
-/// Provides a [`Vec`] of [`Route`]s to be attached with [`rocket::Rocket::mount()`]. Used for the
-/// SPA endpoints.
-pub fn spa_routes() -> Vec<Route> {
-    routes![get, get_unadorned]
-}
-/// Provides a [`Vec`] of [`Route`]s to be attached with [`rocket::Rocket::mount()`]. Used for the
-/// api endpoints.
-pub fn api_routes() -> Vec<Route> {
-    routes![
-        posts::get,
-        posts::post,
-        posts::post::get,
-        posts::post::patch,
-        posts::post::delete,
-        posts::post::publish,
-        posts::post::archive,
-        editor::get,
-        accounts::post,
-        accounts::account::get,
-        accounts::account::get_self,
-        accounts::account::patch,
-        accounts::account::delete,
-        login::post,
-        login::delete,
-        credentials::pws::post,
-        credentials::pws::pw::patch,
-        credentials::pws::pw::delete,
-        permissions::post,
-        permissions::delete,
-        permissions::permission::get,
-        permissions::permission::delete,
-    ]
 }

@@ -40,16 +40,22 @@ impl VerifiedToken {
 }
 impl TryFrom<(SeparatedToken, &<ed25519::Algo as A>::Key)> for VerifiedToken {
     type Error = Error;
-    fn try_from((tok, key): (SeparatedToken, &<ed25519::Algo as A>::Key)) -> Result<Self, Self::Error> {
+    fn try_from(
+        (tok, key): (SeparatedToken, &<ed25519::Algo as A>::Key),
+    ) -> Result<Self, Self::Error> {
         let signed_plaintext = multi_part_pre_auth_encoding(&[
             HEADER.to_combined().as_slice(),
             tok.msg(),
             tok.footer.as_ref().map_or(b"", |f| f.as_slice()),
         ])
         .map_err(|_| Error::Signing)?;
-        <ed25519::Algo as HashA>::verify_public(signed_plaintext.as_slice(), tok.sig(), key.public_key())
-            .map_err(|_| Error::Signing)?
-            .ok_or(Error::BadSignature)?;
+        <ed25519::Algo as HashA>::verify_public(
+            signed_plaintext.as_slice(),
+            tok.sig(),
+            key.public_key(),
+        )
+        .map_err(|_| Error::Signing)?
+        .ok_or(Error::BadSignature)?;
         Ok(Self {
             msg: tok.msg().to_vec(),
             footer: tok.footer,

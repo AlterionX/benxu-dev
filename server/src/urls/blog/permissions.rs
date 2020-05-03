@@ -1,13 +1,16 @@
 //! Handlers and functions for utilizing the permissions system of the blog.
 
-pub mod error;
+mod error;
 use error::Error;
-pub mod data;
+mod data;
 
 use rocket::http::Status;
 use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
-use crate::blog::{auth, db::PermissionQuery, DB};
+use crate::util::{
+    auth,
+    blog::{db::PermissionQuery, DB},
+};
 use blog_db::models::*;
 
 /// Checks if credentials allows for creation of requested permissions.
@@ -87,7 +90,13 @@ pub mod permission {
     use rocket::http::Status;
     use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
-    use crate::blog::{auth, db::PermissionQuery, permissions::Error, DB};
+    use crate::{
+        urls::blog::permissions::Error,
+        util::{
+            auth,
+            blog::{db::PermissionQuery, DB},
+        },
+    };
     use blog_db::models::*;
 
     /// Gets the permission with the requested id. Requires caller to have the
@@ -101,7 +110,7 @@ pub mod permission {
         let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
         db.get_permission_with_id(id)
             .map(Json)
-            .map_err(|e| (e.into(): Error).into())
+            .map_err(|e| Error::from(e).into())
     }
     /// Deletes the permission with the requested id. Requires caller to have the
     /// [`CanDeletePermission`](crate::blog::auth::perms::CanDeletePermission`) permission.
@@ -114,6 +123,6 @@ pub mod permission {
         let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
         db.delete_permission_with_id(id)
             .map(Json)
-            .map_err(|e| (e.into(): Error).into())
+            .map_err(|e| Error::from(e).into())
     }
 }

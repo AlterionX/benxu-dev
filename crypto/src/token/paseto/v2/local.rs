@@ -8,17 +8,11 @@ mod local_prelude {
             Algo as A,
         },
         token::paseto::{
-            util::{
-                collapse_to_vec,
-                multi_part_pre_auth_encoding,
-            },
             token,
+            util::{collapse_to_vec, multi_part_pre_auth_encoding},
             v2::local::{
                 error::Error,
-                nonce::{
-                    Nonce,
-                    Randomness,
-                },
+                nonce::{Nonce, Randomness},
                 HEADER,
             },
         },
@@ -39,12 +33,8 @@ pub mod error;
 mod nonce;
 
 use crate::token::paseto::{
+    v2::local::{decryption::BasicToken, encryption::PrimedToken, local_prelude::*},
     Protocol as ProtocolTrait,
-    v2::local::{
-        decryption::BasicToken,
-        encryption::PrimedToken,
-        local_prelude::*
-    },
 };
 
 const VERSION: &'static str = "v2";
@@ -97,10 +87,7 @@ impl ProtocolTrait for Protocol {
 #[cfg(test)]
 mod unit_tests {
     use super::*;
-    use crate::{
-        algo::SafeGenerateKey,
-        token::paseto::Protocol as P,
-    };
+    use crate::{algo::SafeGenerateKey, token::paseto::Protocol as P};
 
     #[test]
     fn v2_local_cycle() {

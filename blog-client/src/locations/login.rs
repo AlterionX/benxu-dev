@@ -197,8 +197,7 @@ pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM
                     .dyn_into()
                     .tap_err(|_| log::error!("Input field is not an HtmlElement!"))
                     .ok()?;
-                el
-                    .focus()
+                el.focus()
                     .tap_err(|_| log::error!("Failed to focus on the username form input."))
                     .ok()?;
                 Some(())

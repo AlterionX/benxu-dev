@@ -1,6 +1,6 @@
 //! Handlers and functions for handling logins/seessions.
 
-pub mod data;
+mod data;
 use data::CanAuthenticate;
 
 use rocket::{
@@ -10,11 +10,11 @@ use rocket::{
 use rocket_contrib::json::Json;
 
 use crate::{
-    blog::{auth, db},
     cfg::{PWKeyFixture, TokenKeyFixture},
+    util::{auth, blog::db},
 };
-use crypto::Generational;
 use blog_db::models::*;
+use crypto::Generational;
 
 /// Route handler for creating a session. Credentials passed in will be ignored if caller is
 /// already logged in.

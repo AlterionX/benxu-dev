@@ -1,5 +1,5 @@
-use seed::prelude::*;
 use crate::shared::Authorization;
+use seed::prelude::*;
 
 pub fn loading<M: Clone>() -> seed::virtual_dom::Node<M> {
     p!["Loading!"]

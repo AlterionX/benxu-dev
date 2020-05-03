@@ -93,7 +93,7 @@ pub mod pws {
                 .map(|_| Status::Ok)
                 .map_err(|_| Status::InternalServerError)
         }
-        /// Handler for deleting a password. Must be chaning own credentials or have the
+        /// Handler for deleting a password. Must be changing own credentials or have the
         /// [`CanEditUserCredentials`](crate::blog::auth::perms::CanEditUserCredentials) permissions.
         ///
         /// An example use case is when you wish to utilize only FIDO or OAuth to log in.

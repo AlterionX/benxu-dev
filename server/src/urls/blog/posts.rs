@@ -4,6 +4,7 @@ use rocket::http::{RawStr, Status};
 use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
 
 use chrono::DateTime;
+use tap::*;
 
 use crate::util::{
     auth,
@@ -43,12 +44,14 @@ pub fn get(
     .filter(|b| **b)
     .count();
     if num_passed != 2 {
+        log::error!("Post search request made with more or less than 2 restrictions.");
         Err(Status::BadRequest)
     } else if let (Some(start_time), Some(stop_time)) = (start_time, stop_time) {
         get_by_date_range(db, start_time, stop_time, ord_criteria, ord)
     } else if let (Some(lim), Some(offset)) = (lim, offset) {
         get_by_limit_and_offset(db, offset, lim, ord_criteria, ord)
     } else {
+        log::error!("Post search request made with a mismatched pair of restrictions.");
         Err(Status::BadRequest)
     }
 }
@@ -82,6 +85,7 @@ pub fn get_by_date_range(
         ord,
         limit: max_posts,
     })
+    .tap_err(|e| log::error!("Failed to find posts by date range due to error {:?}.", e))
     .map(Json)
     .map_err(|_| Status::InternalServerError)
 }
@@ -101,6 +105,7 @@ pub fn get_by_limit_and_offset(
         order_by: ord_criteria,
         ord,
     })
+    .tap_err(|e| log::error!("Failed to find posts due to error {:?}.", e))
     .map(Json)
     .map_err(|_| Status::InternalServerError)
 }
@@ -115,11 +120,9 @@ pub fn post(
 ) -> Result<Json<posts::Data>, Status> {
     let post = post.into_inner();
     db.insert_post((&post, credentials.user_id()))
+        .tap_err(|e| log::error!("Failed to create new post due to error {:?}.", e))
         .map(Json)
-        .map_err(|_e| {
-            // TODO log error
-            Status::InternalServerError
-        })
+        .map_err(|_| Status::InternalServerError)
 }
 
 /// Handlers and functions for managing or retrieving individual posts.
@@ -146,8 +149,8 @@ pub mod post {
     #[get("/posts/<id>")]
     pub fn get(db: DB, id: RUuid) -> Result<Json<posts::Data>, Status> {
         let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
-        // TODO eventually consider error messages for different DB failures
         db.find_post_with_id(id)
+            .tap_err(|e| log::error!("Failed to retrieve post {:?} due to DB error {:?}.", id, e))
             .map(Json)
             .map_err(|_| Status::BadRequest)
     }
@@ -160,16 +163,19 @@ pub mod post {
         _editor: auth::Credentials<auth::perms::CanEdit>,
         db: DB,
     ) -> Status {
-        log::debug!("Hit post patch endpoint.");
         let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
-        map_to_status(db.update_post_with_id(id, &update.into_inner()))
+        let res = db.update_post_with_id(id, &update.into_inner());
+        map_to_status(res)
     }
     /// Handler for deleting a post with a specific id. Requires user to be logged in and have
     /// the [`CanDelete`](crate::blog::auth::perms::CanDelete) permission.
     #[delete("/posts/<id>")]
     pub fn delete(id: RUuid, db: DB, deleter: auth::Credentials<auth::perms::CanDelete>) -> Status {
         let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
-        map_to_status(db.delete_post_with_id(id, &posts::Deletion::new(deleter.user_id())))
+        let deletion_update = posts::Deletion::new(deleter.user_id());
+        let req = db.delete_post_with_id(id, &deletion_update)
+            .tap_err(|e| log::error!("Failed to delete post {:?} due to error {:?}.", id, e));
+        map_to_status(req)
     }
     /// Handler for publishing a post with a specific id. Requires user to be logged in and have
     /// the [`CanPublish`](crate::blog::auth::perms::CanPublish) permission.

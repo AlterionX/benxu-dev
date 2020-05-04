@@ -1,12 +1,12 @@
-//! Errors that can occur while using the permission endpoints.
+//! Errors that can occur while using the capability endpoints.
 
 pub(super) use diesel::result::Error as Diesel;
 
-/// Represents possible errors from using the database for permissions.
+/// Represents possible errors from using the database for capabilities.
 pub enum Error {
     /// Database errors of many kinds.
     DB(Diesel),
-    /// Insufficient permissions for accessing an endpoint for permissions.
+    /// Insufficient capabilities for accessing an endpoint for capabilities.
     Unauthorized,
 }
 impl From<Diesel> for Error {

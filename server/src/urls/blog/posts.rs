@@ -12,6 +12,7 @@ use crate::util::{
         db::{self, PostQuery},
         DB,
     },
+    uuid_compat::ruuid_to_uuid,
 };
 use blog_db::models::*;
 
@@ -111,15 +112,15 @@ pub fn get_by_limit_and_offset(
 }
 
 /// Handler for posting a post to the database. Requires user to be logged in and have the
-/// [`CanPost`](crate::blog::auth::perms::CanPost) permission.
+/// [`Post`](crate::blog::auth::caps::Post) capability.
 #[post("/posts", format = "json", data = "<post>")]
 pub fn post(
     db: DB,
-    credentials: auth::Credentials<auth::perms::CanPost>,
+    capabilities: auth::Capabilities<auth::caps::Post>,
     post: Json<posts::NewNoMeta>,
 ) -> Result<Json<posts::Data>, Status> {
     let post = post.into_inner();
-    db.insert_post((&post, credentials.user_id()))
+    db.insert_post((&post, capabilities.user_id()))
         .tap_err(|e| log::error!("Failed to create new post due to error {:?}.", e))
         .map(Json)
         .map_err(|_| Status::InternalServerError)
@@ -145,51 +146,51 @@ pub mod post {
         }
     }
 
-    /// Handler for retrieving a post with a specific id. No permissions needed.
+    /// Handler for retrieving a post with a specific id. No capabilities needed.
     #[get("/posts/<id>")]
     pub fn get(db: DB, id: RUuid) -> Result<Json<posts::Data>, Status> {
-        let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
+        let id = ruuid_to_uuid(id);
         db.find_post_with_id(id)
             .tap_err(|e| log::error!("Failed to retrieve post {:?} due to DB error {:?}.", id, e))
             .map(Json)
             .map_err(|_| Status::BadRequest)
     }
     /// Handler for editing a post with a specific id. Requires user to be logged in and have the
-    /// [`CanPost`](crate::blog::auth::perms::CanEdit) permission.
+    /// [`Post`](crate::blog::auth::caps::Edit) capability.
     #[patch("/posts/<id>", data = "<update>")]
     pub fn patch(
         id: RUuid,
         update: Json<posts::Changed>,
-        _editor: auth::Credentials<auth::perms::CanEdit>,
+        _editor: auth::Capabilities<auth::caps::Edit>,
         db: DB,
     ) -> Status {
-        let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
+        let id = ruuid_to_uuid(id);
         let res = db.update_post_with_id(id, &update.into_inner());
         map_to_status(res)
     }
     /// Handler for deleting a post with a specific id. Requires user to be logged in and have
-    /// the [`CanDelete`](crate::blog::auth::perms::CanDelete) permission.
+    /// the [`Delete`](crate::blog::auth::caps::Delete) capability.
     #[delete("/posts/<id>")]
-    pub fn delete(id: RUuid, db: DB, deleter: auth::Credentials<auth::perms::CanDelete>) -> Status {
-        let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
+    pub fn delete(id: RUuid, db: DB, deleter: auth::Capabilities<auth::caps::Delete>) -> Status {
+        let id = ruuid_to_uuid(id);
         let deletion_update = posts::Deletion::new(deleter.user_id());
         let req = db.delete_post_with_id(id, &deletion_update)
             .tap_err(|e| log::error!("Failed to delete post {:?} due to error {:?}.", id, e));
         map_to_status(req)
     }
     /// Handler for publishing a post with a specific id. Requires user to be logged in and have
-    /// the [`CanPublish`](crate::blog::auth::perms::CanPublish) permission.
+    /// the [`Publish`](crate::blog::auth::caps::Publish) capability.
     #[post("/posts/<id>/publish", data = "<update>")]
     pub fn publish(
         id: RUuid,
         db: DB,
         update: Option<Json<posts::Changed>>,
-        publisher: auth::Credentials<auth::perms::CanPublish>,
+        publisher: auth::Capabilities<auth::caps::Publish>,
     ) -> Status {
-        let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
+        let id = ruuid_to_uuid(id);
         if let Some(update) = update {
             let update = update.into_inner();
-            let changed_credential = publisher.clone().change_level::<auth::perms::CanEdit>();
+            let changed_credential = publisher.clone().change_level::<auth::caps::Edit>();
             if let Ok(_) = changed_credential {
                 let status = map_to_status(db.update_post_with_id(id, &update));
                 if status != Status::Ok {
@@ -203,14 +204,14 @@ pub mod post {
         map_to_status(db.publish_post_with_id(id, posts::Publishing::new(publisher)))
     }
     /// Handler for publishing a post with a specific id. Requires user to be logged in and have
-    /// the [`CanPublish`](crate::blog::auth::perms::CanPublish) permission.
+    /// the [`Publish`](crate::blog::auth::caps::Publish) capability.
     #[post("/posts/<id>/archive")]
     pub fn archive(
         id: RUuid,
         db: DB,
-        archiver: auth::Credentials<auth::perms::CanArchive>,
+        archiver: auth::Capabilities<auth::caps::Archive>,
     ) -> Status {
-        let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
+        let id = ruuid_to_uuid(id);
         map_to_status(db.archive_post_with_id(id, posts::Archival::new(archiver.user_id())))
     }
 }

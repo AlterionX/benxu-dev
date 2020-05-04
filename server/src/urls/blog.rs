@@ -3,7 +3,7 @@
 pub mod accounts;
 pub mod credentials;
 pub mod login;
-pub mod permissions;
+pub mod capabilities;
 pub mod posts;
 
 use crate::util::auth;
@@ -14,16 +14,16 @@ use rocket::Route;
 #[get("/<_path..>")]
 pub fn get(
     _path: Option<rocket::http::uri::Segments>,
-    c: Option<auth::UnverifiedPermissionsCredential>,
+    c: Option<auth::UnverifiedCapabilities>,
 ) -> Markup {
-    // TODO set based on permissions
+    // TODO set based on capabilities
     htmlgen::index(c.is_some())
 }
 
 /// Handler for serving the primary web app for when there is no path.
 #[get("/")]
-pub fn get_unadorned(c: Option<auth::UnverifiedPermissionsCredential>) -> Markup {
-    // TODO set based on permissions
+pub fn get_unadorned(c: Option<auth::UnverifiedCapabilities>) -> Markup {
+    // TODO set based on capabilities
     htmlgen::index(c.is_some())
 }
 
@@ -54,16 +54,16 @@ pub fn api_routes() -> Vec<Route> {
         credentials::pws::post,
         credentials::pws::pw::patch,
         credentials::pws::pw::delete,
-        permissions::post,
-        permissions::delete,
-        permissions::permission::get,
-        permissions::permission::delete,
+        capabilities::post,
+        capabilities::delete,
+        capabilities::capability::get,
+        capabilities::capability::delete,
     ]
 }
 
 /// Functions serving the initial blog page, before it gets taken over by
 /// [`blog_client`](blog_client).
-pub mod htmlgen {
+mod htmlgen {
     use maud::{html, Markup};
     use page_client::{data, partials};
 

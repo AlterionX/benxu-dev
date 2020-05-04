@@ -5,12 +5,14 @@ use rocket::{
     State,
 };
 use rocket_contrib::{json::Json, uuid::Uuid as RUuid};
+use tap::*;
 
 use crate::{
     cfg::TokenKeyFixture,
     util::{
         auth,
         blog::{db::UserQuery, DB},
+        uuid_compat::ruuid_to_uuid,
     },
 };
 use blog_db::models::*;
@@ -19,13 +21,13 @@ use crypto::Generational;
 /// Handler for creating an account.
 ///
 /// Creates the `user_to_create` as stated in [`create_account`]. Also logs the user in question
-/// into the newly created account provided that they are not already logged in. Must have perms
-/// for [`CanCreateUser`][crate::blog::auth::perms::CanCreateUser] if already logged in.
+/// into the newly created account provided that they are not already logged in. Must have caps
+/// for [`CreateUser`][crate::blog::auth::caps::CreateUser] if already logged in.
 ///
-/// As of now, no default account permissions are provided on creation on the server side.
+/// As of now, no default account capabilities are provided on creation on the server side.
 #[post("/accounts", format = "json", data = "<user_to_create>")]
 pub fn post(
-    credentials: Option<auth::UnverifiedPermissionsCredential>,
+    capabilities: Option<auth::UnverifiedCapabilities>,
     user_to_create: Json<users::NewNoMeta>,
     db: DB,
     mut cookies: Cookies,
@@ -33,24 +35,26 @@ pub fn post(
 ) -> Result<Json<users::DataNoMeta>, Status> {
     let user_to_create = user_to_create.into_inner();
     log::debug!("Attempting to create account {:?}.", user_to_create);
-    let creator = credentials
-        .map(auth::UnverifiedPermissionsCredential::into_inner)
-        .map(auth::Credentials::change_level::<auth::perms::CanCreateUser>)
+    let creator = capabilities
+        .map(auth::UnverifiedCapabilities::into_inner)
+        .map(auth::Capabilities::change_level::<auth::caps::CreateUser>)
         .transpose()
         .map_err(|_| Status::Unauthorized)?
         .map(|cr| cr.user_id());
-    let created =
-        create_account(&db, creator, user_to_create).map_err(|_| Status::InternalServerError)?;
+    let created = create_account(&db, creator, user_to_create)
+        .tap_err(|e| log::error!("Account creation failed due to {:?}", e))
+        .map_err(|_| Status::InternalServerError)?;
     // Add token if not already logged in to facilitate credential creation.
     // If a credential is not created in the first session, they will currently need to contact the
     // site admin to log in again.
     if creator.is_none() {
         let key = &tok_key_store
             .get_store()
+            .tap_err(|_| log::error!("Token key service crashed."))
             .map_err(|_| Status::InternalServerError)?
             .curr;
-        let new_credentials = auth::Credentials::<()>::safe_new(created.id, vec![]);
-        auth::attach_credentials_token(key, new_credentials, &mut cookies)
+        let new_capabilities = auth::Capabilities::<()>::safe_new(created.id, vec![]);
+        auth::attach_capabilities_token(key, new_capabilities, &mut cookies)
             .map_err(|_| Status::InternalServerError)?;
     }
     Ok(Json(created.strip_meta()))
@@ -78,10 +82,10 @@ pub mod account {
     pub fn get(
         db: DB,
         id: RUuid,
-        credentials: auth::UnverifiedPermissionsCredential,
+        capabilities: auth::UnverifiedCapabilities,
     ) -> Result<Json<users::DataNoMeta>, Status> {
-        let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
-        if credentials.user_id() != id {
+        let id = ruuid_to_uuid(id);
+        if capabilities.user_id() != id {
             return Err(Status::Unauthorized);
         }
         db.find_user_by_id(id)
@@ -94,29 +98,29 @@ pub mod account {
     #[get("/accounts/me")]
     pub fn get_self(
         db: DB,
-        credentials: Option<auth::UnverifiedPermissionsCredential>,
+        capabilities: Option<auth::UnverifiedCapabilities>,
     ) -> Result<Json<users::DataNoMeta>, Status> {
-        let credentials = credentials.ok_or(Status::Unauthorized)?;
-        let id = credentials.user_id();
+        let capabilities = capabilities.ok_or(Status::Unauthorized)?;
+        let id = capabilities.user_id();
         db.find_user_by_id(id)
             .map(users::Data::strip_meta)
             .map(Json)
             .map_err(|_| Status::InternalServerError)
     }
-    /// Handler to allow editing of user information if logged in as same user or has permissions
+    /// Handler to allow editing of user information if logged in as same user or has capabilities
     /// to edit users.
     #[patch("/accounts/<id>", format = "json", data = "<changes>")]
     pub fn patch(
         db: DB,
         id: RUuid,
-        credentials: auth::UnverifiedPermissionsCredential,
+        capabilities: auth::UnverifiedCapabilities,
         changes: Json<users::ChangedNoMeta>,
     ) -> Result<Json<users::DataNoMeta>, Status> {
-        let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
+        let id = ruuid_to_uuid(id);
         let changes = changes.into_inner();
-        let updater = credentials
+        let updater = capabilities
             .into_inner()
-            .change_level::<auth::perms::CanEditUser>()
+            .change_level::<auth::caps::EditUser>()
             .map(|cr| cr.user_id())
             .or_else(|cr| {
                 if id == cr.user_id() {
@@ -131,18 +135,18 @@ pub mod account {
             .map(Json)
             .map_err(|_| Status::InternalServerError)
     }
-    /// Handler to allow for the deletion of accounts if logged in as same user or has permissions
+    /// Handler to allow for the deletion of accounts if logged in as same user or has capabilities
     /// to delete users.
     #[delete("/accounts/<id>")]
     pub fn delete(
         db: DB,
         id: RUuid,
-        credentials: auth::UnverifiedPermissionsCredential,
+        capabilities: auth::UnverifiedCapabilities,
     ) -> Result<Status, Status> {
-        let id = uuid::Uuid::from_bytes(id.into_inner().as_bytes().clone());
-        credentials
+        let id = ruuid_to_uuid(id);
+        capabilities
             .into_inner()
-            .change_level::<auth::perms::CanDeleteUser>()
+            .change_level::<auth::caps::DeleteUser>()
             .map(|cr| cr.user_id())
             .or_else(|cr| {
                 if id == cr.user_id() {

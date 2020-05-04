@@ -10,11 +10,11 @@ use crypto::token::paseto::V2LocalError as DecryptError;
 pub enum Error {
     /// Database errored when attempting operation.
     Diesel(diesel::result::Error),
-    /// Authenticated user lacks permissions to create a user.
-    LackingPermissions,
-    /// Credentials do not match user.
+    /// Authenticated user lacks capabilities to create a user.
+    LackingCapabilities,
+    /// Capabilities do not match user.
     BadCredentials,
-    /// Credentials are lacking.
+    /// Capabilities are lacking.
     Unauthorized,
     /// KeyStore is poisoned.
     KeyStorePoisoned,
@@ -41,7 +41,7 @@ impl From<&Error> for Status {
         match e {
             Error::Diesel(DieselError::NotFound) => Status::NotFound,
             Error::Diesel(_) => Status::InternalServerError,
-            Error::LackingPermissions => Status::InternalServerError,
+            Error::LackingCapabilities => Status::InternalServerError,
             Error::BadCredentials => Status::InternalServerError,
             Error::KeyStorePoisoned => Status::InternalServerError,
             Error::Unauthorized => Status::Unauthorized,

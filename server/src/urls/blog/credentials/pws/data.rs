@@ -3,7 +3,7 @@
 use crate::{
     cfg::PWAlgo,
     util::{
-        auth::{self, perms::Verifiable},
+        auth::{self, caps::Verifiable, credentials::SavableCredential},
         blog::{
             db::{PWQuery, UserQuery},
             DB,
@@ -15,51 +15,36 @@ use boolinator::Boolinator;
 use crypto::algo::{hash::symmetric::Algo as HashA, Algo as A};
 pub use login_enum::CreatePassword;
 
-/// Used to mark structs that can be converted into a database record and saved or used to update a
-/// preexisting row in the table.
-pub trait SavableCredential {
-    /// The object returned on succcess, typically the ORM's `Data` representation of the struct.
-    type Success;
-    /// The object returned on succcess, typically the ORM's `Error` type.
-    type Error;
-    /// Converts the credential and attempts to create a new row for the credential. Will return
-    /// the created row on success.
-    fn convert_and_save_with_credentials(self) -> Result<Self::Success, Self::Error>;
-    /// Converts the credential and attempts to update an existing row for the credential. Will
-    /// return the updated row on success.
-    fn convert_and_update_with_credentials(self) -> Result<Self::Success, Self::Error>;
-}
-
 /// A view into [`Password`](crate::blog::credentials::data::Password) together with the database
 /// used to store credentials, and the secret key for the password hash.
 pub struct PasswordWithBackingInfo<'a> {
     /// A reference to the [`DB`](crate::blog::DB) we will be using for verification.
     pub(super) db: &'a DB,
-    /// A reference to the [`Credentials`](crate::blog::auth::Credentials) related to the request.
-    pub(super) credentials: &'a auth::UnverifiedPermissionsCredential,
+    /// A reference to the [`Capabilities`](crate::blog::auth::Capabilities) related to the request.
+    pub(super) capabilities: &'a auth::UnverifiedCapabilities,
     /// A reference to the secret key for the password hashing.
     pub(super) argon2d_key: &'a <PWAlgo as A>::Key,
     /// A reference to the password credential data. Notice that this is not just a [`String`].
     pub(super) pw: &'a CreatePassword,
 }
 impl<'a> PasswordWithBackingInfo<'a> {
-    /// Checks to ensure that the credentials provided matches the (assumed) owner of the password
-    /// to be changed. This means that the credentials have the
-    /// [`CanEditUserCredentials`](crate::blog::auth::perms::CanEditUserCredentials) permissions or
-    /// that the credentials belong to the (assumed) owner of the password.
+    /// Checks to ensure that the capabilities provided matches the (assumed) owner of the password
+    /// to be changed. This means that the capabilities have the
+    /// [`EditUserCredentials`](crate::blog::auth::caps::EditUserCredentials) capabilities or
+    /// that the capabilities belong to the (assumed) owner of the password.
     fn verify_requester(&self) -> bool {
         use log::*;
         debug!(
             "Attempting to match {:?} with {:?}.",
-            self.credentials.user_id(),
+            self.capabilities.user_id(),
             self.pw.user_id
         );
         debug!(
             "Simple check validates to {:?}",
-            self.credentials.user_id() == self.pw.user_id
+            self.capabilities.user_id() == self.pw.user_id
         );
-        self.credentials.user_id() == self.pw.user_id
-            || auth::perms::CanEditUserCredentials::verify(self.credentials)
+        self.capabilities.user_id() == self.pw.user_id
+            || auth::caps::EditUserCredentials::verify(self.capabilities)
     }
     /// Checks if there are duplicate password entries, aka multiple passwords per user. This
     /// should not be allowed, and this helps detecting such situations.
@@ -100,11 +85,11 @@ impl<'a> PasswordWithBackingInfo<'a> {
 impl<'a> SavableCredential for PasswordWithBackingInfo<'a> {
     type Success = ();
     type Error = ();
-    fn convert_and_save_with_credentials(self) -> Result<Self::Success, Self::Error> {
+    fn convert_and_save_with_capabilities(self) -> Result<Self::Success, Self::Error> {
         use log::*;
         debug!(
             "Saving credentials. Ensuring {:?} can edit and no duplicate password entries for {:?}.",
-            self.credentials.user_id(),
+            self.capabilities.user_id(),
             self.pw.user_id,
         );
         self.verify(0)
@@ -114,8 +99,8 @@ impl<'a> SavableCredential for PasswordWithBackingInfo<'a> {
         let (generated_salt, pw_hash) = self.hash();
         debug!("Hashed. Saving.");
         let creation = self.db.create_pw_hash(credentials::pw::New {
-            created_by: self.credentials.user_id(),
-            updated_by: self.credentials.user_id(),
+            created_by: self.capabilities.user_id(),
+            updated_by: self.capabilities.user_id(),
             user_id: self.pw.user_id,
             hash: base64::encode(pw_hash.as_slice()).as_str(),
             salt: base64::encode(generated_salt.as_slice()).as_str(),
@@ -123,7 +108,7 @@ impl<'a> SavableCredential for PasswordWithBackingInfo<'a> {
         debug!("Attempt: {:?}", creation);
         creation.map(|_| ()).map_err(|_| ())
     }
-    fn convert_and_update_with_credentials(self) -> Result<Self::Success, Self::Error> {
+    fn convert_and_update_with_capabilities(self) -> Result<Self::Success, Self::Error> {
         self.verify(1)
             .map_err(|_| ())
             .and_then(|b| b.as_result((), ()))?;
@@ -132,7 +117,7 @@ impl<'a> SavableCredential for PasswordWithBackingInfo<'a> {
             .update_pw_hash_for_user_id(
                 self.pw.user_id,
                 credentials::pw::Changed {
-                    updated_by: self.credentials.user_id(),
+                    updated_by: self.capabilities.user_id(),
                     hash: Some(base64::encode(pw_hash.as_slice())),
                     salt: Some(base64::encode(generated_salt.as_slice())),
                 },

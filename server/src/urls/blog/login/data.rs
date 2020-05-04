@@ -7,7 +7,7 @@ use crate::{
     util::{
         auth,
         blog::{
-            db::{PWQuery, PermissionQuery, UserQuery},
+            db::{PWQuery, CapabilityQuery, UserQuery},
             DB,
         },
     },
@@ -49,20 +49,20 @@ impl<'a> AuthnWithStored<'a> {
     }
 }
 
-pub trait CanAuthenticate {
+pub trait Authenticate {
     #[must_use]
-    /// Authenticates users and gets permissions of user if successful.
+    /// Authenticates users and gets capabilities of user if successful.
     fn authenticate(
         &self,
         db: &DB,
         pw_key_store: &PWKeyFixture,
-    ) -> Result<(users::Data, Vec<auth::Permission>), auth::Error>;
-    /// Find user this credential belongs to along with a list of permissions belonging to the
+    ) -> Result<(users::Data, Vec<auth::Capability>), auth::Error>;
+    /// Find user this credential belongs to along with a list of capabilities belonging to the
     /// user.
     fn find_targeted_user(
         &self,
         db: &DB,
-    ) -> Result<(users::Data, Vec<permissions::Data>), diesel::result::Error>;
+    ) -> Result<(users::Data, Vec<capabilities::Data>), diesel::result::Error>;
     /// Create a reference of the submitted credentials alongside the official credentials. This
     /// will be verified later on.
     fn pair_with_stored(
@@ -71,15 +71,15 @@ pub trait CanAuthenticate {
         user: &users::Data,
     ) -> Result<AuthnWithStored, diesel::result::Error>;
 }
-impl CanAuthenticate for Authentication {
+impl Authenticate for Authentication {
     fn authenticate(
         &self,
         db: &DB,
         pw_key_store: &PWKeyFixture,
-    ) -> Result<(users::Data, Vec<auth::Permission>), auth::Error> {
+    ) -> Result<(users::Data, Vec<auth::Capability>), auth::Error> {
         use log::*;
         trace!("Beginning authentication process.");
-        let (user, perms) = self.find_targeted_user(db)?;
+        let (user, caps) = self.find_targeted_user(db)?;
         trace!("Found user.");
         let key = pw_key_store.key();
         trace!("Found secret key.");
@@ -87,22 +87,22 @@ impl CanAuthenticate for Authentication {
         trace!("Found secret key.");
         targeted_credential
             .verify_with_err(&*key)
-            .map(|_| (user, perms.iter().map(auth::Permission::from).collect()))
+            .map(|_| (user, caps.iter().map(auth::Capability::from).collect()))
             .map_err(|_| auth::Error::BadCredentials)
     }
     fn find_targeted_user(
         &self,
         db: &DB,
-    ) -> Result<(users::Data, Vec<permissions::Data>), diesel::result::Error> {
+    ) -> Result<(users::Data, Vec<capabilities::Data>), diesel::result::Error> {
         use log::*;
         trace!("Beginning user search.");
         let user = match self {
             Self::Password(p) => db.find_user_by_user_name(p.user_name.as_str()),
         }?;
-        trace!("Getting permissions for user.");
-        let permissions = db.get_user_permissions(&user)?;
+        trace!("Getting capabilities for user.");
+        let capabilities = db.get_user_capabilities(&user)?;
         trace!("Both located. Returning.");
-        Ok((user, permissions))
+        Ok((user, capabilities))
     }
     fn pair_with_stored(
         &self,

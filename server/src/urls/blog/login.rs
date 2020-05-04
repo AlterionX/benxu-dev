@@ -1,7 +1,7 @@
 //! Handlers and functions for handling logins/seessions.
 
 mod data;
-use data::CanAuthenticate;
+use data::Authenticate;
 
 use rocket::{
     http::{Cookies, Status},
@@ -16,7 +16,7 @@ use crate::{
 use blog_db::models::*;
 use crypto::Generational;
 
-/// Route handler for creating a session. Credentials passed in will be ignored if caller is
+/// Route handler for creating a session. Capabilities passed in will be ignored if caller is
 /// already logged in.
 #[post("/login", format = "json", data = "<auth_data>")]
 pub fn post(
@@ -28,7 +28,7 @@ pub fn post(
 ) -> Result<Json<users::DataNoMeta>, Status> {
     use log::*;
     info!("Processing data.");
-    let (user, perms) = match auth_data.authenticate(&db, &pw_key_store) {
+    let (user, caps) = match auth_data.authenticate(&db, &pw_key_store) {
         Err(e) => {
             error!("{:?}", e);
             let e = Err(e.into());
@@ -38,12 +38,12 @@ pub fn post(
         Ok(user_and_p) => user_and_p,
     };
     debug!("Resolved to user {}.", user.user_name);
-    auth::attach_credentials_token(
+    auth::attach_capabilities_token(
         &tok_key_store
             .get_store()
             .map_err(|_| Status::InternalServerError)?
             .curr,
-        auth::UnverifiedPermissionsCredential::new(user.id, perms).into_inner(),
+        auth::UnverifiedCapabilities::new(user.id, caps).into_inner(),
         &mut cookies,
     )
     .map_err(|_| Status::InternalServerError)?;
@@ -55,5 +55,5 @@ pub fn post(
 /// alaways return OK.
 #[delete("/login")]
 pub fn delete(mut cookies: Cookies) {
-    auth::detach_credentials_token_if_exists(&mut cookies);
+    auth::detach_capabilities_token_if_exists(&mut cookies);
 }

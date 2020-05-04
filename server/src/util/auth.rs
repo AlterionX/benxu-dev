@@ -1,10 +1,11 @@
 //! Structs and utility functions for handling authorization tokens.
 
-pub mod permissions;
-pub use permissions as perms;
-pub use perms::Permission;
+pub mod capabilities;
+pub use capabilities as caps;
+pub use caps::Capability;
 mod error;
 pub use error::Error;
+pub mod credentials;
 
 use rocket::{
     http::{Cookie, Cookies, Status},
@@ -23,91 +24,91 @@ use crypto::{
     token::paseto::{self, Protocol},
 };
 
-/// The name of the cookie holding the credentials to be deserialized.
+/// The name of the cookie holding the capabilities to be deserialized.
 pub const AUTH_COOKIE_NAME: &str = "_atk";
 
-/// A struct representing the list of permissions a user has.
+/// A struct representing the list of capabilities a user has.
 ///
-/// TODO query the database for the list of permissions instead of serializing it.
+/// TODO query the database for the list of capabilities instead of serializing it.
 #[derive(Debug, Serialize)]
-pub struct Credentials<L> {
+pub struct Capabilities<L> {
     #[serde(skip)]
     level: PhantomData<L>,
-    permissions: Vec<Permission>,
+    capabilities: Vec<Capability>,
     user_id: uuid::Uuid,
 }
-impl<L> Credentials<L> {
-    /// Check if a list of permissions is satisfied.
-    pub fn has_permissions(&self, req_perms: &[Permission]) -> bool {
+impl<L> Capabilities<L> {
+    /// Check if a list of capabilities is satisfied.
+    pub fn has_capabilities(&self, req_perms: &[Capability]) -> bool {
         req_perms
             .iter()
-            .all(|req_perm| self.permissions.contains(req_perm))
+            .all(|req_perm| self.capabilities.contains(req_perm))
     }
     /// Gets the a copy of the id of the user this credential belongs to.
     pub fn user_id(&self) -> uuid::Uuid {
         self.user_id
     }
-    /// Gets the a copy of the permissions of the user.
-    pub fn permissions(&self) -> &[Permission] {
-        self.permissions.as_slice()
+    /// Gets the a copy of the capabilities of the user.
+    pub fn capabilities(&self) -> &[Capability] {
+        self.capabilities.as_slice()
     }
     /// Attempts to change the credential's level, returning the old credential on error
-    /// (insufficient permissions) and the new credential on success.
-    pub fn change_level<NewLevel: perms::Verifiable>(
+    /// (insufficient capabilities) and the new credential on success.
+    pub fn change_level<NewLevel: caps::Verifiable>(
         self,
-    ) -> Result<Credentials<NewLevel>, Credentials<L>> {
-        let Credentials {
+    ) -> Result<Capabilities<NewLevel>, Capabilities<L>> {
+        let Capabilities {
             user_id,
-            permissions,
+            capabilities,
             level,
         } = self;
-        Credentials::new(user_id, permissions).map_err(|(user_id, permissions)| Self {
+        Capabilities::new(user_id, capabilities).map_err(|(user_id, capabilities)| Self {
             level,
             user_id,
-            permissions,
+            capabilities,
         })
     }
     /// Revert the credential back to an unverified state.
-    pub fn back_to_any(self) -> Credentials<perms::Any> {
-        Credentials::safe_new(self.user_id, self.permissions)
+    pub fn back_to_any(self) -> Capabilities<caps::Any> {
+        Capabilities::safe_new(self.user_id, self.capabilities)
     }
 }
-impl<L: perms::Verifiable> Credentials<L> {
-    /// Creates a new Credentials object from a set of permissions and validates the permissions
+impl<L: caps::Verifiable> Capabilities<L> {
+    /// Creates a new Capabilities object from a set of capabilities and validates the capabilities
     /// at the level requested by `L`.
     pub fn new(
         user_id: uuid::Uuid,
-        permissions: Vec<Permission>,
-    ) -> Result<Self, (uuid::Uuid, Vec<Permission>)> {
-        if L::verify_slice(permissions.as_slice()) {
+        capabilities: Vec<Capability>,
+    ) -> Result<Self, (uuid::Uuid, Vec<Capability>)> {
+        if L::verify_slice(capabilities.as_slice()) {
             Ok(Self {
                 level: PhantomData,
                 user_id,
-                permissions,
+                capabilities,
             })
         } else {
-            Err((user_id, permissions))
+            Err((user_id, capabilities))
         }
     }
 }
-impl Credentials<perms::Any> {
+impl Capabilities<caps::Any> {
     /// Creating an unverified credential has no chance of failure; this allows for the provided
     /// specialization of no error.
-    pub fn safe_new(user_id: uuid::Uuid, permissions: Vec<Permission>) -> Self {
+    pub fn safe_new(user_id: uuid::Uuid, capabilities: Vec<Capability>) -> Self {
         Self {
             level: PhantomData,
             user_id,
-            permissions,
+            capabilities,
         }
     }
     /// Extracts an unverified credential from a provided token.
     fn extract(
         cookies: &Cookies,
         key_store: &TokenKeyStore,
-    ) -> Result<Credentials<perms::Any>, Error> {
+    ) -> Result<Capabilities<caps::Any>, Error> {
         let auth_cookie = cookies.get(AUTH_COOKIE_NAME).ok_or(Error::Unauthorized)?;
 
-        type TokenData = paseto::token::Data<Credentials<perms::Any>, ()>;
+        type TokenData = paseto::token::Data<Capabilities<caps::Any>, ()>;
         // TODO no-copy once paseto is no copy on the input
         let token: TokenData = key_store.attempt_with_retry(&mut |key, _opt_err| {
             let token = paseto::token::Packed::new(auth_cookie.value().as_bytes().to_vec());
@@ -117,15 +118,15 @@ impl Credentials<perms::Any> {
         Ok(token.msg)
     }
 }
-/// Custom implementation of Deserialize is due the need to forbid deserialization of credentials
-/// into arbitrary permission levels.
-impl<'de> Deserialize<'de> for Credentials<perms::Any> {
+/// Custom implementation of Deserialize is due the need to forbid deserialization of capabilities
+/// into arbitrary capability levels.
+impl<'de> Deserialize<'de> for Capabilities<caps::Any> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         enum Field {
-            Permissions,
+            Capabilities,
             UserId,
             Ignore,
         }
@@ -143,7 +144,7 @@ impl<'de> Deserialize<'de> for Credentials<perms::Any> {
                 E: serde::de::Error,
             {
                 match value {
-                    0u64 => serde::export::Ok(Field::Permissions),
+                    0u64 => serde::export::Ok(Field::Capabilities),
                     1u64 => serde::export::Ok(Field::UserId),
                     _ => serde::export::Err(serde::de::Error::invalid_value(
                         serde::de::Unexpected::Unsigned(value),
@@ -156,7 +157,7 @@ impl<'de> Deserialize<'de> for Credentials<perms::Any> {
                 E: serde::de::Error,
             {
                 match value {
-                    "permissions" => serde::export::Ok(Field::Permissions),
+                    "capabilities" => serde::export::Ok(Field::Capabilities),
                     "user_id" => serde::export::Ok(Field::UserId),
                     _ => serde::export::Ok(Field::Ignore),
                 }
@@ -166,7 +167,7 @@ impl<'de> Deserialize<'de> for Credentials<perms::Any> {
                 E: serde::de::Error,
             {
                 match value {
-                    b"permissions" => serde::export::Ok(Field::Permissions),
+                    b"capabilities" => serde::export::Ok(Field::Capabilities),
                     b"user_id" => serde::export::Ok(Field::UserId),
                     _ => serde::export::Ok(Field::Ignore),
                 }
@@ -185,35 +186,35 @@ impl<'de> Deserialize<'de> for Credentials<perms::Any> {
             lifetime: serde::export::PhantomData<&'de ()>,
         }
         impl<'de> serde::de::Visitor<'de> for Visitor<'de> {
-            type Value = Credentials<perms::Any>;
+            type Value = Capabilities<caps::Any>;
             fn expecting(
                 &self,
                 formatter: &mut serde::export::Formatter,
             ) -> serde::export::fmt::Result {
-                serde::export::Formatter::write_str(formatter, "struct Credentials")
+                serde::export::Formatter::write_str(formatter, "struct Capabilities")
             }
             #[inline]
             fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
             where
                 A: serde::de::SeqAccess<'de>,
             {
-                let permissions = serde::de::SeqAccess::next_element::<Vec<Permission>>(&mut seq)?
+                let capabilities = serde::de::SeqAccess::next_element::<Vec<Capability>>(&mut seq)?
                     .ok_or_else(|| {
                         serde::de::Error::invalid_length(
                             0usize,
-                            &"struct Credentials with 2 elements",
+                            &"struct Capabilities with 2 elements",
                         )
                     })?;
                 let user_id = serde::de::SeqAccess::next_element::<uuid::Uuid>(&mut seq)?
                     .ok_or_else(|| {
                         serde::de::Error::invalid_length(
                             1usize,
-                            &"struct Credentials with 2 elements",
+                            &"struct Capabilities with 2 elements",
                         )
                     })?;
-                Ok(Credentials {
+                Ok(Capabilities {
                     level: PhantomData,
-                    permissions,
+                    capabilities,
                     user_id,
                 })
             }
@@ -222,17 +223,17 @@ impl<'de> Deserialize<'de> for Credentials<perms::Any> {
             where
                 A: serde::de::MapAccess<'de>,
             {
-                let mut permissions = None;
+                let mut capabilities = None;
                 let mut user_id = None;
                 while let Some(key) = serde::de::MapAccess::next_key::<Field>(&mut map)? {
                     match key {
-                        Field::Permissions => {
-                            permissions = if permissions.is_some() {
+                        Field::Capabilities => {
+                            capabilities = if capabilities.is_some() {
                                 return Err(<A::Error as serde::de::Error>::duplicate_field(
-                                    "permissions",
+                                    "capabilities",
                                 ));
                             } else {
-                                Some(serde::de::MapAccess::next_value::<Vec<Permission>>(
+                                Some(serde::de::MapAccess::next_value::<Vec<Capability>>(
                                     &mut map,
                                 )?)
                             }
@@ -253,25 +254,25 @@ impl<'de> Deserialize<'de> for Credentials<perms::Any> {
                         }
                     }
                 }
-                let permissions = match permissions {
-                    serde::export::Some(permissions) => permissions,
-                    serde::export::None => serde::private::de::missing_field("permissions")?,
+                let capabilities = match capabilities {
+                    serde::export::Some(capabilities) => capabilities,
+                    serde::export::None => serde::private::de::missing_field("capabilities")?,
                 };
                 let user_id = match user_id {
                     serde::export::Some(user_id) => user_id,
                     serde::export::None => serde::private::de::missing_field("user_id")?,
                 };
-                serde::export::Ok(Credentials {
+                serde::export::Ok(Capabilities {
                     level: PhantomData,
-                    permissions,
+                    capabilities,
                     user_id,
                 })
             }
         }
-        const FIELDS: &[&str] = &["permissions", "user_id"];
+        const FIELDS: &[&str] = &["capabilities", "user_id"];
         serde::Deserializer::deserialize_struct(
             deserializer,
-            "Credentials",
+            "Capabilities",
             FIELDS,
             Visitor {
                 lifetime: serde::export::PhantomData,
@@ -279,11 +280,11 @@ impl<'de> Deserialize<'de> for Credentials<perms::Any> {
         )
     }
 }
-impl<'a, 'r, L: perms::Verifiable + std::fmt::Debug> FromRequest<'a, 'r> for Credentials<L> {
+impl<'a, 'r, L: caps::Verifiable + std::fmt::Debug> FromRequest<'a, 'r> for Capabilities<L> {
     type Error = Error;
     fn from_request(req: &'a Request<'r>) -> Outcome<Self, Self::Error> {
-        req.guard::<UnverifiedPermissionsCredential>()
-            .tap(|res| log::debug!("Found credentials? {:?}", res))?
+        req.guard::<UnverifiedCapabilities>()
+            .tap(|res| log::debug!("Found capabilities? {:?}", res))?
             .into_inner()
             .change_level()
             .tap(|res| log::debug!("Level changed: {:?}", res))
@@ -292,40 +293,40 @@ impl<'a, 'r, L: perms::Verifiable + std::fmt::Debug> FromRequest<'a, 'r> for Cre
     }
 }
 
-impl<L> Clone for Credentials<L> {
+impl<L> Clone for Capabilities<L> {
     fn clone(&self) -> Self {
-        Credentials {
+        Capabilities {
             level: PhantomData,
-            permissions: self.permissions.clone(),
+            capabilities: self.capabilities.clone(),
             user_id: self.user_id.clone(),
         }
     }
 }
 
-/// A wrapper around [`Credential<()>`](crate::blog::auth::Credentials) for ensuring awareness of
-/// the lack of permissions.
+/// A wrapper around [`Credential<()>`](crate::blog::auth::Capabilities) for ensuring awareness of
+/// the lack of capabilities.
 #[derive(Debug, Deserialize)]
-pub struct UnverifiedPermissionsCredential(Credentials<perms::Any>);
-impl UnverifiedPermissionsCredential {
+pub struct UnverifiedCapabilities(Capabilities<caps::Any>);
+impl UnverifiedCapabilities {
     /// Create a new struct, simply wrapping up the
-    /// [`Credentials::new()`](crate::blog::auth::Credentials::new) function with the newtype
+    /// [`Capabilities::new()`](crate::blog::auth::Capabilities::new) function with the newtype
     /// struct.
-    pub fn new(user_id: uuid::Uuid, perms: Vec<Permission>) -> Self {
+    pub fn new(user_id: uuid::Uuid, caps: Vec<Capability>) -> Self {
         // Should not be able to error
-        Self(Credentials::safe_new(user_id, perms))
+        Self(Capabilities::safe_new(user_id, caps))
     }
-    /// Consumes self, yielding a [`Credentials<Any>`](crate::blog::auth::Credentials) struct.
-    pub fn into_inner(self) -> Credentials<perms::Any> {
+    /// Consumes self, yielding a [`Capabilities<Any>`](crate::blog::auth::Capabilities) struct.
+    pub fn into_inner(self) -> Capabilities<caps::Any> {
         self.0
     }
 }
-impl Deref for UnverifiedPermissionsCredential {
-    type Target = Credentials<perms::Any>;
+impl Deref for UnverifiedCapabilities {
+    type Target = Capabilities<caps::Any>;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
-impl<'a, 'r> FromRequest<'a, 'r> for UnverifiedPermissionsCredential {
+impl<'a, 'r> FromRequest<'a, 'r> for UnverifiedCapabilities {
     type Error = Error;
     fn from_request(req: &'a Request<'r>) -> Outcome<Self, Self::Error> {
         let cookies = req.cookies();
@@ -336,30 +337,30 @@ impl<'a, 'r> FromRequest<'a, 'r> for UnverifiedPermissionsCredential {
             .map_err(|_| Error::KeyStoreAbsent)
             .into_outcome(Status::InternalServerError)?;
 
-        Credentials::extract(&cookies, &*key_store)
+        Capabilities::extract(&cookies, &*key_store)
             .into_outcome(Status::Unauthorized)
-            .map(|cr: Credentials<perms::Any>| cr.into())
+            .map(|cr: Capabilities<caps::Any>| cr.into())
     }
 }
-impl From<Credentials<perms::Any>> for UnverifiedPermissionsCredential {
-    fn from(cr: Credentials<perms::Any>) -> Self {
+impl From<Capabilities<caps::Any>> for UnverifiedCapabilities {
+    fn from(cr: Capabilities<caps::Any>) -> Self {
         log::debug!("{:?}", cr);
         Self(cr)
     }
 }
 
-/// Attaches a [`Credentials`](crate::blog::auth::Credentials) to the cookies so that they
+/// Attaches a [`Capabilities`](crate::blog::auth::Capabilities) to the cookies so that they
 /// can be verified later.
 #[must_use]
-pub fn attach_credentials_token(
+pub fn attach_capabilities_token(
     key: &<<paseto::V2Local as paseto::Protocol>::CoreAlgo as A>::Key,
-    credentials: Credentials<perms::Any>,
+    capabilities: Capabilities<caps::Any>,
     cookies: &mut Cookies,
 ) -> Result<(), ()> {
-    detach_credentials_token_if_exists(cookies);
+    detach_capabilities_token_if_exists(cookies);
     let opt_none: Option<()> = None;
     let tok = paseto::token::Data {
-        msg: credentials,
+        msg: capabilities,
         footer: opt_none,
     };
     let token_str = paseto::V2Local::encrypt(tok, key)
@@ -372,8 +373,8 @@ pub fn attach_credentials_token(
     cookies.add(auth_cookie);
     Ok(())
 }
-/// Detaches a [`Credentials`](crate::blog::auth::Credentials) from the cookie.
-pub fn detach_credentials_token_if_exists(cookies: &mut Cookies) {
+/// Detaches a [`Capabilities`](crate::blog::auth::Capabilities) from the cookie.
+pub fn detach_capabilities_token_if_exists(cookies: &mut Cookies) {
     let auth_cookie = cookies.get(AUTH_COOKIE_NAME);
     if auth_cookie.is_some() {
         cookies.remove(Cookie::named(AUTH_COOKIE_NAME));

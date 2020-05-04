@@ -7,7 +7,7 @@ use crate::{
     util::{
         auth,
         blog::{
-            db::{PWQuery, CapabilityQuery, UserQuery},
+            db::{CapabilityQuery, PWQuery, UserQuery},
             DB,
         },
     },

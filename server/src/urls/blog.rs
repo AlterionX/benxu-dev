@@ -1,9 +1,9 @@
 //! Marshalls the data between the [`blog_client`](../blog_client) and [`blog_db`](../blog_db).
 
 pub mod accounts;
+pub mod capabilities;
 pub mod credentials;
 pub mod login;
-pub mod capabilities;
 pub mod posts;
 
 use crate::util::auth;

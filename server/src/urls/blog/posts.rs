@@ -174,7 +174,8 @@ pub mod post {
     pub fn delete(id: RUuid, db: DB, deleter: auth::Capabilities<auth::caps::Delete>) -> Status {
         let id = ruuid_to_uuid(id);
         let deletion_update = posts::Deletion::new(deleter.user_id());
-        let req = db.delete_post_with_id(id, &deletion_update)
+        let req = db
+            .delete_post_with_id(id, &deletion_update)
             .tap_err(|e| log::error!("Failed to delete post {:?} due to error {:?}.", id, e));
         map_to_status(req)
     }
@@ -206,11 +207,7 @@ pub mod post {
     /// Handler for publishing a post with a specific id. Requires user to be logged in and have
     /// the [`Publish`](crate::blog::auth::caps::Publish) capability.
     #[post("/posts/<id>/archive")]
-    pub fn archive(
-        id: RUuid,
-        db: DB,
-        archiver: auth::Capabilities<auth::caps::Archive>,
-    ) -> Status {
+    pub fn archive(id: RUuid, db: DB, archiver: auth::Capabilities<auth::caps::Archive>) -> Status {
         let id = ruuid_to_uuid(id);
         map_to_status(db.archive_post_with_id(id, posts::Archival::new(archiver.user_id())))
     }

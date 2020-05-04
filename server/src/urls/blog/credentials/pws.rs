@@ -14,7 +14,6 @@ use crate::{
     },
 };
 
-
 /// Allows for the creation of new passwords. Only functions if attempting to create a password
 /// for self or if the caller possesses the
 /// [`EditUserCapabilities`](crate::blog::auth::caps::EditUserCapabilities) capabilities.

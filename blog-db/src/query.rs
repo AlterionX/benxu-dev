@@ -359,8 +359,10 @@ pub trait CapabilityQuery: DBConn {
         &self,
         user_id: uuid::Uuid,
     ) -> Result<Vec<capabilities::Data>, diesel::result::Error> {
-        diesel::delete(schema::capabilities::table.filter(schema::capabilities::user_id.eq(user_id)))
-            .get_results(self.conn())
+        diesel::delete(
+            schema::capabilities::table.filter(schema::capabilities::user_id.eq(user_id)),
+        )
+        .get_results(self.conn())
     }
     /// Delete all capabilities with the listed ids.
     fn delete_capabilities_with_ids(

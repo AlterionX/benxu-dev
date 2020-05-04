@@ -32,10 +32,7 @@ pub async fn load_post(post_marker: PostMarker) -> Result<GlobalM, GlobalM> {
         .await
 }
 pub fn is_restricted_from(s: &S, gs: &GlobalS) -> bool {
-    if let GlobalS {
-        user: Some(user), ..
-    } = gs
-    {
+    if let Some(user) = gs.user.as_ref() {
         // TODO move this check onto the server for security
         match s {
             S::Old(stored_post, _) => !stored_post.is_published() && !user.can_see_unpublished,

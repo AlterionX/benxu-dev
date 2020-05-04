@@ -1,10 +1,10 @@
 //! Marshalls the data between the [`blog_client`](../blog_client) and [`blog_db`](../blog_db).
 
-pub mod accounts;
-pub mod capabilities;
-pub mod credentials;
-pub mod login;
-pub mod posts;
+mod accounts;
+mod capabilities;
+mod credentials;
+mod login;
+mod posts;
 
 use crate::util::auth;
 use maud::Markup;
@@ -43,7 +43,6 @@ pub fn api_routes() -> Vec<Route> {
         posts::post::delete,
         posts::post::publish,
         posts::post::archive,
-        editor::get,
         accounts::post,
         accounts::account::get,
         accounts::account::get_self,
@@ -129,15 +128,5 @@ mod htmlgen {
             .logo(logo.as_ref())
             .build();
         partials::basic_page(html! { "Loading. Please wait..." }, Some(&meta))
-    }
-}
-
-/// Handlers, functions, structs for marshalling editor data and retrieving the webpage.
-pub mod editor {
-    use rocket::http::Status;
-    /// Handler for serving the editor page, to be implemented.
-    #[get("/editor")]
-    pub fn get() -> Status {
-        Status::NotImplemented
     }
 }

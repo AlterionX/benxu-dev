@@ -4,20 +4,17 @@ use crate::{
     cfg::PWAlgo,
     util::{
         auth::{self, caps::Verifiable, credentials::SavableCredential},
-        blog::{
-            db::{PWQuery, UserQuery},
-            DB,
-        },
+        blog::{db::{PWQuery, UserQuery}, DB},
     },
 };
 use blog_db::models::*;
 use boolinator::Boolinator;
 use crypto::algo::{hash::symmetric::Algo as HashA, Algo as A};
-pub use login_enum::CreatePassword;
+pub(super) use login_enum::CreatePassword;
 
 /// A view into [`Password`](crate::blog::credentials::data::Password) together with the database
 /// used to store credentials, and the secret key for the password hash.
-pub struct PasswordWithBackingInfo<'a> {
+pub(super) struct PasswordWithBackingInfo<'a> {
     /// A reference to the [`DB`](crate::blog::DB) we will be using for verification.
     pub(super) db: &'a DB,
     /// A reference to the [`Capabilities`](crate::blog::auth::Capabilities) related to the request.

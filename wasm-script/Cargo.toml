@@ -1,6 +1,6 @@
 [package]
 name = "wasm-slideshow"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["AlterionX <ben.xu.cs@gmail.com>"]
 edition = "2018"
 license = "MIT"
@@ -29,3 +29,6 @@ features = [
       'DomTokenList',
 ]
 
+[profile.release]
+lto = true
+opt-level = 's'

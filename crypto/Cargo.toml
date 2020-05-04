@@ -1,6 +1,6 @@
 [package]
 name = "bundled-crypto"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["AlterionX <ben.xu.cs@gmail.com>"]
 edition = "2018"
 license = "MIT"
@@ -11,7 +11,7 @@ repository = "https://github.com/AlterionX/benxu-dev"
 
 [dependencies]
 # various crypto algos
-# ring = { version = "0.16.9", features = ["rsa_signing"] }
+# ring = "0.16.13"
 ring = { version = "0.13.5", features = ["rsa_signing"] }
 openssl = "0.10.29"
 rand = "0.7.3"

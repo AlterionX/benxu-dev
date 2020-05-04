@@ -16,14 +16,12 @@ pub fn get(
     _path: Option<rocket::http::uri::Segments>,
     c: Option<auth::UnverifiedCapabilities>,
 ) -> Markup {
-    // TODO set based on capabilities
     htmlgen::index(c.is_some())
 }
 
 /// Handler for serving the primary web app for when there is no path.
 #[get("/")]
 pub fn get_unadorned(c: Option<auth::UnverifiedCapabilities>) -> Markup {
-    // TODO set based on capabilities
     htmlgen::index(c.is_some())
 }
 

@@ -1,4 +1,4 @@
-use std::{fs, path::Path, process::Command};
+use std::{fs, path::Path};
 
 fn build_dirs(root: &Path) {
     let needed_dirs = [
@@ -28,10 +28,6 @@ fn move_wasm_and_loader(root: &Path) {
             if name.ends_with(".wasm") {
                 let wasm_file_path = root.join("wasm").join(name);
                 fs::copy(&path, &wasm_file_path).unwrap();
-                Command::new("wasm-gc")
-                    .arg(&wasm_file_path)
-                    .output()
-                    .unwrap();
             }
         }
     }

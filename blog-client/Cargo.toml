@@ -1,6 +1,6 @@
 [package]
 name = "blog-client"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["AlterionX <ben.xu.cs@gmail.com>"]
 edition = "2018"
 license = "MIT"
@@ -29,16 +29,16 @@ version = "0.6.0"
 
 [dependencies.db-models]
 package = "blog-db"
-version = "0.2.0"
+version = "0.3.0"
 path = "../blog-db"
 features = ["client"]
 [dependencies.htmlgen]
 package = "static-page-builder"
-version = "0.2.0"
+version = "0.2.1"
 path = "../page-client"
 [dependencies.login-enum]
 package = "blog-login-enum"
-version = "0.1.0"
+version = "0.1.1"
 path = "../blog-login-enum"
 
 [dependencies.serde]
@@ -82,3 +82,6 @@ features = [
       'History',
 ]
 
+[profile.release]
+lto = true
+opt-level = 's'

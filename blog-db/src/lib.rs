@@ -14,7 +14,7 @@ extern crate diesel;
 pub mod schema;
 
 #[cfg(feature = "client")]
-pub use models::{credentials, permissions, post_tag_junctions, posts, tags, users};
+pub use models::{credentials, capabilities, post_tag_junctions, posts, tags, users};
 
 #[cfg(feature = "server")]
 pub mod query;

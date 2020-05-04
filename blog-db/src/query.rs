@@ -321,58 +321,58 @@ pub trait PWQuery: DBConn {
 }
 impl<T: DBConn> PWQuery for T {}
 
-pub trait PermissionQuery: DBConn {
-    /// Get permissions based on the user.
-    fn get_user_permissions(
+pub trait CapabilityQuery: DBConn {
+    /// Get capabilities based on the user.
+    fn get_user_capabilities(
         &self,
         user: &users::Data,
-    ) -> Result<Vec<permissions::Data>, diesel::result::Error> {
-        permissions::Data::belonging_to(user).load(self.conn())
+    ) -> Result<Vec<capabilities::Data>, diesel::result::Error> {
+        capabilities::Data::belonging_to(user).load(self.conn())
     }
-    /// Create all permissions in the [`Vec`].
-    fn create_all_permissions<'a>(
+    /// Create all capabilities in the [`Vec`].
+    fn create_all_capabilities<'a>(
         &'_ self,
-        permissions: Vec<permissions::New<'a>>,
-    ) -> Result<Vec<permissions::Data>, diesel::result::Error> {
-        let to_create: Vec<permissions::NewWithId> =
-            permissions.into_iter().map(|new| new.into()).collect();
-        diesel::insert_into(schema::permissions::table)
+        capabilities: Vec<capabilities::New<'a>>,
+    ) -> Result<Vec<capabilities::Data>, diesel::result::Error> {
+        let to_create: Vec<capabilities::NewWithId> =
+            capabilities.into_iter().map(|new| new.into()).collect();
+        diesel::insert_into(schema::capabilities::table)
             .values(to_create)
             .get_results(self.conn())
     }
-    /// Get all permissions matching the provided id. There should only be one.
-    fn get_permission_with_id(
+    /// Get all capabilities matching the provided id. There should only be one.
+    fn get_capability_with_id(
         &self,
         id: uuid::Uuid,
-    ) -> Result<permissions::Data, diesel::result::Error> {
-        schema::permissions::table.find(id).get_result(self.conn())
+    ) -> Result<capabilities::Data, diesel::result::Error> {
+        schema::capabilities::table.find(id).get_result(self.conn())
     }
-    /// Delete all permissions matching the provided id. There should only be one.
-    fn delete_permission_with_id(
+    /// Delete all capabilities matching the provided id. There should only be one.
+    fn delete_capability_with_id(
         &self,
         id: uuid::Uuid,
-    ) -> Result<permissions::Data, diesel::result::Error> {
-        diesel::delete(schema::permissions::table.find(id)).get_result(self.conn())
+    ) -> Result<capabilities::Data, diesel::result::Error> {
+        diesel::delete(schema::capabilities::table.find(id)).get_result(self.conn())
     }
-    /// Delete all permissions matching the provided user_id. There can (will usually be) multiple.
-    fn delete_permissions_by_user_id(
+    /// Delete all capabilities matching the provided user_id. There can (will usually be) multiple.
+    fn delete_capabilities_by_user_id(
         &self,
         user_id: uuid::Uuid,
-    ) -> Result<Vec<permissions::Data>, diesel::result::Error> {
-        diesel::delete(schema::permissions::table.filter(schema::permissions::user_id.eq(user_id)))
+    ) -> Result<Vec<capabilities::Data>, diesel::result::Error> {
+        diesel::delete(schema::capabilities::table.filter(schema::capabilities::user_id.eq(user_id)))
             .get_results(self.conn())
     }
-    /// Delete all permissions with the listed ids.
-    fn delete_permissions_with_ids(
+    /// Delete all capabilities with the listed ids.
+    fn delete_capabilities_with_ids(
         &self,
-        permission_ids: &[uuid::Uuid],
-    ) -> Result<Vec<permissions::Data>, diesel::result::Error> {
+        capability_ids: &[uuid::Uuid],
+    ) -> Result<Vec<capabilities::Data>, diesel::result::Error> {
         diesel::delete(
-            schema::permissions::table.filter(schema::permissions::id.eq_any(permission_ids)),
+            schema::capabilities::table.filter(schema::capabilities::id.eq_any(capability_ids)),
         )
         .get_results(self.conn())
     }
 }
-impl<T: DBConn> PermissionQuery for T {}
+impl<T: DBConn> CapabilityQuery for T {}
 
 // TODO tests?

@@ -29,6 +29,7 @@ impl Location {
     pub fn find_redirect(self, gs: &GlobalS) -> Result<Self, Self> {
         match &self {
             Location::Login(_) if gs.user.is_some() => Ok(Location::Listing(listing::S::default())),
+            // TODO Editor hops to not found. Pressing back will load the editor properly.
             Location::Editor(s) if editor::is_restricted_from(s, gs) => Ok(Location::NotFound),
             Location::Viewer(_) if viewer::is_restricted_from(gs) => Ok(Location::NotFound),
             _ => Err(self),

@@ -80,9 +80,9 @@ pub trait PostQuery: DBConn {
         log::debug!("Attempting to find posts with {:?} query.", conditions);
         let query = schema::posts::table;
         let query = if show_unpublished {
-            query.filter(schema::posts::published_at.is_null()).into_boxed()
-        } else {
             query.into_boxed()
+        } else {
+            query.filter(schema::posts::published_at.is_not_null()).into_boxed()
         };
         match conditions {
             PostListing::Date {

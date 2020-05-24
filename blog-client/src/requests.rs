@@ -134,3 +134,12 @@ impl Default for PostQuery {
         }
     }
 }
+
+impl PostQuery {
+    fn generate_next(&self) -> Option<PostQuery> {
+        None
+    }
+    fn generate_prev(&self) -> Option<PostQuery> {
+        None
+    }
+}

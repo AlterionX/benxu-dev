@@ -4,7 +4,10 @@ use crate::{
     cfg::PWAlgo,
     util::{
         auth::{self, caps::Verifiable, credentials::SavableCredential},
-        blog::{db::{PWQuery, UserQuery}, DB},
+        blog::{
+            db::{PWQuery, UserQuery},
+            DB,
+        },
     },
 };
 use blog_db::models::*;

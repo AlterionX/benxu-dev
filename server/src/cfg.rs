@@ -1,6 +1,10 @@
 use crypto;
 use log::*;
-use std::{path::Path, sync::Arc};
+use std::{
+    path::PathBuf,
+    sync::Arc,
+};
+use structopt::StructOpt;
 use tap::*;
 
 /// Algorithm utilized for hashing passwords
@@ -27,75 +31,113 @@ pub const BLOG_API_ROOT: &'static str = "/api";
 /// Routing path root for blog pages/endpoints from the [`blog`](crate::blog) module.
 pub const BLOG_SPA_ROOT: &'static str = "/blog";
 
-/// Seeks out and returns the path to the secret key for password hashing, returning an error
-/// if it could not find the file and defaulting to
-/// [`PW_SECRET_KEY_DEFAULT_PATH`](crate::Server::PW_SECRET_KEY_DEFAULT_PATH) if the
-/// environment variable
-/// [`PW_SECRET_KEY_ENV_VAR_NAME`](crate::Server::PW_SECRET_KEY_ENV_VAR_NAME) for that path
-/// does not exist.
-pub fn pw_secret() -> Result<std::path::PathBuf, std::io::Error> {
-    let env_var_res = std::env::var(PW_SECRET_KEY_ENV_VAR_NAME);
-    let pw_file = env_var_res
-        .as_ref()
-        .map(|s| s.as_ref())
-        .tap_err(|e| {
-            match e {
-                std::env::VarError::NotPresent => warn!(
-                    "The environment variable pointing to the secret key for password hashing is not present!",
-                ),
-                std::env::VarError::NotUnicode(var) => warn!(
-                    "The environment variable is not unicode/ascii! Found {:?} instead.",
-                    var,
-                ),
+#[derive(Debug, StructOpt)]
+#[structopt(name = "benxu-server", about = "Server for benxu.dev")]
+pub struct Opt {
+    #[structopt(long)]
+    pub ignore_dotenv: bool,
+    #[structopt(
+        long,
+        default_value = PW_SECRET_KEY_DEFAULT_PATH,
+        env = PW_SECRET_KEY_ENV_VAR_NAME
+    )]
+    pub pw_secret_path: PathBuf,
+    #[structopt(
+        long,
+        default_value = PUBLIC_ROOT
+    )]
+    pub public_root_route: String,
+    #[structopt(
+        long,
+        default_value = PUBLIC_DIRECTORY,
+    )]
+    pub public_root_dir: PathBuf,
+    #[structopt(
+        long,
+        default_value = STATIC_ROOT,
+    )]
+    pub fixed_root_route: String,
+    #[structopt(
+        long,
+        default_value = BLOG_API_ROOT,
+    )]
+    pub blog_api_root_route: String,
+    #[structopt(
+        long,
+        default_value = BLOG_SPA_ROOT,
+    )]
+    pub blog_spa_root_route: String,
+}
+
+impl Opt {
+    pub fn load() -> Opt {
+        let opt = Opt::from_args();
+        log::trace!("App loaded initially with following opt: {:?}", opt);
+        // We need to reload again if we were not supposed to ignore the dotenv file.
+        let opt = if opt.ignore_dotenv {
+            opt
+        } else {
+            log::trace!("Loading dotenv file.");
+            match dotenv::dotenv() {
+                Ok(p) => log::info!("Dotenv file loaded from `{:?}`", p),
+                Err(e) => log::warn!("Could not load dotenv file due to: {:?}.", e),
             };
-            warn!("Defaulting secret key path to \"{}\".", PW_SECRET_KEY_DEFAULT_PATH)
-        })
-        .unwrap_or(PW_SECRET_KEY_DEFAULT_PATH);
-    Path::new(pw_file)
+            log::trace!("Reloading Opt from args after attempting to load dotenv.");
+            Opt::from_args()
+        };
+        log::debug!("App loaded with following opt: {:?}", opt);
+        log::info!("Configuration fully loaded.");
+        opt
+    }
+}
+
+/// Initializes the key rotation system for the token's secret key.
+pub fn token_key() -> crypto::KeyRotator<TokenAlgo> {
+    crypto::KeyRotator::init(TokenAlgo {}, None)
+}
+
+/// Initializes the key store for the password's hashing secret key.
+pub fn pw_secret(opt: &Opt) -> crypto::StableKeyStore<PWAlgo> {
+    use std::{fs::File, io::Read};
+    log::debug!("Locating password hashing secret...");
+    let secret_path = opt.pw_secret_path
         .canonicalize()
         .tap_err(|e| match e.kind() {
             std::io::ErrorKind::NotFound => {
                 error!(
-                    "Could not find the secret key file \"{}\" for password hashing!",
-                    pw_file
+                    "Could not find the secret key file `{}` for password hashing!",
+                    opt.pw_secret_path.display()
                 );
             }
             _ => error!(
-                "Unknown error encountered when attempting to file \"{}\"\n{:?}",
-                pw_file, e
+                "Unknown error encountered when attempting to file `{}`\n{:?}",
+                opt.pw_secret_path.display(), e
             ),
         })
-}
-/// Initializes the key rotation system for the token's secret key.
-pub fn init_token_key() -> crypto::KeyRotator<TokenAlgo> {
-    crypto::KeyRotator::init(TokenAlgo {}, None)
-}
-/// Initializes the key store for the password's hashing secret key.
-pub fn init_pw_secret<S: AsRef<Path>>(secret_path: &S) -> crypto::StableKeyStore<PWAlgo> {
-    use std::{fs::File, io::Read};
-    info!("Loading secret from disk...");
-    let secret_path = secret_path.as_ref();
+        .expect("Password secret to be present.");
+    log::info!("Password secret located.");
+    log::info!("Loading secret from file {}...", secret_path.display());
     let secret = File::open(secret_path)
         .and_then(|mut f| {
             info!("Loading file metadata...");
             let meta = f.metadata()?;
             if meta.len() == 0 {
-                warn!("No secret key provided!");
+                log::warn!("No secret key provided!");
                 Ok(vec![])
             } else {
                 info!("Reading file...");
                 let to_read = if meta.len() > 32 {
-                    warn!("Secret key far larger than expected! Truncating the secret to 2^32 - 1 bytes.");
+                    log::warn!("Secret key larger than expected! Truncating the secret to 32 bytes. (Check if limit is actully 2^32 - 1 bytes.)");
                     32u64
                 } else if meta.len() < 16 {
-                    warn!("Secret key far smaller than suggested 32 bytes! Please consider lengthening the secret.");
+                    log::warn!("Secret key far smaller than suggested 32 bytes! Please consider lengthening the secret.");
                     meta.len()
                 } else {
                     meta.len()
                 } as usize;
                 let mut read_bytes = vec![0; to_read];
                 f.read_exact(read_bytes.as_mut_slice())?;
-                info!("File read.");
+                log::info!("File read.");
                 Ok(read_bytes)
             }
         })
@@ -103,17 +145,17 @@ pub fn init_pw_secret<S: AsRef<Path>>(secret_path: &S) -> crypto::StableKeyStore
             use std::io::ErrorKind;
             match e.kind() {
                 // This should be taken care of already when finding the path, but jic.
-                ErrorKind::NotFound => error!(
+                ErrorKind::NotFound => log::error!(
                     "Could not find file at `{}`.",
-                    secret_path.display(),
+                    opt.pw_secret_path.display()
                 ),
-                ErrorKind::PermissionDenied => error!(
+                ErrorKind::PermissionDenied => log::error!(
                     "Lacking valid permissions for accessing file at `{}`.",
-                    secret_path.display(),
+                    opt.pw_secret_path.display()
                 ),
-                _ => error!(
+                _ => log::error!(
                     "Could not find secret key at path `{}`! Caused by: {:?}",
-                    secret_path.display(),
+                    opt.pw_secret_path.display(),
                     e,
                 ),
             };

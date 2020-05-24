@@ -27,3 +27,5 @@ server/private
 .env
 .pw_secret
 
+# Cargo timing files
+cargo-timing*

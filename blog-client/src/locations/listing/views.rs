@@ -88,7 +88,7 @@ pub fn render(s: &S, gs: &GlobalS) -> Vec<Node<M>> {
                 log::debug!("Calling published render.");
                 vec![render_post_list("Coming soon.", posts.as_slice())]
             } else {
-                log::debug!("Not called");
+                log::debug!("No posts found.");
                 vec![shared::views::loading()]
             },
         ],

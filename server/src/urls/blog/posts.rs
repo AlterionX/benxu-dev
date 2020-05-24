@@ -29,6 +29,7 @@ pub fn get(
     lim: Option<usize>,
     ord_criteria: Option<db::OrderingField>,
     ord: Option<db::SortOrdering>,
+    capabilities: Option<auth::UnverifiedCapabilities>,
 ) -> Result<Json<Vec<posts::BasicData>>, Status> {
     let ord_criteria = ord_criteria.unwrap_or(db::OrderingField::Date);
     let ord = ord.unwrap_or_else(|| match ord_criteria {
@@ -48,9 +49,9 @@ pub fn get(
         log::error!("Post search request made with more or less than 2 restrictions.");
         Err(Status::BadRequest)
     } else if let (Some(start_time), Some(stop_time)) = (start_time, stop_time) {
-        get_by_date_range(db, start_time, stop_time, ord_criteria, ord)
+        get_by_date_range(db, start_time, stop_time, ord_criteria, ord, capabilities)
     } else if let (Some(lim), Some(offset)) = (lim, offset) {
-        get_by_limit_and_offset(db, offset, lim, ord_criteria, ord)
+        get_by_limit_and_offset(db, offset, lim, ord_criteria, ord, capabilities)
     } else {
         log::error!("Post search request made with a mismatched pair of restrictions.");
         Err(Status::BadRequest)
@@ -63,6 +64,7 @@ pub fn get_by_date_range(
     stop_time: &RawStr,
     ord_criteria: db::OrderingField,
     ord: db::SortOrdering,
+    capabilities: Option<auth::UnverifiedCapabilities>,
 ) -> Result<Json<Vec<posts::BasicData>>, Status> {
     let start_time = start_time
         .percent_decode()
@@ -85,7 +87,7 @@ pub fn get_by_date_range(
         order_by: ord_criteria,
         ord,
         limit: max_posts,
-    })
+    }, capabilities.is_some())
     .tap_err(|e| log::error!("Failed to find posts by date range due to error {:?}.", e))
     .map(Json)
     .map_err(|_| Status::InternalServerError)
@@ -99,13 +101,14 @@ pub fn get_by_limit_and_offset(
     lim: usize,
     ord_criteria: db::OrderingField,
     ord: db::SortOrdering,
+    capabilities: Option<auth::UnverifiedCapabilities>,
 ) -> Result<Json<Vec<posts::BasicData>>, Status> {
     db.find_posts_with_post_listing_conditions(db::PostListing::LimAndOffset {
         offset,
         lim: std::cmp::min(lim, 500),
         order_by: ord_criteria,
         ord,
-    })
+    }, capabilities.is_some())
     .tap_err(|e| log::error!("Failed to find posts due to error {:?}.", e))
     .map(Json)
     .map_err(|_| Status::InternalServerError)

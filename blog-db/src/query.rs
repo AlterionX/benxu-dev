@@ -75,8 +75,15 @@ pub trait PostQuery: DBConn {
     fn find_posts_with_post_listing_conditions(
         &self,
         conditions: PostListing,
+        show_unpublished: bool,
     ) -> Result<Vec<posts::BasicData>, diesel::result::Error> {
         log::debug!("Attempting to find posts with {:?} query.", conditions);
+        let query = schema::posts::table;
+        let query = if show_unpublished {
+            query.filter(schema::posts::published_at.is_null()).into_boxed()
+        } else {
+            query.into_boxed()
+        };
         match conditions {
             PostListing::Date {
                 start,
@@ -85,7 +92,7 @@ pub trait PostQuery: DBConn {
                 ord,
                 limit,
             } => {
-                let query = schema::posts::table
+                let query = query
                     .select(posts::BasicData::COLUMNS)
                     .filter(
                         schema::posts::published_at
@@ -119,7 +126,6 @@ pub trait PostQuery: DBConn {
                 order_by,
                 ord,
             } => {
-                let query = schema::posts::table;
                 match order_by {
                     OrderingField::Date => match ord {
                         SortOrdering::Ascending => query

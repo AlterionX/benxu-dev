@@ -59,7 +59,7 @@ pub fn render_post_pagination_buttons(s: &S) {
             Some(url) => a![
                 attrs! {
                     At::Class => "next";
-                    At::Href => url.to_string();
+                    At::Href => url;
                 },
                 "Next >"
             ],
@@ -69,7 +69,7 @@ pub fn render_post_pagination_buttons(s: &S) {
             Some(url) => a![
                 attrs! {
                     At::Class => "prev";
-                    At::Href => url.to_string();
+                    At::Href => url;
                 },
                 "< Previous"
             ],

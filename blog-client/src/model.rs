@@ -1,4 +1,4 @@
-use seed::fetch::FetchObject;
+use seed::browser::service::fetch::FetchObject;
 use seed::prelude::*;
 use serde::{Deserialize, Serialize};
 use tap::*;
@@ -124,13 +124,13 @@ pub enum FailReason {
     Data { is_dom_err: bool },
     Status(u16, String),
 }
-impl<T> From<seed::fetch::FailReason<T>> for FailReason {
-    fn from(e: seed::fetch::FailReason<T>) -> Self {
+impl<T> From<seed::browser::service::fetch::FailReason<T>> for FailReason {
+    fn from(e: seed::browser::service::fetch::FailReason<T>) -> Self {
         match e {
-            seed::fetch::FailReason::RequestError(_, _) => Self::Req,
-            seed::fetch::FailReason::Status(s, _) => Self::Status(s.code, s.text),
-            seed::fetch::FailReason::DataError(e, _) => Self::Data {
-                is_dom_err: if let seed::fetch::DataError::DomException(_) = e {
+            seed::browser::service::fetch::FailReason::RequestError(_, _) => Self::Req,
+            seed::browser::service::fetch::FailReason::Status(s, _) => Self::Status(s.code, s.text),
+            seed::browser::service::fetch::FailReason::DataError(e, _) => Self::Data {
+                is_dom_err: if let seed::browser::service::fetch::DataError::DomException(_) = e {
                     true
                 } else {
                     false

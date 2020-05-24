@@ -35,6 +35,14 @@ impl Default for PostSort {
         Self::Date(SortOrdering::Descending)
     }
 }
+impl PostSort {
+    fn get_ordering(&self) -> &SortOrdering {
+        match self {
+            Self::AlphabeticalTitle(o) => o,
+            Self::Date(o) => o,
+        }
+    }
+}
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PostPagination {
     Ten,
@@ -106,6 +114,65 @@ impl Display for PostRange {
         }
     }
 }
+impl PostRange {
+    fn generate_next(&self) -> Option<PostRange> {
+        match self {
+            PostRange::ByPage {
+                page_size,
+                page_num,
+            } => Some(PostRange::ByPage {
+                page_size: page_size.clone(),
+                page_num: page_num + 1,
+            }),
+            PostRange::LimAndOffset {
+                lim,
+                offset,
+            } => Some(PostRange::LimAndOffset {
+                lim: lim.clone(),
+                offset: offset + lim,
+            }),
+            PostRange::ByDate {
+                begin,
+                end,
+            } => None
+        }
+    }
+    fn generate_prev(&self) -> Option<PostRange> {
+        match self {
+            PostRange::ByPage {
+                page_size,
+                page_num,
+            } => if *page_num == 0 {
+                None
+            } else {
+                Some(PostRange::ByPage {
+                    page_size: page_size.clone(),
+                    page_num: page_num - 1,
+                })
+            },
+            PostRange::LimAndOffset {
+                lim,
+                offset,
+            } => if *offset == 0 {
+                None
+            } else {
+                Some(PostRange::LimAndOffset {
+                    lim: lim.clone(),
+                    offset: if *offset < *lim {
+                        0
+                    } else {
+                        offset - lim
+                    },
+                })
+            },
+            PostRange::ByDate {
+                begin,
+                end,
+            } => None
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PostQuery {
     Structured {
@@ -136,10 +203,29 @@ impl Default for PostQuery {
 }
 
 impl PostQuery {
-    fn generate_next(&self) -> Option<PostQuery> {
-        None
+    pub fn generate_next(&self) -> Option<PostQuery> {
+        // TODO be smarter about how many posts are actually available.
+        match self {
+            Self::Structured {
+                range,
+                sort,
+            } => Some(Self::Structured {
+                range: range.generate_next()?,
+                sort: sort.clone(),
+            }),
+            Self::Raw(_) => None
+        }
     }
-    fn generate_prev(&self) -> Option<PostQuery> {
-        None
+    pub fn generate_prev(&self) -> Option<PostQuery> {
+        match self {
+            Self::Structured {
+                range,
+                sort,
+            } => Some(Self::Structured {
+                range: range.generate_prev()?,
+                sort: sort.clone(),
+            }),
+            Self::Raw(_) => None
+        }
     }
 }

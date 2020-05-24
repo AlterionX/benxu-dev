@@ -9,32 +9,34 @@ pub struct S {
 }
 impl S {
     pub fn to_url(&self) -> Url {
-        let mut url = ;
         if let Some(q) = &self.query {
-            Self::query_url(q);
+            Self::generate_url(q)
         } else {
             Self::url_root()
         }
-        url
     }
 
     pub fn url_root() -> Url {
         Url::new(vec!["blog"])
     }
 
-    pub fn generate_url(post: &PostQuery) -> Url {
+    pub fn generate_url(q: &PostQuery) -> Url {
         Self::url_root().search(format!("{}", q).as_str())
     }
 
     pub fn generate_next_url(&self) -> Option<Url> {
-        self.query.as_ref()
-            .and_then(PostQuery::generate_next)
+        self.query
+            .unwrap_or(Default::default())
+            .generate_next()
+            .as_ref()
             .map(Self::generate_url)
     }
 
     pub fn generate_prev_url(&self) -> Option<Url> {
-        self.query.as_ref()
-            .and_then(PostQuery::generate_prev)
+        self.query
+            .unwrap_or(Default::default())
+            .generate_prev()
+            .as_ref()
             .map(Self::generate_url)
     }
 }

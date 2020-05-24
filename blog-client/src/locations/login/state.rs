@@ -32,7 +32,7 @@ impl S {
 }
 impl S {
     pub fn create_user_post(&self) -> impl GlobalAsyncM {
-        use seed::fetch::{Method, Request};
+        use seed::browser::service::fetch::{Method, Request};
         const CREATE_USER_URL: &'static str = "/api/accounts";
         Request::new(CREATE_USER_URL)
             .method(Method::Post)
@@ -64,7 +64,7 @@ impl S {
     }
     pub fn create_credential_post(&self, u: &StoreUser) -> impl GlobalAsyncM {
         use crate::locations::*;
-        use seed::fetch::{Method, Request};
+        use seed::browser::service::fetch::{Method, Request};
         const CREDENTIAL_URL: &str = "/api/credentials/pws";
         Request::new(CREDENTIAL_URL)
             .method(Method::Post)
@@ -82,7 +82,7 @@ impl S {
     }
     pub fn create_session_post(&self) -> impl GlobalAsyncM {
         use crate::locations::*;
-        use seed::fetch::{Method, Request};
+        use seed::browser::service::fetch::{Method, Request};
         const LOGIN_URL: &str = "/api/login";
         Request::new(LOGIN_URL)
             .method(Method::Post)

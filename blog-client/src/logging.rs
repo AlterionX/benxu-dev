@@ -1,13 +1,13 @@
 #[cfg(not(debug_assertions))]
-#[wasm_bindgen]
+#[wasm_bindgen::prelude::wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
+    #[wasm_bindgen::prelude::wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
 }
 
 #[cfg(not(debug_assertions))]
 pub fn setup_logger() {
-    crate::log("Is release mode. Logging disabled.");
+    crate::logging::log("Is release mode. Logging disabled.");
 }
 
 #[cfg(debug_assertions)]

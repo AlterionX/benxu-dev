@@ -13,7 +13,7 @@ pub use state::S;
 pub use views::render;
 
 pub async fn data_load(s: S) -> Result<GlobalM, GlobalM> {
-    use seed::fetch::Request;
+    use seed::browser::service::fetch::Request;
     const POSTS_URL: &str = "/api/posts";
     let query = s.query.unwrap_or_else(PostQuery::default);
     let url = format!("{}?{}", POSTS_URL, query);

@@ -21,7 +21,7 @@ pub use state::S;
 pub use views::render;
 
 pub async fn logout_trigger() -> Result<GlobalM, GlobalM> {
-    use seed::fetch::{Method, Request};
+    use seed::browser::service::fetch::{Method, Request};
     const LOGOUT_URL: &str = "/api/login";
     Request::new(LOGOUT_URL)
         .method(Method::Delete)
@@ -39,11 +39,11 @@ fn logout_post_fetch(_gs: *const GlobalS, res: GSOpResult) -> Option<GlobalM> {
     }
 }
 
-pub async fn find_current_user() -> seed::fetch::FetchObject<users::DataNoMeta> {
+pub async fn find_current_user() -> seed::browser::service::fetch::FetchObject<users::DataNoMeta> {
     const SELF_URL: &str = "/api/accounts/me";
     log::info!("Detecting if already logged in...");
     seed::Request::new(SELF_URL)
-        .fetch_json(|f: seed::fetch::FetchObject<db_models::users::DataNoMeta>| f)
+        .fetch_json(|f: seed::browser::service::fetch::FetchObject<db_models::users::DataNoMeta>| f)
         .await
         .unwrap_or_else(|e| e)
 }

@@ -42,7 +42,7 @@ version = "0.1.1"
 path = "../blog-login-enum"
 
 [dependencies.serde]
-version = "1.0.106"
+version = "1"
 features = ["derive"]
 [dependencies.uuid]
 version = "0.8.1"
@@ -53,7 +53,7 @@ features = ["serde", "wasmbind"]
 
 # Front end specific dependencies
 [dependencies.seed]
-version = "0.6.0"
+version = "0.7.0"
 # git = "https://github.com/David-OConnor/seed.git"
 # path = "../../seed"
 [dependencies.js-sys]

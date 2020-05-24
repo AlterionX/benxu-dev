@@ -15,7 +15,7 @@ pub use views::render;
 pub async fn load_post(post_marker: PostMarker) -> Result<GlobalM, GlobalM> {
     const POSTS_URL: &str = "/api/posts";
     let url = format!("{}/{}", POSTS_URL, post_marker);
-    use seed::fetch::Request;
+    use seed::browser::service::fetch::Request;
     Request::new(url)
         .fetch_json(move |fo| {
             GlobalM::StoreOpWithAction(GSOp::Post(post_marker, fo), |gs, res| {

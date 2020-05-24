@@ -106,7 +106,7 @@ impl Default for S {
 
 impl S {
     pub fn attempt_save(&mut self) -> Option<std::pin::Pin<Box<dyn GlobalAsyncM>>> {
-        use seed::fetch::{Method, Request};
+        use seed::browser::service::fetch::{Method, Request};
         let (url, method) = match self {
             Self::Undetermined(_) => None,
             Self::New(_) => {
@@ -170,7 +170,7 @@ impl S {
         }
     }
     pub fn attempt_publish(&mut self, user: &User) -> Option<std::pin::Pin<Box<dyn GlobalAsyncM>>> {
-        use seed::fetch::{Method, Request};
+        use seed::browser::service::fetch::{Method, Request};
         match self {
             Self::Undetermined(_) => None,
             Self::New(post) => {

@@ -3,6 +3,10 @@
 #[macro_use]
 extern crate seed;
 
+mod logging;
+#[cfg(debug_assertions)]
+pub use logging::realtime_log_change;
+
 mod locations;
 mod messages;
 mod model;
@@ -12,36 +16,10 @@ mod shared;
 use messages::M;
 use model::Model;
 use seed::prelude::*;
-
-#[cfg(not(debug_assertions))]
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-}
-
-#[cfg(debug_assertions)]
-pub mod realtime_log_change {
-    #[wasm_bindgen::prelude::wasm_bindgen]
-    pub fn set_log_level(level: usize) {
-        log::set_max_level([log::LevelFilter::Info, log::LevelFilter::Trace][level]);
-    }
-}
-#[cfg(not(debug_assertions))]
-fn setup_logger() {
-    crate::log("Is release mode. Logging disabled.");
-}
-#[cfg(debug_assertions)]
-fn setup_logger() {
-    fern::Dispatch::new()
-        .chain(fern::Output::call(console_log::log))
-        .apply()
-        .unwrap()
-}
+use tap::*;
 
 fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
     log::info!("Processing message {:?}.", msg);
-    use locations::*;
     match msg {
         M::NoOp => (),
         M::Grouped(mm) => {
@@ -51,14 +29,13 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
             }
         }
         M::ChangeMenu(is_logged_in) => shared::views::replace_nav(is_logged_in),
-        M::ChangePage(loc) => {
-            log::debug!("Running page change...");
-            loc.prep_page_for_render(&model.loc, &model.store, orders);
-            orders.skip();
-        }
         M::ChangePageAndUrl(loc) => {
             log::debug!("Running page change (programmatic)...");
             seed::push_route(loc.to_url());
+            orders.skip().send_msg(M::ChangePage(loc));
+        }
+        M::ChangePage(loc) => {
+            log::debug!("Running page change...");
             loc.prep_page_for_render(&model.loc, &model.store, orders);
             orders.skip();
         }
@@ -93,46 +70,39 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
             }
         }
         // TODO remove boilerplate with macro?
-        M::Login(msg) => {
-            log::debug!("Handling login msg...");
-            if let Location::Login(s) = &mut model.loc {
-                login::update(msg, s, &model.store, &mut orders.proxy(M::Login));
-            } else {
-                orders.skip();
-            }
-        }
-        M::Listing(msg) => {
-            log::debug!("Handling editor msg...");
-            if let Location::Listing(s) = &mut model.loc {
-                listing::update(msg, s, &model.store, &mut orders.proxy(M::Listing));
-            } else {
-                orders.skip();
-            }
-        }
-        M::Viewer(msg) => {
-            log::debug!("Handling viewer msg...");
-            if let Location::Viewer(s) = &mut model.loc {
-                viewer::update(msg, s, &model.store, &mut orders.proxy(M::Viewer));
-            } else {
-                orders.skip();
-            }
-        }
-        M::Editor(msg) => {
-            log::debug!("Handling editor msg...");
-            if let Location::Editor(s) = &mut model.loc {
-                editor::update(msg, s, &model.store, &mut orders.proxy(M::Editor));
-            } else {
-                orders.skip();
-            }
+        M::Location(msg) => {
+            log::debug!("Handling location msg...");
+            locations::update(msg, &mut model.loc, &model.store, &mut orders.proxy(M::Location));
+            log::trace!("Location msg handled.");
         }
     }
 }
+
+fn view(m: &Model) -> impl View<M> {
+    let Model { loc: l, store: s } = m;
+    log::info!("Rendering location {:?} with global state {:?}.", l, s);
+    locations::view(l, s)
+}
+
 fn routes(url: Url) -> Option<M> {
     log::info!("Attempting to route {:?}.", url);
     messages::RouteMatch::from(url).into_inner()
 }
-fn view(m: &Model) -> impl View<M> {
-    m.to_view()
+
+fn before_mount(_: Url) -> BeforeMount {
+    use wasm_bindgen::JsCast;
+    let body_tag = seed::body();
+    let tag = match body_tag.query_selector("main") {
+        Ok(Some(main_tag)) => main_tag
+            .dyn_into()
+            .tap_err(|_| log::error!("Main tag is not an HtmlElement!"))
+            .unwrap(),
+        _ => body_tag,
+    };
+
+    BeforeMount::new()
+        .mount_point(tag)
+        .mount_type(MountType::Takeover)
 }
 
 fn after_mount(_: Url, orders: &mut impl Orders<M, M>) -> AfterMount<Model> {
@@ -144,22 +114,12 @@ fn after_mount(_: Url, orders: &mut impl Orders<M, M>) -> AfterMount<Model> {
 }
 
 fn init_app() {
-    use wasm_bindgen::JsCast;
     log::info!("Starting up application.");
-    let body_tag = seed::body();
-    let tag = match body_tag.query_selector("main") {
-        Ok(Some(main_tag)) => main_tag.dyn_into().unwrap(),
-        _ => body_tag,
-    };
 
     let app = seed::App::builder(update, view)
         .sink(update)
         .routes(routes)
-        .before_mount(move |_| {
-            BeforeMount::new()
-                .mount_point(tag)
-                .mount_type(MountType::Takeover)
-        })
+        .before_mount(before_mount)
         .after_mount(after_mount);
     log::info!("App built. Now running.");
     app.build_and_start();
@@ -167,6 +127,6 @@ fn init_app() {
 
 #[wasm_bindgen(start)]
 pub fn begin_app() {
-    setup_logger();
+    logging::setup_logger();
     init_app();
 }

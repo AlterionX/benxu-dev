@@ -11,6 +11,35 @@ pub mod listing;
 pub mod login;
 pub mod viewer;
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)] 
+pub enum M {
+    Login(login::M),
+    Editor(editor::M),
+    Viewer(viewer::M),
+    Listing(listing::M),
+}
+
+pub fn update(msg: M, loc: &mut Location, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM>) {
+    match (msg, loc) {
+        (M::Login(m), Location::Login(s)) => {
+            login::update(m, s, gs, &mut orders.proxy(M::Login));
+        }
+        (M::Editor(m), Location::Editor(s)) => {
+            editor::update(m, s, gs, &mut orders.proxy(M::Editor));
+        }
+        (M::Viewer(m), Location::Viewer(s)) => {
+            viewer::update(m, s, gs, &mut orders.proxy(M::Viewer));
+        }
+        (M::Listing(m), Location::Listing(s)) => {
+            listing::update(m, s, gs, &mut orders.proxy(M::Listing));
+        }
+        _ => {
+            log::warn!("Delayed message ignored.");
+            orders.skip();
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Location {
     Login(login::S),
@@ -104,19 +133,20 @@ impl Location {
         }
     }
     pub fn post_load_msgs(&self) -> Option<GlobalM> {
-        Some(match self {
-            Location::Login(_) => GlobalM::Login(login::M::SetFocus),
-            _ => None?,
-        })
-    }
-    pub fn to_view(&self, gs: &GlobalS) -> Vec<Node<GlobalM>> {
         match self {
-            Location::Logout => vec![h1!["Logging out..."]],
-            Location::Listing(s) => listing::render(s, gs).map_msg(GlobalM::Listing),
-            Location::Login(s) => vec![login::render(s, gs).map_msg(GlobalM::Login)],
-            Location::Viewer(s) => vec![viewer::render(s, gs).map_msg(GlobalM::Viewer)],
-            Location::Editor(s) => editor::render(s, gs).map_msg(GlobalM::Editor),
-            Location::NotFound => vec![p!["Page not found!"]],
+            Location::Login(_) => Some(GlobalM::Location(M::Login(login::M::SetFocus))),
+            _ => None,
         }
     }
+}
+
+pub fn view(loc: &Location, gs: &GlobalS) -> Vec<Node<GlobalM>> {
+    match loc {
+        Location::Logout => vec![h1!["Logging out..."]],
+        Location::Listing(s) => listing::render(s, gs).map_msg(M::Listing),
+        Location::Login(s) => vec![login::render(s, gs).map_msg(M::Login)],
+        Location::Viewer(s) => vec![viewer::render(s, gs).map_msg(M::Viewer)],
+        Location::Editor(s) => editor::render(s, gs).map_msg(M::Editor),
+        Location::NotFound => vec![p!["Page not found!"]],
+    }.map_msg(GlobalM::Location)
 }

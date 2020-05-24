@@ -1,4 +1,9 @@
-use crate::{locations::*, model, requests::PostQuery, shared::Authorization};
+use crate::{
+    locations::{Location, M as LocationM, editor, listing, login, viewer},
+    model,
+    requests::PostQuery,
+    shared::Authorization,
+};
 use boolinator::Boolinator;
 use serde::{Deserialize, Serialize};
 
@@ -28,10 +33,7 @@ pub enum M {
     ),
     StoreOp(model::StoreOperations),
     // Location specific
-    Login(login::M),
-    Editor(editor::M),
-    Viewer(viewer::M),
-    Listing(listing::M),
+    Location(LocationM),
     // Empty message
     NoOp,
     // Chained message

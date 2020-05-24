@@ -3,7 +3,7 @@ use seed::prelude::*;
 use serde::{Deserialize, Serialize};
 use tap::*;
 
-use crate::{locations::*, messages::M, requests};
+use crate::{locations::*, requests};
 use db_models::models::{posts, users};
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -246,14 +246,4 @@ impl Store {
 pub struct Model {
     pub store: Store,
     pub loc: Location,
-}
-impl Model {
-    pub fn to_view(&self) -> Vec<Node<M>> {
-        log::info!(
-            "Rendering location {:?} with global state {:?}.",
-            self.loc,
-            self.store
-        );
-        self.loc.to_view(&self.store)
-    }
 }

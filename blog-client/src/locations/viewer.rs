@@ -2,12 +2,19 @@ use seed::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    locations::Location,
+    locations::{Location},
     messages::M as GlobalM,
     model::{PostMarker, Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp},
     shared,
 };
 use db_models::posts;
+
+mod messages;
+mod state;
+mod views;
+pub use messages::{M, update};
+pub use state::S;
+pub use views::render;
 
 pub async fn load_post(post_marker: PostMarker) -> Result<GlobalM, GlobalM> {
     use seed::fetch::Request;
@@ -41,43 +48,5 @@ pub fn is_restricted_from(gs: &GlobalS) -> bool {
                 .unwrap_or(true)
     } else {
         false
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum M {}
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct S {
-    pub post_marker: PostMarker,
-}
-impl From<PostMarker> for S {
-    fn from(s: PostMarker) -> Self {
-        Self { post_marker: s }
-    }
-}
-impl S {
-    pub fn to_url(&self) -> Url {
-        Url::new(vec!["blog", "posts", self.post_marker.to_string().as_str()])
-    }
-}
-
-pub fn update(m: M, _s: &mut S, _gs: &GlobalS, _orders: &mut impl Orders<M, GlobalM>) {
-    match m {
-        // M:: => {}
-    }
-}
-
-pub fn render_post(post: &posts::DataNoMeta) -> Node<M> {
-
-    div![
-        attrs! { At::Class => "post" },
-        h1![post.title],
-        md![post.body.as_str()],
-    ]
-}
-pub fn render(s: &S, gs: &GlobalS) -> Node<M> {
-    match gs.post.as_ref() {
-        Some(post) if s.post_marker.refers_to(post) => render_post(post),
-        _ => shared::views::loading(),
     }
 }

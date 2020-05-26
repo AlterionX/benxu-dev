@@ -100,8 +100,8 @@ impl Location {
             Self::Viewer(s) => s.to_url(),
             Self::Listing(s) => s.to_url(),
             Self::Editor(s) => s.to_url(),
-            Self::Logout => Url::new(vec!["blog", "logout"]),
-            Self::NotFound => Url::new(vec!["blog", "404"]),
+            Self::Logout => Url::new().set_path(vec!["blog", "logout"]),
+            Self::NotFound => Url::new().set_path(vec!["blog", "404"]),
         }
     }
 }

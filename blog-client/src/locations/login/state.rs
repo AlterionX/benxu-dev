@@ -1,18 +1,30 @@
 
 use seed::prelude::*;
 use serde::{Deserialize, Serialize};
-use tap::*;
 
 use crate::{
     locations::{Location, M as LocationM, listing, login::{M}},
     messages::{AsyncM as GlobalAsyncM, M as GlobalM},
     model::{
-        Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp, User as StoreUser,
+        StoreOperations as GSOp, User as StoreUser,
     },
-    shared::Authorization,
+    shared::{Authorization, retry},
 };
 use db_models::models::users;
 use login_enum::{Authentication, CreatePassword, Password};
+
+const CREATE_USER_MSG: retry::LogPair<'static> = retry::LogPair {
+    pre_completion: "creating user",
+    post_completion: "parsing created user",
+};
+const CREATE_CREDENTIAL_MSG: retry::LogPair<'static> = retry::LogPair {
+    pre_completion: "creating credential",
+    post_completion: "parsing created credential",
+};
+const CREATE_SESSION_MSG: retry::LogPair<'static> = retry::LogPair {
+    pre_completion: "creating session",
+    post_completion: "parsing created session",
+};
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct S {
@@ -27,23 +39,40 @@ pub struct S {
 }
 impl S {
     pub fn to_url(&self) -> Url {
-        Url::new(vec!["blog", "login"])
+        Url::new().set_path(&["blog", "login"])
     }
 }
 impl S {
     pub fn create_user_post(&self) -> impl GlobalAsyncM {
-        use seed::browser::service::fetch::{Method, Request};
+        let data = users::NewNoMeta {
+            user_name: self.username.clone(),
+            first_name: self.first_name.clone().unwrap(),
+            last_name: self.last_name.clone().unwrap(),
+            email: self.email.clone().unwrap(),
+        };
+        Self::create_user_post_async(data)
+    }
+
+    async fn create_user_post_async<'a>(data: users::NewNoMeta) -> GlobalM {
         const CREATE_USER_URL: &'static str = "/api/accounts";
-        Request::new(CREATE_USER_URL)
+        let req = Request::new(CREATE_USER_URL)
             .method(Method::Post)
-            .send_json(&users::NewNoMeta {
-                user_name: self.username.clone(),
-                first_name: self.first_name.clone().unwrap(),
-                last_name: self.last_name.clone().unwrap(),
-                email: self.email.clone().unwrap(),
-            })
-            .fetch_json(|fo| {
-                GlobalM::StoreOpWithAction(GSOp::User(fo), |_gs, res| {
+            .json(&data);
+        let req = if let Ok(req) = req {
+            req
+        } else {
+            return GlobalM::NoOp;
+        };
+        let res = retry::fetch_process_with_retry(
+            req,
+            &CREATE_CREDENTIAL_MSG,
+            None,
+            |res| res.json(),
+        ).await;
+        match res {
+            Err(_) => GlobalM::NoOp,
+            Ok(obj) =>
+                GlobalM::StoreOpWithAction(GSOp::User(obj), |_gs, res| {
                     use crate::model::StoreOpResult::*;
                     match res {
                         Success => {
@@ -60,53 +89,83 @@ impl S {
                         }
                     }
                 })
-            })
+        }
     }
+
     pub fn create_credential_post(&self, u: &StoreUser) -> impl GlobalAsyncM {
-        use crate::locations::*;
-        use seed::browser::service::fetch::{Method, Request};
+        let pw = CreatePassword {
+            user_id: u.id,
+            password: self.password.clone(),
+        };
+        Self::create_credential_post_async(pw)
+    }
+
+    async fn create_credential_post_async(pw: CreatePassword) -> GlobalM {
         const CREDENTIAL_URL: &str = "/api/credentials/pws";
-        Request::new(CREDENTIAL_URL)
+        let req = Request::new(CREDENTIAL_URL)
             .method(Method::Post)
-            .send_json(&CreatePassword {
-                user_id: u.id,
-                password: self.password.clone(),
-            })
-            .fetch(|fo| {
-                if fo.response().is_ok() {
-                    GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default()))
-                } else {
-                    GlobalM::NoOp
+            .json(&pw);
+        let req = if let Ok(req) = req {
+            req
+        } else {
+            return GlobalM::NoOp;
+        };
+        let res = retry::fetch_process_with_retry(
+            req,
+            &CREATE_USER_MSG,
+            None,
+            |res| async { Ok(()) },
+        ).await;
+        match res {
+            Err(_) => GlobalM::NoOp,
+            Ok(_) => GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default())),
+        }
+    }
+
+    pub fn create_session_post(&self) -> impl GlobalAsyncM {
+        let auth = Authentication::Password(Password {
+            user_name: self.username.clone(),
+            password: self.password.clone(),
+        });
+        Self::create_session_post_async(auth)
+    }
+
+    async fn create_session_post_async(auth: Authentication) -> GlobalM {
+        use crate::locations::*;
+        const LOGIN_URL: &str = "/api/login";
+        let req = Request::new(LOGIN_URL)
+            .method(Method::Post)
+            .json(&auth);
+        let req = if let Ok(req) = req {
+            req
+        } else {
+            return GlobalM::NoOp;
+        };
+        let res = retry::fetch_process_with_retry(
+            req,
+            &CREATE_SESSION_MSG,
+            None,
+            |res| res.json(),
+        ).await;
+        match res {
+            // TODO Display error message.
+            Err(_) => GlobalM::NoOp,
+            Ok(obj) => GlobalM::StoreOpWithAction(GSOp::User(obj), |_gs, res| {
+                use crate::model::StoreOpResult::*;
+                match res {
+                    Success => {
+                        log::trace!("Logged in. Redirect to homepage.");
+                        Some(GlobalM::Grouped(vec![
+                            GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default())),
+                            GlobalM::ChangeMenu(Authorization::LoggedIn),
+                        ]))
+                    }
+                    Failure(e) => {
+                        log::trace!("Attempt to create session failed with {:?} error.", e);
+                        None
+                    }
                 }
             })
-    }
-    pub fn create_session_post(&self) -> impl GlobalAsyncM {
-        use crate::locations::*;
-        use seed::browser::service::fetch::{Method, Request};
-        const LOGIN_URL: &str = "/api/login";
-        Request::new(LOGIN_URL)
-            .method(Method::Post)
-            .send_json(&Authentication::Password(Password {
-                user_name: self.username.clone(),
-                password: self.password.clone(),
-            }))
-            .fetch_json(move |fo| {
-                GlobalM::StoreOpWithAction(GSOp::User(fo), |_gs, res| {
-                    use crate::model::StoreOpResult::*;
-                    match res {
-                        Success => {
-                            log::trace!("Logged in. Redirect to homepage.");
-                            Some(GlobalM::Grouped(vec![
-                                GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default())),
-                                GlobalM::ChangeMenu(Authorization::LoggedIn),
-                            ]))
-                        }
-                        Failure(e) => {
-                            log::trace!("Attempt to create session failed with {:?} error.", e);
-                            None
-                        }
-                    }
-                })
-            })
+        }
     }
 }

@@ -1,13 +1,9 @@
-use seed::prelude::*;
-use serde::{Deserialize, Serialize};
-
 use crate::{
     locations::{Location},
     messages::M as GlobalM,
     model::{PostMarker, Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp},
-    shared,
+    shared::retry,
 };
-use db_models::posts;
 
 mod messages;
 mod state;
@@ -16,13 +12,24 @@ pub use messages::{M, update};
 pub use state::S;
 pub use views::render;
 
-pub async fn load_post(post_marker: PostMarker) -> Result<GlobalM, GlobalM> {
-    use seed::browser::service::fetch::Request;
+const POST_LOAD_MSGS: retry::LogPair<'static> = retry::LogPair {
+    pre_completion: "loading post",
+    post_completion: "parsing loaded post",
+};
+
+pub async fn load_post(post_marker: PostMarker) -> GlobalM {
     const POSTS_URL: &str = "/api/posts";
     let url = format!("{}/{}", POSTS_URL, post_marker);
-    Request::new(url)
-        .fetch_json(move |fo| GlobalM::StoreOpWithAction(GSOp::Post(post_marker, fo), after_fetch))
-        .await
+    let fo = retry::fetch_process_with_retry(
+        url.into(),
+        &POST_LOAD_MSGS,
+        None,
+        |res| res.json(),
+    ).await;
+    match fo {
+        Err(_) => GlobalM::NoOp,
+        Ok(obj) => GlobalM::StoreOpWithAction(GSOp::Post(post_marker, obj), after_fetch),
+    }
 }
 fn after_fetch(gs: *const GlobalS, res: GSOpResult) -> Option<GlobalM> {
     use GSOpResult::*;

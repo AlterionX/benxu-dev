@@ -19,6 +19,8 @@ crate-type = ["cdylib"]
 version = "2.4.0"
 [dependencies.tap]
 version = "0.4.0"
+[dependencies.ordinal]
+version = "0.2"
 
 [dependencies.percent-encoding]
 version = "2.1.0"

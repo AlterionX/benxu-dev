@@ -4,15 +4,10 @@ use serde::{Deserialize, Serialize};
 use tap::*;
 
 use crate::{
-    locations::{Location, M as LocationM, listing, login::{S}},
-    messages::{AsyncM as GlobalAsyncM, M as GlobalM},
-    model::{
-        Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp, User as StoreUser,
-    },
-    shared::Authorization,
+    locations::login::S,
+    messages::M as GlobalM,
+    model::Store as GlobalS,
 };
-use db_models::models::users;
-use login_enum::{Authentication, CreatePassword, Password};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum M {
@@ -65,7 +60,6 @@ pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM
         }
         M::SetFocus => {
             let _ = (|| {
-                use wasm_bindgen::JsCast;
                 log::trace!("Setting form focus...");
                 let el: web_sys::HtmlElement = seed::body()
                     .query_selector("input[name=username]")

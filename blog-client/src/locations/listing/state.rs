@@ -17,11 +17,11 @@ impl S {
     }
 
     pub fn url_root() -> Url {
-        Url::new(vec!["blog"])
+        Url::new().set_path(vec!["blog"])
     }
 
     pub fn generate_url(q: &PostQuery) -> Url {
-        Self::url_root().search(format!("{}", q).as_str())
+        Self::url_root().set_search(q)
     }
 
     pub fn generate_next_url(&self) -> Option<Url> {

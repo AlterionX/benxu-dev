@@ -1,7 +1,5 @@
-use seed::browser::service::fetch::FetchObject;
 use seed::prelude::*;
 use serde::{Deserialize, Serialize};
-use tap::*;
 
 use crate::{locations::*, requests};
 use db_models::models::{posts, users};
@@ -86,12 +84,12 @@ impl std::fmt::Display for PostMarker {
 
 #[derive(Debug, Clone)]
 pub enum StoreOperations {
-    Post(PostMarker, FetchObject<posts::DataNoMeta>),
-    PostWithoutMarker(FetchObject<posts::DataNoMeta>),
+    Post(PostMarker, posts::DataNoMeta),
+    PostWithoutMarker(posts::DataNoMeta),
     PostRaw(posts::DataNoMeta),
-    PostListing(requests::PostQuery, FetchObject<Vec<posts::BasicData>>),
-    User(FetchObject<users::DataNoMeta>),
-    RemoveUser(FetchObject<String>),
+    PostListing(requests::PostQuery, Vec<posts::BasicData>),
+    User(users::DataNoMeta),
+    RemoveUser(String),
 }
 impl PartialEq for StoreOperations {
     fn eq(&self, rhs: &StoreOperations) -> bool {
@@ -123,21 +121,6 @@ pub enum FailReason {
     Req,
     Data { is_dom_err: bool },
     Status(u16, String),
-}
-impl<T> From<seed::browser::service::fetch::FailReason<T>> for FailReason {
-    fn from(e: seed::browser::service::fetch::FailReason<T>) -> Self {
-        match e {
-            seed::browser::service::fetch::FailReason::RequestError(_, _) => Self::Req,
-            seed::browser::service::fetch::FailReason::Status(s, _) => Self::Status(s.code, s.text),
-            seed::browser::service::fetch::FailReason::DataError(e, _) => Self::Data {
-                is_dom_err: if let seed::browser::service::fetch::DataError::DomException(_) = e {
-                    true
-                } else {
-                    false
-                },
-            },
-        }
-    }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum StoreOpResult {
@@ -183,9 +166,7 @@ impl Store {
             PostListing(_q, fetched) => {
                 log::trace!("Post listing store operation triggered.");
                 // TODO use query data to implement cache.
-                let fetched = fetched.response()?;
                 let mut available_posts: Vec<_> = fetched
-                    .data
                     .into_iter()
                     .filter(|post| post.deleted_at.is_none())
                     .collect();
@@ -198,25 +179,15 @@ impl Store {
             }
             RemoveUser(fo) => {
                 log::trace!("User clear operation triggered.");
-                fo.response().tap_err(|e| {
-                    log::warn!("Error {:?} occurred! TODO: show an error to the user.", e)
-                })?;
                 self.user = None;
             }
             User(fo) => {
                 log::trace!("User store operation triggered.");
-                let fetched = fo.response().tap_err(|e| {
-                    log::warn!("Error {:?} occurred! TODO: show an error to the user.", e)
-                })?;
-                let unparsed = fetched.data;
-                let parsed = unparsed.into();
+                let parsed = fo.into();
                 self.user.replace(parsed);
             }
             Post(_, fo) | PostWithoutMarker(fo) => {
-                let fetched = fo.response().tap_err(|e| {
-                    log::warn!("Error {:?} occurred! TODO: show an error to the user.", e)
-                })?;
-                self.post.replace(fetched.data);
+                self.post.replace(fo);
             }
             PostRaw(raw_post) => {
                 self.post.replace(raw_post);

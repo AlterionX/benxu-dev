@@ -1,13 +1,7 @@
-use seed::prelude::*;
+use seed::browser::url::Url;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    locations::{Location, viewer::M},
-    messages::M as GlobalM,
-    model::{PostMarker, Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp},
-    shared,
-};
-use db_models::posts;
+use crate::model::PostMarker;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct S {
@@ -20,6 +14,6 @@ impl From<PostMarker> for S {
 }
 impl S {
     pub fn to_url(&self) -> Url {
-        Url::new(vec!["blog", "posts", self.post_marker.to_string().as_str()])
+        Url::new().set_path(&["blog", "posts", self.post_marker.to_string().as_str()])
     }
 }

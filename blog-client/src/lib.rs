@@ -78,7 +78,7 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
     }
 }
 
-fn view(m: &Model) -> impl View<M> {
+fn view(m: &Model) -> impl IntoNodes<M> {
     let Model { loc: l, store: s } = m;
     log::info!("Rendering location {:?} with global state {:?}.", l, s);
     locations::view(l, s)
@@ -90,7 +90,6 @@ fn routes(url: Url) -> Option<M> {
 }
 
 fn before_mount(_: Url) -> BeforeMount {
-    use wasm_bindgen::JsCast;
     let body_tag = seed::body();
     let tag = match body_tag.query_selector("main") {
         Ok(Some(main_tag)) => main_tag
@@ -107,8 +106,8 @@ fn before_mount(_: Url) -> BeforeMount {
 
 fn after_mount(_: Url, orders: &mut impl Orders<M, M>) -> AfterMount<Model> {
     orders.perform_cmd(async {
-        let user = locations::login::find_current_user().await;
-        Ok(M::StoreOp(model::StoreOperations::User(user)))
+        let user = locations::login::find_current_user().await?;
+        Some(M::StoreOp(model::StoreOperations::User(user)))
     });
     AfterMount::new(Model::default()).url_handling(UrlHandling::PassToRoutes)
 }

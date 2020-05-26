@@ -2,12 +2,10 @@ use seed::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    locations::{Location, viewer::S},
+    locations::viewer::S,
     messages::M as GlobalM,
-    model::{PostMarker, Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp},
-    shared,
+    model::Store as GlobalS,
 };
-use db_models::posts;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum M {}

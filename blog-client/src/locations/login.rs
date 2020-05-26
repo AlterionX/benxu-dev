@@ -1,17 +1,12 @@
-use seed::prelude::*;
-use serde::{Deserialize, Serialize};
-use tap::*;
-
 use crate::{
     locations::*,
-    messages::{AsyncM as GlobalAsyncM, M as GlobalM},
+    messages::{M as GlobalM},
     model::{
-        Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp, User as StoreUser,
+        Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp,
     },
-    shared::Authorization,
+    shared::{Authorization, retry},
 };
 use db_models::models::users;
-use login_enum::{Authentication, CreatePassword, Password};
 
 mod messages;
 mod state;
@@ -20,13 +15,29 @@ pub use messages::{M, update};
 pub use state::S;
 pub use views::render;
 
-pub async fn logout_trigger() -> Result<GlobalM, GlobalM> {
-    use seed::browser::service::fetch::{Method, Request};
+const LOGOUT_MSG: retry::LogPair<'static> = retry::LogPair {
+    pre_completion: "logging out",
+    post_completion: "reading log out response",
+};
+
+const FIND_ME_MSG: retry::LogPair<'static> = retry::LogPair {
+    pre_completion: "discovering myself",
+    post_completion: "reading what was discovered",
+};
+
+pub async fn logout_trigger() -> GlobalM {
     const LOGOUT_URL: &str = "/api/login";
-    Request::new(LOGOUT_URL)
-        .method(Method::Delete)
-        .fetch_string(|fo| GlobalM::StoreOpWithAction(GSOp::RemoveUser(fo), logout_post_fetch))
-        .await
+    let req = Request::new(LOGOUT_URL).method(Method::Delete);
+    let res = retry::fetch_process_with_retry(
+        LOGOUT_URL.into(),
+        &LOGOUT_MSG,
+        None,
+        |res| res.text(),
+    ).await;
+    match res {
+        Err(_) => GlobalM::NoOp,
+        Ok(obj) => GlobalM::StoreOpWithAction(GSOp::RemoveUser(obj), logout_post_fetch),
+    }
 }
 fn logout_post_fetch(_gs: *const GlobalS, res: GSOpResult) -> Option<GlobalM> {
     use GSOpResult::*;
@@ -39,13 +50,16 @@ fn logout_post_fetch(_gs: *const GlobalS, res: GSOpResult) -> Option<GlobalM> {
     }
 }
 
-pub async fn find_current_user() -> seed::browser::service::fetch::FetchObject<users::DataNoMeta> {
+pub async fn find_current_user() -> Option<users::DataNoMeta> {
     const SELF_URL: &str = "/api/accounts/me";
     log::info!("Detecting if already logged in...");
-    seed::Request::new(SELF_URL)
-        .fetch_json(|f: seed::browser::service::fetch::FetchObject<db_models::users::DataNoMeta>| f)
-        .await
-        .unwrap_or_else(|e| e)
+    let res = retry::fetch_process_with_retry(
+        SELF_URL.into(),
+        &FIND_ME_MSG,
+        Some(1),
+        |res| res.json(),
+    ).await;
+    res.ok()
 }
 
 

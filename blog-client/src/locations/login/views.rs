@@ -1,18 +1,10 @@
 
 use seed::prelude::*;
-use serde::{Deserialize, Serialize};
-use tap::*;
 
 use crate::{
-    locations::{*, login::{M, S}},
-    messages::{AsyncM as GlobalAsyncM, M as GlobalM},
-    model::{
-        Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp, User as StoreUser,
-    },
-    shared::Authorization,
+    locations::login::{M, S},
+    model::Store as GlobalS,
 };
-use db_models::models::users;
-use login_enum::{Authentication, CreatePassword, Password};
 
 pub fn render(s: &S, _gs: &GlobalS) -> Node<M> {
     div![

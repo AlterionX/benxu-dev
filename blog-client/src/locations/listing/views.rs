@@ -49,7 +49,7 @@ fn render_post_list(empty_msg: &str, posts: &[posts::BasicData]) -> Node<M> {
         ]
     }
 }
-pub fn render_post_pagination_buttons(s: &S) {
+pub fn render_post_pagination_buttons(s: &S) -> Node<M> {
     // TODO
     div![
         attrs! {

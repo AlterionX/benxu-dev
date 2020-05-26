@@ -24,7 +24,7 @@ fn render_post(p: &posts::BasicData, author: Option<&Name>) -> Node<M> {
                     };
                     At::Class => "post-title-link";
                 },
-                p.title,
+                p.title.as_str(),
             ],
         ],
         p![

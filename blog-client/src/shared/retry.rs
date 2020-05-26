@@ -1,8 +1,9 @@
 use seed::browser::fetch::{fetch, FetchError, Response, Request, Result as FetchResult};
+use tap::*;
 
 pub struct LogPair<'a> {
-    pre_completion: &'a str,
-    post_completion: &'a str,
+    pub pre_completion: &'a str,
+    pub post_completion: &'a str,
 }
 
 pub enum AllowRetry {
@@ -47,9 +48,9 @@ async fn fetch_conditional<'a>(req: Request<'a>, logging_msg: &LogPair<'a>) -> R
 
 const RETRY_LIM: usize = 10;
 
-struct RetryResult {
-    retries: usize,
-    response: Response,
+pub struct RetryResult {
+    pub retries: usize,
+    pub response: Response,
 }
 
 pub async fn fetch_with_retry<'a>(req: Request<'a>, logging_msg: &LogPair<'a>, retry_lim: Option<usize>) -> Result<RetryResult, ()> {
@@ -109,7 +110,7 @@ pub async fn fetch_with_retry<'a>(req: Request<'a>, logging_msg: &LogPair<'a>, r
     Err(())
 }
 
-pub async fn fetch_process_with_retry<'a, T, FutT, F>(
+pub async fn fetch_process_with_retry<'a, 'b, T, FutT, F>(
     req: Request<'a>,
     logging_msg: &LogPair<'a>,
     retry_lim: Option<usize>,
@@ -133,9 +134,8 @@ pub async fn fetch_process_with_retry<'a, T, FutT, F>(
         } = fetch_with_retry(req.clone(), logging_msg, Some(retry_lim - retry_cnt)).await?;
         retry_cnt += retries + 1; // An extra one for the count, since the successful request didn't count.
 
-        // TODO: Consider future additions to the retries here.
-        let obj = match process_res(&res).await {
-            Ok(obj) => return Ok(obj),
+        let ret = match process_res(&res).await {
+            Ok(obj) => Some(Ok(obj)),
             Err(e) => {
                 match e {
                     FetchError::SerdeError(e) => {
@@ -151,10 +151,115 @@ pub async fn fetch_process_with_retry<'a, T, FutT, F>(
                         log::error!("Encountered network error {:?} while {}. Should be impossible. Aborting.", e, logging_msg.post_completion);
                     },
                     FetchError::RequestError(e) => {
-                        log::error!("Failed to construct request for {}. Should be impossible. Aborting.", logging_msg.post_completion);
+                        log::error!("Failed to construct request for {} due error {:?}. Should be impossible. Aborting.", logging_msg.post_completion, e);
                     },
                     FetchError::StatusError(e) => {
                         // TODO Further consider what error, since we might want to retry some HTTP error codes.
+                        log::error!("Server returned status error {:?} while {}. Should be impossible. Aborting.", e, logging_msg.post_completion)
+                    },
+                }
+                Some(Err(()))
+            }
+        };
+        if let Some(ret) = ret {
+            return ret;
+        }
+    };
+    log::error!("Hit retry limit or abort while {}, force aborting.", logging_msg.pre_completion);
+    Err(())
+}
+
+#[deprecated = "Should use `fetch_process_with_rety` once it's bug free."]
+pub async fn fetch_json_with_retry<'a, T: 'static + serde::de::DeserializeOwned>(
+    req: Request<'a>,
+    logging_msg: &LogPair<'a>,
+    retry_lim: Option<usize>,
+) -> Result<T, ()> {
+    let retry_lim = retry_lim.unwrap_or(RETRY_LIM);
+    let mut retry_cnt = 0;
+    while retry_cnt < retry_lim {
+        if retry_cnt != 0 {
+            let next_retry = ordinal::Ordinal(retry_cnt + 1);
+            log::debug!("Performing {} retry of {}.", next_retry, logging_msg.pre_completion);
+        }
+
+        let RetryResult {
+            response: res,
+            retries,
+        } = fetch_with_retry(req.clone(), logging_msg, Some(retry_lim - retry_cnt)).await?;
+        retry_cnt += retries + 1; // An extra one for the count, since the successful request didn't count.
+
+        match res.json().await {
+            Ok(obj) => return Ok(obj),
+            Err(e) => {
+                match e {
+                    FetchError::SerdeError(e) => {
+                        log::error!("Encountered serialization error {:?} while {}. Aborting.", e, logging_msg.post_completion);
+                    },
+                    FetchError::DomException(e) => {
+                        log::error!("Encountered DomException {:?} while {}. Should be impossible. Aborting.", e, logging_msg.post_completion);
+                    },
+                    FetchError::PromiseError(e) => {
+                        log::error!("Encountered PromiseError {:?} while {}. Should be impossible. Aborting.", e, logging_msg.post_completion);
+                    },
+                    FetchError::NetworkError(e) => {
+                        log::error!("Encountered network error {:?} while {}. Should be impossible. Aborting.", e, logging_msg.post_completion);
+                    },
+                    FetchError::RequestError(_) => {
+                        log::error!("Failed to construct request for {}. Should be impossible. Aborting.", logging_msg.post_completion);
+                    },
+                    FetchError::StatusError(e) => {
+                        log::error!("Server returned status error {:?} while {}. Should be impossible. Aborting.", e, logging_msg.post_completion)
+                    },
+                }
+                break;
+            }
+        };
+    }
+    log::error!("Hit retry limit or abort while {}, force aborting.", logging_msg.pre_completion);
+    Err(())
+}
+
+#[deprecated = "Should use `fetch_process_with_rety` once it's bug free."]
+pub async fn fetch_text_with_retry<'a>(
+    req: Request<'a>,
+    logging_msg: &LogPair<'a>,
+    retry_lim: Option<usize>,
+) -> Result<String, ()> {
+    let retry_lim = retry_lim.unwrap_or(RETRY_LIM);
+    let mut retry_cnt = 0;
+    while retry_cnt < retry_lim {
+        if retry_cnt != 0 {
+            let next_retry = ordinal::Ordinal(retry_cnt + 1);
+            log::debug!("Performing {} retry of {}.", next_retry, logging_msg.pre_completion);
+        }
+
+        let RetryResult {
+            response: res,
+            retries,
+        } = fetch_with_retry(req.clone(), logging_msg, Some(retry_lim - retry_cnt)).await?;
+        retry_cnt += retries + 1; // An extra one for the count, since the successful request didn't count.
+
+        match res.text().await {
+            Ok(obj) => return Ok(obj),
+            Err(e) => {
+                match e {
+                    FetchError::SerdeError(e) => {
+                        log::error!("Encountered serialization error {:?} while {}. Aborting.", e, logging_msg.post_completion);
+                    },
+                    FetchError::DomException(e) => {
+                        log::error!("Encountered DomException {:?} while {}. Should be impossible. Aborting.", e, logging_msg.post_completion);
+                    },
+                    FetchError::PromiseError(e) => {
+                        log::error!("Encountered PromiseError {:?} while {}. Should be impossible. Aborting.", e, logging_msg.post_completion);
+                    },
+                    FetchError::NetworkError(e) => {
+                        log::error!("Encountered network error {:?} while {}. Should be impossible. Aborting.", e, logging_msg.post_completion);
+                    },
+                    FetchError::RequestError(_) => {
+                        log::error!("Failed to construct request for {}. Should be impossible. Aborting.", logging_msg.post_completion);
+                    },
+                    FetchError::StatusError(e) => {
                         log::error!("Server returned status error {:?} while {}. Should be impossible. Aborting.", e, logging_msg.post_completion)
                     },
                 }

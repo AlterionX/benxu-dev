@@ -1,11 +1,12 @@
 use seed::prelude::*;
 use serde::{Deserialize, Serialize};
+use tap::*;
 
 use crate::{
     locations::{editor::M, Location, M as LocationM},
     messages::{AsyncM as GlobalAsyncM, M as GlobalM},
     model::{
-        PostMarker, Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp, User,
+        PostMarker, Store as GlobalS, StoreOperations as GSOp, User,
     },
     shared::retry,
 };
@@ -121,31 +122,17 @@ impl S {
         } else {
             return GlobalM::NoOp;
         };
-        let res = retry::fetch_process_with_retry(
+        let res = retry::fetch_json_with_retry(
             req,
             &NEW_SAVE_MSG,
             None,
-            |res| res.json(),
         ).await;
         match res {
             Err(_) => GlobalM::NoOp,
-            Ok(obj) => GlobalM::StoreOpWithAction(
+            Ok(obj) => GlobalM::StoreOpWithMessage(
                 GSOp::PostWithoutMarker(obj),
-                |_gs, res| {
-                    use crate::model::StoreOpResult::*;
-                    match res {
-                        Success => {
-                            log::debug!(
-                                "Post is saved! Modifying state to be `Old` instead of `New`"
-                            );
-                            Some(GlobalM::Location(LocationM::Editor(M::SyncPost)))
-                        }
-                        Failure(e) => {
-                            log::error!("Post save failed due to {:?}.", e);
-                            None
-                        }
-                    }
-            }),
+                || GlobalM::Location(LocationM::Editor(M::SyncPost))
+            ),
         }
     }
     async fn attempt_save_async_old(mut post: posts::DataNoMeta, changes: posts::Changed) -> GlobalM {
@@ -164,15 +151,14 @@ impl S {
         } else {
             return GlobalM::NoOp;
         };
-        let res = retry::fetch_process_with_retry(
+        let res = retry::fetch_text_with_retry(
             req,
             &SAVE_OLD_MSG,
             None,
-            |res| res.text(),
         ).await;
         match res {
             Err(_) => GlobalM::NoOp,
-            Ok(obj) => {
+            Ok(_) => {
                 if let Some(title) = changes.title {
                     post.title = title;
                 }
@@ -208,25 +194,20 @@ impl S {
         } else {
             return GlobalM::NoOp;
         };
-        let res = retry::fetch_process_with_retry(
+        let res = retry::fetch_json_with_retry(
             req,
             &PUB_NEW_MSG,
             None,
-            |res| res.json(),
         ).await;
         match res {
             Err(_) => GlobalM::NoOp,
-            Ok(obj) => GlobalM::StoreOpWithAction(GSOp::PostWithoutMarker(obj), |gs: *const GlobalS, res| {
-                let gs = unsafe { gs.as_ref() }?;
-                if let (GSOpResult::Success, Some(posts::DataNoMeta { id: post_id, .. })) =
-                    (res, &gs.post)
-                {
-                    Some(GlobalM::ChangePageAndUrl(Location::Viewer(
-                        PostMarker::Uuid(*post_id).into(),
-                    )))
-                } else {
-                    None
-                }
+            Ok(obj) => GlobalM::StoreOpWithAction(GSOp::PostWithoutMarker(obj), |gs: *const GlobalS| {
+                let gs = unsafe { gs.as_ref() }.expect("The global state to always exist.");
+                gs.post.as_ref().map(|post| GlobalM::ChangePageAndUrl(Location::Viewer(
+                    PostMarker::Uuid(post.id).into(),
+                )))
+                .tap_none(|| log::error!("Post loaded but was not saved."))
+                .unwrap_or(GlobalM::NoOp)
             })
         }
     }
@@ -248,11 +229,10 @@ impl S {
             req
         };
 
-        let res = retry::fetch_process_with_retry(
+        let res = retry::fetch_text_with_retry(
             req, 
             &PUB_OLD_MSG,
             None,
-            |res| res.text(),
         ).await;
         match res {
             Ok(_) => GlobalM::ChangePageAndUrl(Location::Viewer(

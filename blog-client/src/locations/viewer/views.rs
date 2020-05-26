@@ -16,7 +16,7 @@ pub fn render(s: &S, gs: &GlobalS) -> Node<M> {
 fn render_post(post: &posts::DataNoMeta) -> Node<M> {
     div![
         attrs! { At::Class => "post" },
-        h1![post.title],
+        h1![post.title.as_str()],
         md![post.body.as_str()],
     ]
 }

@@ -1,7 +1,9 @@
+use tap::*;
+
 use crate::{
     locations::{Location},
     messages::M as GlobalM,
-    model::{PostMarker, Store as GlobalS, StoreOpResult as GSOpResult, StoreOperations as GSOp},
+    model::{PostMarker, Store as GlobalS, StoreOperations as GSOp},
     shared::retry,
 };
 
@@ -20,27 +22,26 @@ const POST_LOAD_MSGS: retry::LogPair<'static> = retry::LogPair {
 pub async fn load_post(post_marker: PostMarker) -> GlobalM {
     const POSTS_URL: &str = "/api/posts";
     let url = format!("{}/{}", POSTS_URL, post_marker);
-    let fo = retry::fetch_process_with_retry(
+    let fo = retry::fetch_json_with_retry(
         url.into(),
         &POST_LOAD_MSGS,
         None,
-        |res| res.json(),
     ).await;
     match fo {
         Err(_) => GlobalM::NoOp,
-        Ok(obj) => GlobalM::StoreOpWithAction(GSOp::Post(post_marker, obj), after_fetch),
+        Ok(obj) => GlobalM::StoreOpWithAction(GSOp::Post(post_marker, obj), |gs| {
+            let gs = unsafe { gs.as_ref() }.expect("The global state to always exist.");
+            gs.post
+                .as_ref()
+                .map(|post| GlobalM::RenderPage(Location::Viewer(S {
+                    post_marker: PostMarker::Uuid(post.id),
+                })))
+                .tap_none(|| log::error!("Post loaded but was not saved to store."))
+                .unwrap_or(GlobalM::NoOp)
+        }),
     }
 }
-fn after_fetch(gs: *const GlobalS, res: GSOpResult) -> Option<GlobalM> {
-    use GSOpResult::*;
-    let gs = unsafe { gs.as_ref() }?;
-    match (res, &gs.post) {
-        (Success, Some(post)) => Some(GlobalM::RenderPage(Location::Viewer(S {
-            post_marker: PostMarker::Uuid(post.id),
-        }))),
-        _ => None,
-    }
-}
+
 pub fn is_restricted_from(gs: &GlobalS) -> bool {
     if let GlobalS {
         post: Some(post),

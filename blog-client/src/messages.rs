@@ -25,13 +25,14 @@ pub enum M {
     ChangePage(Location),
     ChangePageAndUrl(Location),
     RenderPage(Location),
-    // Globabl state
+    // Global state
     StoreOpWithAction(
         model::StoreOperations,
         // Uses a pointer to get around the lack of default impls for references in functions
         // TODO fix when this gets resolved
-        fn(*const model::Store, model::StoreOpResult) -> Option<M>,
+        fn(*const model::Store) -> M,
     ),
+    StoreOpWithMessage(model::StoreOperations, fn() -> M),
     StoreOp(model::StoreOperations),
     // Location specific
     Location(LocationM),
@@ -57,7 +58,7 @@ impl RouteMatch {
     pub fn into_inner(self) -> Option<M> {
         self.0
     }
-    fn msg_from_url(mut url: seed::Url) -> Option<M> {
+    fn msg_from_url(url: seed::Url) -> Option<M> {
         log::info!("Routing url {:?}.", url);
         let path = url.path();
         // Verify that the first path component is "blog".

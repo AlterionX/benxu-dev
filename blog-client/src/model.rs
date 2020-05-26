@@ -116,41 +116,6 @@ impl std::hash::Hash for StoreOperations {
         }
     }
 }
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum FailReason {
-    Req,
-    Data { is_dom_err: bool },
-    Status(u16, String),
-}
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum StoreOpResult {
-    Success,
-    Failure(FailReason),
-}
-impl From<Result<(), FailReason>> for StoreOpResult {
-    fn from(res: Result<(), FailReason>) -> Self {
-        match res {
-            Ok(_) => Self::Success,
-            Err(e) => Self::Failure(e),
-        }
-    }
-}
-impl std::ops::Try for StoreOpResult {
-    type Ok = ();
-    type Error = FailReason;
-    fn into_result(self) -> Result<Self::Ok, Self::Error> {
-        match self {
-            Self::Success => Ok(()),
-            Self::Failure(e) => Err(e),
-        }
-    }
-    fn from_error(v: Self::Error) -> Self {
-        Self::Failure(v)
-    }
-    fn from_ok(_: Self::Ok) -> Self {
-        Self::Success
-    }
-}
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Store {
@@ -160,7 +125,7 @@ pub struct Store {
     pub user: Option<User>,
 }
 impl Store {
-    pub fn exec(&mut self, op: StoreOperations) -> StoreOpResult {
+    pub fn exec(&mut self, op: StoreOperations) {
         use StoreOperations::*;
         match op {
             PostListing(_q, fetched) => {
@@ -177,7 +142,7 @@ impl Store {
                 self.published_posts.replace(published);
                 self.unpublished_posts.replace(unpublished);
             }
-            RemoveUser(fo) => {
+            RemoveUser(_) => {
                 log::trace!("User clear operation triggered.");
                 self.user = None;
             }
@@ -193,7 +158,6 @@ impl Store {
                 self.post.replace(raw_post);
             }
         }
-        StoreOpResult::Success
     }
     pub fn has_cached_post(&self, id: &PostMarker) -> bool {
         use PostMarker::*;

@@ -25,16 +25,28 @@ impl S {
     }
 
     pub fn generate_next_url(&self) -> Option<Url> {
-        self.query
-            .unwrap_or(Default::default())
+        let q = self.query
+            .as_ref()
+            .ok_or_else(|| PostQuery::default());
+        let q_ref = match &q {
+            Err(e) => e,
+            Ok(q) => *q,
+        };
+        q_ref
             .generate_next()
             .as_ref()
             .map(Self::generate_url)
     }
 
     pub fn generate_prev_url(&self) -> Option<Url> {
-        self.query
-            .unwrap_or(Default::default())
+        let q = self.query
+            .as_ref()
+            .ok_or_else(|| PostQuery::default());
+        let q_ref = match &q {
+            Err(e) => e,
+            Ok(q) => *q,
+        };
+        q_ref
             .generate_prev()
             .as_ref()
             .map(Self::generate_url)

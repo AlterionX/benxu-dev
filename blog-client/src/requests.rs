@@ -36,14 +36,6 @@ impl Default for PostSort {
         Self::Date(SortOrdering::Descending)
     }
 }
-impl PostSort {
-    fn get_ordering(&self) -> &SortOrdering {
-        match self {
-            Self::AlphabeticalTitle(o) => o,
-            Self::Date(o) => o,
-        }
-    }
-}
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PostPagination {
     Ten,
@@ -132,10 +124,7 @@ impl PostRange {
                 lim: lim.clone(),
                 offset: offset + lim,
             }),
-            PostRange::ByDate {
-                begin,
-                end,
-            } => None
+            PostRange::ByDate { .. } => None
         }
     }
     fn generate_prev(&self) -> Option<PostRange> {
@@ -166,10 +155,7 @@ impl PostRange {
                     },
                 })
             },
-            PostRange::ByDate {
-                begin,
-                end,
-            } => None
+            PostRange::ByDate { .. } => None
         }
     }
 }
@@ -255,27 +241,21 @@ impl std::convert::TryFrom<&seed::browser::url::UrlSearch> for PostQuery {
                 _ => return Err(format!("Unknown search parameter {:?}.", k)),
             }
         }
-        let opt_sort_ordering = if let (Some(ord), Some(ord_criteria)) = (ord, ord_criteria) {
-            match ord_criteria {
-                "date" => Some(PostSort::Date(ord)),
-                "title" => Some(PostSort::AlphabeticalTitle(ord)),
-                _ => return Err(format!("Unknown `ord_criteria` field {:?} in post query.", ord_criteria)),
-            }
-        } else if ord.is_some() || ord_criteria.is_some() {
+        let opt_sort_ordering = if ord.is_some() || ord_criteria.is_some() {
             let ord_criteria = ord_criteria.unwrap_or("title");
             let ord = ord.map_or_else(|| match ord_criteria {
                 "title" => Ok(SortOrdering::Ascending),
                 "date" => Ok(SortOrdering::Descending),
                 _ => return Err("Unknown `ord_criteria` field.")
-                    .tap_err(|e| log::error!("Unknown `ord_criteria` field {:?} in post query", ord_criteria)),
+                    .tap_err(|_| log::error!("Unknown `ord_criteria` field {:?} in post query", ord_criteria)),
             }, |v| Ok(v))?;
             Some(match ord_criteria {
                 "title" => PostSort::AlphabeticalTitle(ord),
                 "date" => PostSort::Date(ord),
                 _ => return Err("Unknown `ord_criteria` field.".to_string())
-                    .tap_err(|e| log::error!("Unknown `ord_criteria` field {:?} in post query", ord_criteria)),
+                    .tap_err(|_| log::error!("Unknown `ord_criteria` field {:?} in post query", ord_criteria)),
             })
-        } else {
+        }  else {
             None
         };
 
@@ -339,8 +319,10 @@ impl Into<seed::browser::url::UrlSearch> for &PostQuery {
                 search.push(("lim".to_string(), vec![lim.to_string()]));
             },
             Err((begin, end)) => {
-                let begin = percent_encode(begin.to_rfc3339().as_bytes(), NON_ALPHANUMERIC);
-                let end = percent_encode(end.to_rfc3339().as_bytes(), NON_ALPHANUMERIC);
+                let begin = begin.to_rfc3339();
+                let end = end.to_rfc3339();
+                let begin = percent_encode(begin.as_bytes(), NON_ALPHANUMERIC);
+                let end = percent_encode(end.as_bytes(), NON_ALPHANUMERIC);
                 search.push(("start_time".to_string(), vec![begin.to_string()]));
                 search.push(("stop_time".to_string(), vec![end.to_string()]));
             },

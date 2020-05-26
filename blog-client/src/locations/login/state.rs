@@ -3,7 +3,7 @@ use seed::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    locations::{Location, M as LocationM, listing, login::{M}},
+    locations::{Location, M as LocationM, listing, login::M},
     messages::{AsyncM as GlobalAsyncM, M as GlobalM},
     model::{
         StoreOperations as GSOp, User as StoreUser,
@@ -63,32 +63,19 @@ impl S {
         } else {
             return GlobalM::NoOp;
         };
-        let res = retry::fetch_process_with_retry(
+        let res = retry::fetch_json_with_retry(
             req,
             &CREATE_CREDENTIAL_MSG,
             None,
-            |res| res.json(),
         ).await;
         match res {
             Err(_) => GlobalM::NoOp,
             Ok(obj) =>
-                GlobalM::StoreOpWithAction(GSOp::User(obj), |_gs, res| {
-                    use crate::model::StoreOpResult::*;
-                    match res {
-                        Success => {
-                            log::debug!("Launching credential creation");
-                            Some(GlobalM::Grouped(vec![
-                                GlobalM::Location(LocationM::Login(M::CreateCredential)),
-                                GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default())),
-                                GlobalM::ChangeMenu(Authorization::LoggedIn),
-                            ]))
-                        }
-                        Failure(e) => {
-                            log::error!("User failed creation due to {:?}.", e);
-                            None
-                        }
-                    }
-                })
+                GlobalM::StoreOpWithMessage(GSOp::User(obj), || GlobalM::Grouped(vec![
+                    GlobalM::Location(LocationM::Login(M::CreateCredential)),
+                    GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default())),
+                    GlobalM::ChangeMenu(Authorization::LoggedIn),
+                ]))
         }
     }
 
@@ -110,11 +97,10 @@ impl S {
         } else {
             return GlobalM::NoOp;
         };
-        let res = retry::fetch_process_with_retry(
+        let res = retry::fetch_with_retry(
             req,
             &CREATE_USER_MSG,
             None,
-            |res| async { Ok(()) },
         ).await;
         match res {
             Err(_) => GlobalM::NoOp,
@@ -141,31 +127,18 @@ impl S {
         } else {
             return GlobalM::NoOp;
         };
-        let res = retry::fetch_process_with_retry(
+        let res = retry::fetch_json_with_retry(
             req,
             &CREATE_SESSION_MSG,
             None,
-            |res| res.json(),
         ).await;
         match res {
             // TODO Display error message.
             Err(_) => GlobalM::NoOp,
-            Ok(obj) => GlobalM::StoreOpWithAction(GSOp::User(obj), |_gs, res| {
-                use crate::model::StoreOpResult::*;
-                match res {
-                    Success => {
-                        log::trace!("Logged in. Redirect to homepage.");
-                        Some(GlobalM::Grouped(vec![
-                            GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default())),
-                            GlobalM::ChangeMenu(Authorization::LoggedIn),
-                        ]))
-                    }
-                    Failure(e) => {
-                        log::trace!("Attempt to create session failed with {:?} error.", e);
-                        None
-                    }
-                }
-            })
+            Ok(obj) => GlobalM::StoreOpWithMessage(GSOp::User(obj), || GlobalM::Grouped(vec![
+                GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default())),
+                GlobalM::ChangeMenu(Authorization::LoggedIn),
+            ]))
         }
     }
 }

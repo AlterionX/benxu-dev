@@ -35,7 +35,7 @@ pub async fn logout_trigger() -> GlobalM {
     ).await;
     match res {
         Err(_) => GlobalM::NoOp,
-        Ok(obj) => GlobalM::StoreOpWithMessage(GSOp::RemoveUser(obj), GlobalM::Grouped(vec![
+        Ok(obj) => GlobalM::StoreOpWithMessage(GSOp::RemoveUser(obj), || GlobalM::Grouped(vec![
             GlobalM::ChangeMenu(Authorization::LoggedOut),
             GlobalM::ChangePageAndUrl(Location::Listing(listing::S::default())),
         ])),

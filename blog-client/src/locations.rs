@@ -19,19 +19,19 @@ pub enum M {
     Listing(listing::M),
 }
 
-pub fn update(msg: M, loc: &mut Location, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM>) {
+pub fn update(msg: M, loc: &mut Location, gs: &GlobalS, orders: &mut impl Orders<GlobalM, GlobalM>) {
     match (msg, loc) {
         (M::Login(m), Location::Login(s)) => {
-            login::update(m, s, gs, &mut orders.proxy(M::Login));
+            login::update(m, s, gs, orders);
         }
         (M::Editor(m), Location::Editor(s)) => {
-            editor::update(m, s, gs, &mut orders.proxy(M::Editor));
+            editor::update(m, s, gs, orders);
         }
         (M::Viewer(m), Location::Viewer(s)) => {
-            viewer::update(m, s, gs, &mut orders.proxy(M::Viewer));
+            viewer::update(m, s, gs, orders);
         }
         (M::Listing(m), Location::Listing(s)) => {
-            listing::update(m, s, gs, &mut orders.proxy(M::Listing));
+            listing::update(m, s, gs, orders);
         }
         _ => {
             log::warn!("Delayed message ignored.");

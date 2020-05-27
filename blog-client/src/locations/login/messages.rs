@@ -29,7 +29,7 @@ pub enum M {
     SetFocus,
 }
 
-pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM>) {
+pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<GlobalM, GlobalM>) {
     // TODO better logging.
     log::debug!("Updating login page with {:?}", m);
     match m {
@@ -46,16 +46,16 @@ pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM
         // API calls
         M::CreateUser => {
             log::trace!("Creating a user...");
-            orders.perform_g_cmd(s.create_user_post());
+            orders.perform_cmd(s.create_user_post());
         }
         M::CreateSession => {
             log::trace!("Creating a session...");
-            orders.perform_g_cmd(s.create_session_post());
+            orders.perform_cmd(s.create_session_post());
         }
         M::CreateCredential => {
             log::trace!("Creating credentials...");
             if let Some(u) = gs.user.as_ref() {
-                orders.perform_g_cmd(s.create_credential_post(u));
+                orders.perform_cmd(s.create_credential_post(u));
             }
         }
         M::SetFocus => {

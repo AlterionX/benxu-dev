@@ -33,7 +33,7 @@ pub enum M {
     SyncPost,
 }
 
-pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM>) {
+pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<GlobalM, GlobalM>) {
     use M::*;
     match s {
         S::Undetermined(_) => return,
@@ -46,7 +46,7 @@ pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM
         Publish => {
             if let Some(user) = gs.user.as_ref() {
                 if let Some(req) = s.attempt_publish(user) {
-                    orders.perform_g_cmd(req);
+                    orders.perform_cmd(req);
                 } else {
                     log::error!("Failed to create publish request.")
                 }
@@ -56,7 +56,7 @@ pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM
         }
         Save => {
             if let Some(req) = s.attempt_save() {
-                orders.perform_g_cmd(req);
+                orders.perform_cmd(req);
             } else {
                 log::error!("Failed to create save request.");
             }
@@ -67,7 +67,7 @@ pub fn update(m: M, s: &mut S, gs: &GlobalS, orders: &mut impl Orders<M, GlobalM
                 match s {
                     S::Old(post, _) if post.id == updated.id => update_post(post, updated),
                     _ => {
-                        orders.send_g_msg(GlobalM::ChangePageAndUrl(Location::Editor(S::Old(
+                        orders.send_msg(GlobalM::ChangePageAndUrl(Location::Editor(S::Old(
                             updated.clone(),
                             posts::Changed::default(),
                         ))));

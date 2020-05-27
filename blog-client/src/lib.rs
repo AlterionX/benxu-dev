@@ -79,7 +79,7 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
         // TODO remove boilerplate with macro?
         M::Location(msg) => {
             log::debug!("Handling location msg...");
-            locations::update(msg, &mut model.loc, &model.store, &mut orders.proxy(M::Location));
+            locations::update(msg, &mut model.loc, &model.store, orders);
             log::trace!("Location msg handled.");
         }
     }
@@ -90,7 +90,10 @@ fn init(url: Url, orders: &mut impl Orders<M, M>) -> Model {
     orders
         .subscribe(M::UrlChanged)
         .notify(subs::UrlChanged(url.clone()))
-        .subscribe(M::Location)
+        .subscribe(|login| M::Location(locations::M::Login(login)))
+        .subscribe(|listing| M::Location(locations::M::Listing(listing)))
+        .subscribe(|viewer| M::Location(locations::M::Viewer(viewer)))
+        .subscribe(|editor| M::Location(locations::M::Editor(editor)))
         .perform_cmd(async {
             let user = locations::login::find_current_user().await?;
             Some(M::Grouped(vec![

@@ -10,7 +10,7 @@ use crate::{
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum M {}
 
-pub fn update(m: M, _s: &mut S, _gs: &GlobalS, _orders: &mut impl Orders<M, GlobalM>) {
+pub fn update(m: M, _s: &mut S, _gs: &GlobalS, _orders: &mut impl Orders<GlobalM, GlobalM>) {
     match m {
         // M:: => {}
     }

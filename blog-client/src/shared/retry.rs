@@ -111,7 +111,7 @@ pub async fn fetch_process_with_retry<'a, 'b, T, FutT, F>(
     Err(())
 }
 
-#[deprecated = "Should use `fetch_process_with_rety` once it's bug free."]
+#[deprecated = "Should use `fetch_process_with_retry` once it's bug free."]
 pub async fn fetch_json_with_retry<'a, T: 'static + serde::de::DeserializeOwned>(
     req: Request<'a>,
     logging_msg: &LogPair<'a>,
@@ -149,7 +149,7 @@ pub async fn fetch_json_with_retry<'a, T: 'static + serde::de::DeserializeOwned>
     Err(())
 }
 
-#[deprecated = "Should use `fetch_process_with_rety` once it's bug free."]
+#[deprecated = "Should use `fetch_process_with_retry` once it's bug free."]
 pub async fn fetch_text_with_retry<'a>(
     req: Request<'a>,
     logging_msg: &LogPair<'a>,

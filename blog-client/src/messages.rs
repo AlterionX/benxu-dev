@@ -4,7 +4,6 @@ use crate::{
     requests::PostQuery,
     shared::Authorization,
 };
-use boolinator::Boolinator;
 use tap::*;
 use serde::{Deserialize, Serialize};
 

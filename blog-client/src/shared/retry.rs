@@ -191,13 +191,14 @@ pub async fn fetch_text_with_retry<'a>(
 mod test {
     #[test]
     fn lifetime_wackiness() {
-        let res = super::fetch_process_with_retry(
-            "www.google.com",
+        let res_not_res = super::fetch_process_with_retry(
+            "www.google.com".into(),
             &super::LogPair {
                 pre_completion: "pinging google",
                 post_completion: "parsing res",
-            }, None,
+            },
+            None,
             |res| res.text(),
-        ).await;
+        );
     }
 }

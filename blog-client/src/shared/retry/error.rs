@@ -45,14 +45,6 @@ struct FailSourceVar<T> {
 }
 
 impl<T> FailSourceVar<T> {
-    fn new(initial: T, confirm: T, parsing: T) -> Self {
-        Self {
-            initial,
-            confirm,
-            parsing,
-        }
-    }
-
     fn resolve(&self, src: &FailSource) -> &T {
         match src {
             FailSource::Initial => &self.initial,
@@ -77,21 +69,21 @@ fn log_err<Err: std::fmt::Debug>(e: Err, name: &str, msg: &str, is_possible: boo
 
 pub(super) fn process_fetch_err(e: FetchError, msg: &str, source: FailSource) -> AllowRetry {
     const ERR_POSSIBILITY: ErrorReportInfo<FailSourceVar<bool>> = ErrorReportInfo {
-        serde: FailSourceVar::new(false, false, true),
-        dom: FailSourceVar::new(true, false, false),
-        promise: FailSourceVar::new(true, false, true),
-        network: FailSourceVar::new(true, false, false),
-        request_construction: FailSourceVar::new(false, false, false),
-        status_code: FailSourceVar::new(false, true, false),
+        serde: FailSourceVar { initial: false, confirm: false, parsing: true },
+        dom: FailSourceVar { initial: true, confirm: false, parsing: false },
+        promise: FailSourceVar { initial: true, confirm: false, parsing: true },
+        network: FailSourceVar { initial: true, confirm: false, parsing: false },
+        request_construction: FailSourceVar { initial: false, confirm: false, parsing: false },
+        status_code: FailSourceVar { initial: false, confirm: true, parsing: false },
     };
 
     const RETRY_ALLOWANCE: ErrorReportInfo<FailSourceVar<bool>> = ErrorReportInfo {
-        serde: FailSourceVar::new(false, false, false),
-        dom: FailSourceVar::new(true, false, false),
-        promise: FailSourceVar::new(true, false, true),
-        network: FailSourceVar::new(true, false, false),
-        request_construction: FailSourceVar::new(false, false, false),
-        status_code: FailSourceVar::new(false, true, true),
+        serde: FailSourceVar { initial: false, confirm: false, parsing: false },
+        dom: FailSourceVar { initial: true, confirm: false, parsing: false },
+        promise: FailSourceVar { initial: true, confirm: false, parsing: true },
+        network: FailSourceVar { initial: true, confirm: false, parsing: false },
+        request_construction: FailSourceVar { initial: false, confirm: false, parsing: false },
+        status_code: FailSourceVar { initial: false, confirm: true, parsing: true },
     };
 
     const ERROR_NAME: ErrorReportInfo<&str> = ErrorReportInfo {
@@ -103,8 +95,8 @@ pub(super) fn process_fetch_err(e: FetchError, msg: &str, source: FailSource) ->
         status_code: "status code error",
     };
 
-    let is_possible = *ERR_POSSIBILITY.resolve(&e).resolve(source);
-    let can_retry = *RETRY_ALLOWANCE.resolve(&e).resolve(source);
+    let is_possible = *ERR_POSSIBILITY.resolve(&e).resolve(&source);
+    let can_retry = *RETRY_ALLOWANCE.resolve(&e).resolve(&source);
     let name = *ERROR_NAME.resolve(&e);
 
     // Need another match and repetitive calls due to `e` having different types.

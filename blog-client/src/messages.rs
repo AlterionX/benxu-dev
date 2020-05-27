@@ -38,7 +38,7 @@ impl std::fmt::Debug for StoreCallback {
 #[derive(Debug, Clone)]
 pub enum M {
     // Url changes!
-    UrlChange(seed::Url),
+    UrlChanged(seed::app::subs::UrlChanged),
     // Menu is outside of seed, so we need a special message to swap it with the logged in vs the
     // not logged in version.
     ChangeMenu(Authorization),
@@ -82,9 +82,10 @@ impl RouteMatch {
         let path = url.path();
         // Verify that the first path component is "blog".
         // TODO fix routing to other pages -- this initial check of the root should route instead of return a noop.
-        (path.get(0).map(String::as_str) == Some("blog"))
-            .as_option()
-            .tap_none(|| log::warn!("Url is missing the root path component."))?;
+        if path.get(0).map(String::as_str) != Some("blog") {
+            url.go_and_load();
+            return None;
+        }
         let root = path.get(1)
             .map(String::as_str)
             .map(|s| if s == "" { "home" } else { s })

@@ -117,6 +117,7 @@ impl S {
     }
 
     async fn create_session_post_async(auth: Authentication) -> GlobalM {
+        log::info!("Creating session...");
         use crate::locations::*;
         const LOGIN_URL: &str = "/api/login";
         let req = Request::new(LOGIN_URL)
@@ -132,6 +133,7 @@ impl S {
             &CREATE_SESSION_MSG,
             None,
         ).await;
+        log::info!("Session created with res {:?}.", res);
         match res {
             // TODO Display error message.
             Err(_) => GlobalM::NoOp,

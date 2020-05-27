@@ -28,8 +28,8 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
                 update(m, model, orders)
             }
         }
-        M::UrlChange(url) => {
-            log::debug!("Processing url change...");
+        M::UrlChanged(subs::UrlChanged(url)) => {
+            log::debug!("Processing url {:?} change...", url.path());
             if let Some(m) = routes(url) {
                 orders.skip().send_msg(m);
             }
@@ -86,13 +86,21 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
 }
 
 fn init(url: Url, orders: &mut impl Orders<M, M>) -> Model {
+    log::info!("Running init with url {:?}", url);
     orders
-        .subscribe(M::UrlChange)
-        .notify(subs::UrlChanged(url))
+        .subscribe(M::UrlChanged)
+        .notify(subs::UrlChanged(url.clone()))
+        .subscribe(M::Location)
         .perform_cmd(async {
             let user = locations::login::find_current_user().await?;
-            Some(M::StoreOp(model::StoreOperations::User(user)))
+            Some(M::Grouped(vec![
+                M::StoreOp(model::StoreOperations::User(user)),
+                M::ChangeMenu(shared::Authorization::LoggedIn),
+            ]))
         });
+    if let Some(m) = routes(url) {
+        orders.send_msg(m);
+    }
     Model::default()
 }
 
@@ -120,7 +128,7 @@ fn init_app() {
             _ => body_tag,
         }
     };
-    let app = seed::App::start(tag, init, update, view);
+    seed::App::start(tag, init, update, view);
     log::info!("App built. Now running.");
 }
 

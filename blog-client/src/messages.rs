@@ -62,6 +62,7 @@ impl RouteMatch {
         log::info!("Routing url {:?}.", url);
         let path = url.path();
         // Verify that the first path component is "blog".
+        // TODO fix routing to other pages -- this initial check of the root should route instead of return a noop.
         (path.get(0).map(String::as_str) == Some("blog"))
             .as_option()
             .tap_none(|| log::warn!("Url is missing the root path component."))?;

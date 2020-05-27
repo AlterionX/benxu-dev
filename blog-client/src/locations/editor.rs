@@ -2,7 +2,7 @@ use tap::*;
 
 use crate::{
     locations::Location,
-    messages::M as GlobalM,
+    messages::{M as GlobalM, StoreCallback},
     model::{PostMarker, Store as GlobalS, StoreOperations as GSOp},
     shared::retry,
 };
@@ -30,8 +30,7 @@ pub async fn load_post(post_marker: PostMarker) -> GlobalM {
     ).await;
     match fo {
         Err(_) => GlobalM::NoOp,
-        Ok(obj) => GlobalM::StoreOpWithAction(GSOp::Post(post_marker, obj), |gs| {
-            let gs = unsafe { gs.as_ref() }.expect("The global state to always exist.");
+        Ok(obj) => GlobalM::StoreOpWithAction(GSOp::Post(post_marker, obj), StoreCallback::new(|gs| {
             gs.post
                 .as_ref()
                 .map(|post| GlobalM::RenderPage(Location::Editor(S::Old(
@@ -40,7 +39,7 @@ pub async fn load_post(post_marker: PostMarker) -> GlobalM {
                 ))))
                 .tap_none(|| log::error!("Post loaded but was not saved to store."))
                 .unwrap_or(GlobalM::NoOp)
-        })
+        }))
     }
 }
 pub fn is_restricted_from(s: &S, gs: &GlobalS) -> bool {

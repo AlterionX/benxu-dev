@@ -28,6 +28,12 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
                 update(m, model, orders)
             }
         }
+        M::UrlChange(url) => {
+            log::debug!("Processing url change...");
+            if let Some(m) = routes(url) {
+                orders.skip().send_msg(m);
+            }
+        }
         M::ChangeMenu(is_logged_in) => shared::views::replace_nav(is_logged_in),
         M::ChangePageAndUrl(loc) => {
             log::debug!("Running page change (programmatic)...");
@@ -62,7 +68,7 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
         M::StoreOpWithAction(op, f) => {
             log::debug!("Store operation with follow up action detected.");
             model.store.exec(op);
-            let m = f(&model.store);
+            let m = f.into_inner()(&model.store);
             update(m, model, orders);
         }
         M::StoreOpWithMessage(op, m) => {
@@ -79,6 +85,17 @@ fn update(msg: M, model: &mut Model, orders: &mut impl Orders<M, M>) {
     }
 }
 
+fn init(url: Url, orders: &mut impl Orders<M, M>) -> Model {
+    orders
+        .subscribe(M::UrlChange)
+        .notify(subs::UrlChanged(url))
+        .perform_cmd(async {
+            let user = locations::login::find_current_user().await?;
+            Some(M::StoreOp(model::StoreOperations::User(user)))
+        });
+    Model::default()
+}
+
 fn view(m: &Model) -> impl IntoNodes<M> {
     let Model { loc: l, store: s } = m;
     log::info!("Rendering location {:?} with global state {:?}.", l, s);
@@ -90,39 +107,21 @@ fn routes(url: Url) -> Option<M> {
     messages::RouteMatch::from(url).into_inner()
 }
 
-fn before_mount(_: Url) -> BeforeMount {
-    let body_tag = seed::body();
-    let tag = match body_tag.query_selector("main") {
-        Ok(Some(main_tag)) => main_tag
-            .dyn_into()
-            .tap_err(|_| log::error!("Main tag is not an HtmlElement!"))
-            .unwrap(),
-        _ => body_tag,
-    };
-
-    BeforeMount::new()
-        .mount_point(tag)
-        .mount_type(MountType::Takeover)
-}
-
-fn after_mount(_: Url, orders: &mut impl Orders<M, M>) -> AfterMount<Model> {
-    orders.perform_cmd(async {
-        let user = locations::login::find_current_user().await?;
-        Some(M::StoreOp(model::StoreOperations::User(user)))
-    });
-    AfterMount::new(Model::default()).url_handling(UrlHandling::PassToRoutes)
-}
-
 fn init_app() {
     log::info!("Starting up application.");
 
-    let app = seed::App::builder(update, view)
-        .sink(update)
-        .routes(routes)
-        .before_mount(before_mount)
-        .after_mount(after_mount);
+    let tag = {
+        let body_tag = seed::body();
+        match body_tag.query_selector("main") {
+            Ok(Some(main_tag)) => main_tag
+                .dyn_into()
+                .tap_err(|_| log::error!("Main tag is not an HtmlElement!"))
+                .unwrap(),
+            _ => body_tag,
+        }
+    };
+    let app = seed::App::start(tag, init, update, view);
     log::info!("App built. Now running.");
-    app.build_and_start();
 }
 
 #[wasm_bindgen(start)]

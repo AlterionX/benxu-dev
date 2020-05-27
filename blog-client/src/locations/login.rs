@@ -1,9 +1,7 @@
 use crate::{
     locations::*,
     messages::{M as GlobalM},
-    model::{
-        Store as GlobalS, StoreOperations as GSOp,
-    },
+    model::StoreOperations as GSOp,
     shared::{Authorization, retry},
 };
 use db_models::models::users;

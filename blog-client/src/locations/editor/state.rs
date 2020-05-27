@@ -4,9 +4,9 @@ use tap::*;
 
 use crate::{
     locations::{editor::M, Location, M as LocationM},
-    messages::{AsyncM as GlobalAsyncM, M as GlobalM},
+    messages::{AsyncM as GlobalAsyncM, M as GlobalM, StoreCallback},
     model::{
-        PostMarker, Store as GlobalS, StoreOperations as GSOp, User,
+        PostMarker, StoreOperations as GSOp, User,
     },
     shared::retry,
 };
@@ -201,14 +201,13 @@ impl S {
         ).await;
         match res {
             Err(_) => GlobalM::NoOp,
-            Ok(obj) => GlobalM::StoreOpWithAction(GSOp::PostWithoutMarker(obj), |gs: *const GlobalS| {
-                let gs = unsafe { gs.as_ref() }.expect("The global state to always exist.");
+            Ok(obj) => GlobalM::StoreOpWithAction(GSOp::PostWithoutMarker(obj), StoreCallback::new(|gs| {
                 gs.post.as_ref().map(|post| GlobalM::ChangePageAndUrl(Location::Viewer(
                     PostMarker::Uuid(post.id).into(),
                 )))
                 .tap_none(|| log::error!("Post loaded but was not saved."))
                 .unwrap_or(GlobalM::NoOp)
-            })
+            }))
         }
     }
     async fn attempt_publish_async_old(post: posts::DataNoMeta, changed: posts::Changed) -> GlobalM {

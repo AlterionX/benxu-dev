@@ -16,8 +16,29 @@ pub enum PostAccessMethod {
     ById(uuid::Uuid),
     ByShortName(String),
 }
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+
+#[derive(Clone)]
+pub struct StoreCallback(fn(&model::Store) -> M);
+
+impl StoreCallback {
+    pub fn new(f: fn(&model::Store) -> M) -> Self {
+        Self(f)
+    }
+    pub fn into_inner(self) -> fn(&model::Store) -> M {
+        self.0
+    }
+}
+
+impl std::fmt::Debug for StoreCallback {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Store callback -- no display")
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum M {
+    // Url changes!
+    UrlChange(seed::Url),
     // Menu is outside of seed, so we need a special message to swap it with the logged in vs the
     // not logged in version.
     ChangeMenu(Authorization),
@@ -28,9 +49,7 @@ pub enum M {
     // Global state
     StoreOpWithAction(
         model::StoreOperations,
-        // Uses a pointer to get around the lack of default impls for references in functions
-        // TODO fix when this gets resolved
-        fn(*const model::Store) -> M,
+        StoreCallback,
     ),
     StoreOpWithMessage(model::StoreOperations, fn() -> M),
     StoreOp(model::StoreOperations),
@@ -52,7 +71,7 @@ impl From<model::StoreOperations> for M {
     }
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Default, Debug, Clone)]
 pub struct RouteMatch(Option<M>);
 impl RouteMatch {
     pub fn into_inner(self) -> Option<M> {

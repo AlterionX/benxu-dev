@@ -2,7 +2,6 @@
     proc_macro_hygiene,
     type_ascription,
     decl_macro,
-    try_trait,
     associated_type_defaults,
     never_type
 )]

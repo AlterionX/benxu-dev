@@ -8,7 +8,6 @@ use openssl::{
     rsa::{Padding, Rsa},
     sign::{RsaPssSaltlen, Signer, Verifier},
 };
-use std::option::NoneError;
 
 #[derive(Debug)]
 pub enum KeyGenError {
@@ -75,11 +74,6 @@ pub enum AlgoError {
     DoesNotHavePrivateKey,
     OpenSSL,
 }
-impl From<NoneError> for AlgoError {
-    fn from(_: NoneError) -> Self {
-        Self::DoesNotHavePrivateKey
-    }
-}
 impl From<ErrorStack> for AlgoError {
     fn from(_: ErrorStack) -> Self {
         AlgoError::OpenSSL
@@ -126,7 +120,7 @@ impl asymm::Algo for Algo {
         msg: &[u8],
         key: Option<&<Self::Key as asymm::KeyPair>::Private>,
     ) -> Result<Vec<u8>, Self::SigningError> {
-        let mut signer = Signer::new(MessageDigest::sha384(), key?)?;
+        let mut signer = Signer::new(MessageDigest::sha384(), key.ok_or(Self::SigningError::DoesNotHavePrivateKey)?)?;
         signer.set_rsa_padding(Padding::PKCS1_PSS).unwrap();
         signer
             .set_rsa_pss_saltlen(RsaPssSaltlen::DIGEST_LENGTH)

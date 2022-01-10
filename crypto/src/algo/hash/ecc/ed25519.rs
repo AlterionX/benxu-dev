@@ -4,7 +4,6 @@ use sodiumoxide::crypto::sign::ed25519::{
     gen_keypair, keypair_from_seed, sign_detached as ed25519_sign,
     verify_detached as ed25519_verify, PublicKey, SecretKey, Seed, Signature,
 };
-use std::option::NoneError;
 
 use crate::algo as base;
 use base::hash::asymmetric as asymm;
@@ -56,11 +55,6 @@ pub enum AlgoError {
     DoesNotHavePrivateKey,
     MismatchedSignatureLength,
 }
-impl From<NoneError> for AlgoError {
-    fn from(_: NoneError) -> Self {
-        Self::DoesNotHavePrivateKey
-    }
-}
 
 pub struct Algo;
 impl base::Algo for Algo {
@@ -96,7 +90,7 @@ impl asymm::Algo for Algo {
         msg: &[u8],
         key: Option<&<Self::Key as asymm::KeyPair>::Private>,
     ) -> Result<Vec<u8>, Self::SigningError> {
-        Ok(ed25519_sign(msg, key.as_ref()?).as_ref().to_vec())
+        Ok(ed25519_sign(msg, key.as_ref().ok_or(Self::SigningError::DoesNotHavePrivateKey)?).as_ref().to_vec())
     }
     /// unimplemented
     fn verify_private(

@@ -132,7 +132,7 @@ pub mod htmlgen {
                         (a.k.a. November) is simultaneously my favorite and most hated month of the year."
                     }
                     li {
-                        "a gamer; can't wait for " a href="https://www.cyberpunk.net/us/en/" { "Cyberpunk 2077." }
+                        "a gamer; still waiting for " a href="https://robertsspaceindustries.com/" { "Star Citizen." }
                     }
                     li {
                         "a linguist: I technically know Chinese, and am studying Japanese."
@@ -258,13 +258,13 @@ pub mod htmlgen {
                     My favorites, however, is The Last of Us. It is a work of art. Nier: Automata comes in at a close second; it's only lower \
                     due to the PC port -- as a developer, its poor performance was obvious.\
                 "}
-                p{"\
-                    It feels like it's been a while since my last good RPG. That, and my faith in CD Projekt Red, \
-                    makes me optimistic about Cyberpunk 2077.\
+                p {"\
+                    The favorites I'd listed are RPGs, but I find myself more engrossed in Terraria and Stellaris than RPGs since they leave a lot of room to \
+                    establish a character and role play despite not being an RPG. Dungeons and Dragons (DnD) is pretty fun as well.\
                 "}
                 p {"\
-                    In fact, I find myself more engrossed in Terraria and Stellaris instead of RPGs since they leave a lot of room to \
-                    establish a character and role play despite not being an RPG. Dungeons and Dragons (DnD) is pretty fun as well.\
+                    I also enjoy various space sims, but Star Citizen has captured my heart and I don't think I could ever play a different \
+                    space sim without thinking about Star Citizen.\
                 "}
             },
             None,

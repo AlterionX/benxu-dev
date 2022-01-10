@@ -12,7 +12,7 @@ server = ["diesel", "rocket", "rocket_contrib", "uuid/v4", "log"]
 client = []
 
 [dependencies.chrono]
-version = "0.4.11"
+version = "0.4.19"
 features = ["serde"]
 [dependencies.serde]
 version = "1.0.106"

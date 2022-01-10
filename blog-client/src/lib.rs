@@ -1,4 +1,4 @@
-#![feature(drain_filter, try_trait, move_ref_pattern)]
+#![feature(drain_filter, move_ref_pattern)]
 
 #[macro_use]
 extern crate seed;

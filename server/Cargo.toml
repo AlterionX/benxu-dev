@@ -41,7 +41,7 @@ path = "../crypto"
 version = "1.0.106"
 features = ["derive"]
 [dependencies.maud]
-version = "0.21.0"
+version = "0.23.0"
 features = ["rocket"]
 
 # server + db libs
@@ -60,7 +60,7 @@ features = ["postgres", "chrono", "r2d2"]
 version = "0.4.8"
 features = ["std", "serde"]
 [dependencies.chrono]
-version = "0.4.11"
+version = "0.4.19"
 features = ["serde"]
 [dependencies.uuid]
 version = "0.8.1"

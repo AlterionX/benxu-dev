@@ -50,7 +50,7 @@ features = ["derive"]
 version = "0.8.1"
 features = ["serde", "wasm-bindgen"]
 [dependencies.chrono]
-version = "0.4.11"
+version = "0.4.19"
 features = ["serde", "wasmbind"]
 
 # Front end specific dependencies

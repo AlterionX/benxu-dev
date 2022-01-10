@@ -25,6 +25,11 @@ impl<'a> Render for LogoLink<'a> {
         }
     }
 }
+impl<'a> Render for &LogoLink<'a> {
+    fn render(&self) -> Markup {
+        (*self).render()
+    }
+}
 
 /// Data used during site generation for things like css, scripts, contact info and menus. Most are
 /// for meta tags.
@@ -98,6 +103,11 @@ impl<'a> Render for Logo<'a> {
         }
     }
 }
+impl<'a> Render for &Logo<'a> {
+    fn render(&self) -> Markup {
+        (*self).render()
+    }
+}
 /// Information regarding the `<script>` tags to include.
 pub enum Script<'a> {
     /// Represents a script externally linked (in the `public/js` directory).
@@ -111,6 +121,11 @@ impl<'a> Render for Script<'a> {
             Script::External(src) => html! { script defer?[true] src={ "/public/js/"(src) } {} },
             Script::Embedded(src) => html! { script { (PreEscaped(src)) } },
         }
+    }
+}
+impl<'a> Render for &Script<'a> {
+    fn render(&self) -> Markup {
+        (*self).render()
     }
 }
 impl<'a> Script<'a> {
@@ -162,6 +177,11 @@ impl<'a> Render for Css<'a> {
         }
     }
 }
+impl<'a> Render for &Css<'a> {
+    fn render(&self) -> Markup {
+        (*self).render()
+    }
+}
 /// A email address.
 pub struct Email<'a> {
     /// The username portion of the email.
@@ -174,6 +194,11 @@ impl<'a> Render for Email<'a> {
         html! {
             (self.user)"@"(self.domain)
         }
+    }
+}
+impl<'a> Render for &Email<'a> {
+    fn render(&self) -> Markup {
+        (*self).render()
     }
 }
 /// A phone number. This is an enum for globalization.
@@ -204,6 +229,11 @@ impl<'a> Render for PhoneNumber<'a> {
         }
     }
 }
+impl<'a> Render for &PhoneNumber<'a> {
+    fn render(&self) -> Markup {
+        (*self).render()
+    }
+}
 /// A contact card. Comprised of emails and phone numbers.
 pub struct Contact<'a> {
     /// Emails for this contact.
@@ -221,6 +251,11 @@ impl<'a> Render for Contact<'a> {
                 p.contact-phone-number { "Phone: " (phone) }
             }
         }
+    }
+}
+impl<'a> Render for &Contact<'a> {
+    fn render(&self) -> Markup {
+        (*self).render()
     }
 }
 /// A struct representing names.
@@ -245,6 +280,11 @@ impl<'a> Render for Name<'a> {
         }
     }
 }
+impl<'a> Render for &Name<'a> {
+    fn render(&self) -> Markup {
+        (*self).render()
+    }
+}
 /// Copyright data.
 pub struct Copyright<'a> {
     /// Person copyrighting the website.
@@ -262,6 +302,11 @@ impl<'a> Render for Copyright<'a> {
         html! {
             p.copyright { (self.icon) " " (start_year) "-" (end_year) " " (self.name) ". " (self.rights_clause) "." }
         }
+    }
+}
+impl<'a> Render for &Copyright<'a> {
+    fn render(&self) -> Markup {
+        (*self).render()
     }
 }
 /// An entry in the menu.
@@ -295,6 +340,11 @@ impl<'a> Render for MenuItem<'a> {
                 }
             }
         }
+    }
+}
+impl<'a> Render for &MenuItem<'a> {
+    fn render(&self) -> Markup {
+        (*self).render()
     }
 }
 /// A newtype for a list of [`MenuItem`](crate::data::MenuItem)s.

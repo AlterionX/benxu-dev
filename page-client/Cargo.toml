@@ -11,12 +11,12 @@ repository = "https://github.com/AlterionX/benxu-dev"
 rocket = ["maud/rocket"]
 
 [dependencies]
-maud = "0.21.0"
+maud = "0.23.0"
 typed-builder = "0.5.1"
 [dependencies.chrono]
-version = "0.4.11"
+version = "0.4.19"
 features = ["serde"]
 [dependencies.serde]
-version = "1.0.106"
+version = "1.0.117"
 features = ["derive"]
 

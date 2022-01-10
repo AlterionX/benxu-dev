@@ -1,4 +1,4 @@
-#![feature(proc_macro_hygiene, type_ascription, decl_macro, try_trait)]
+#![feature(proc_macro_hygiene, type_ascription, decl_macro)]
 
 //! Server crate for marshalling and unmarshalling information between the blog-db and blog-client
 //! crates as well as serving a set of static pages.

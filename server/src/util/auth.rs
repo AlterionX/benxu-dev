@@ -332,7 +332,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for UnverifiedCapabilities {
         let cookies = req.cookies();
         let key_store = req
             .guard::<State<TokenKeyFixture>>()
-            .map_failure(|_| Error::KeyStoreAbsent.into())?
+            .map_failure(|_| Error::KeyStoreAbsent)?
             .get_store()
             .map_err(|_| Error::KeyStoreAbsent)
             .into_outcome(Status::InternalServerError)?;

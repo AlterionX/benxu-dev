@@ -18,12 +18,11 @@ Cargo.lock
 #**/*.rs.bk
 
 # generated files
-server/benxu
-server/public/wasm-pack/
-server/public/wasm/
-server/public/js/wasm-bindgen-glue/
-server/private
+active
 
+# Sensitive files
+base-active/config/*
+!base-active/config/sample.toml
 .env
 .pw_secret
 

@@ -1,0 +1,39 @@
+[package]
+name = "static-server"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+axum = "0.6"
+maud = "0.25.0"
+chrono = "0.4"
+sanitise-file-name = "1"
+
+[dependencies.tokio]
+version = "1"
+features = ["macros", "rt-multi-thread"]
+
+[dependencies.spb]
+package = "static-page-builder"
+version = "0.3"
+path = "../../static-page-builder"
+
+[dependencies.tracing]
+version = "0.1"
+
+[dependencies.tracing-log]
+version = "0.1"
+
+[dependencies.tracing-subscriber]
+version = "0.3"
+
+[dependencies.log]
+version = "0.4"
+
+[dependencies.config]
+version = "0.13"
+
+[dependencies.shared-config]
+path = "../../shared-config"

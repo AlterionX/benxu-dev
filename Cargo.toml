@@ -1,15 +1,19 @@
 [workspace]
-
+resolver = "2"
 members = [
-    "server",
-    # static pages
-    "page-client",
-    "wasm-script",
-    # blog pages
-    "blog-client",
-    "blog-login-enum",
-    "blog-db",
-    # crypto suite extracted for convenience
-    "crypto",
+    "servers/static-server",
+    "clients/slideshow",
+    # "clients/blog-client",
+
+    # Site specific cfg.
+    "shared-config",
+
+    # Underlying libraries.
+    "static-page-builder",
+    "web-sys-bridge",
 ]
 
+[profile.wasm]
+inherits = "release"
+lto = true
+opt-level = 3

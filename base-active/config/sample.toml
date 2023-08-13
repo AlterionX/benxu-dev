@@ -1,0 +1,10 @@
+[addresses.primary]
+ip = "::"
+port = 8080
+domain = "localhost:8080"
+
+[addresses.api]
+ip = "::"
+port = 8080
+domain = "localhost:8080"
+

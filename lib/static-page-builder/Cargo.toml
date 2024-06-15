@@ -8,7 +8,7 @@ description = "Provides a set of utilities to build static pages. Built off of m
 repository = "https://github.com/AlterionX/benxu-dev"
 
 [dependencies]
-maud = "0.25"
+maud = "0.26"
 [dependencies.chrono]
 version = "0.4"
 features = ["serde"]

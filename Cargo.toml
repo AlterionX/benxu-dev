@@ -5,12 +5,10 @@ members = [
     "clients/slideshow",
     "clients/blog",
 
-    # Site specific cfg.
-    "shared-config",
-
     # Underlying libraries.
-    "static-page-builder",
-    "web-sys-bridge",
+    "lib/shared-config",
+    "lib/static-page-builder",
+    "lib/web-sys-bridge",
 ]
 
 [profile.wasm]

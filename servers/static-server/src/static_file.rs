@@ -40,18 +40,18 @@ async fn accessor(
     media_type: &'static str,
     use_utf8: bool,
 ) -> StaticFile {
-    log::info!("Processing static file request {root:?}, {required_ending:?}, {unsafe_filename:?}");
+    trc::info!("Processing static file request {root:?}, {required_ending:?}, {unsafe_filename:?}");
 
     let filename = sanitize(unsafe_filename.as_str());
     if !filename.ends_with(required_ending) {
-        log::warn!("Attempted to access bad filename.");
+        trc::warn!("Attempted to access bad filename.");
         return Err(not_found::page().await);
     }
 
     let path = root.join(filename);
 
     let Ok(data) = std::fs::read(path.as_path()) else {
-        log::warn!("Failed to access file {:?}.", path.as_os_str());
+        trc::warn!("Failed to access file {:?}.", path.as_os_str());
         return Err(not_found::page().await);
     };
 

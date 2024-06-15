@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 axum = "0.6"
-maud = "0.25.0"
+maud = "0.26"
 chrono = "0.4"
 sanitise-file-name = "1"
 
@@ -18,22 +18,16 @@ features = ["macros", "rt-multi-thread"]
 [dependencies.spb]
 package = "static-page-builder"
 version = "0.3"
-path = "../../static-page-builder"
+path = "../../lib/static-page-builder"
 
-[dependencies.tracing]
+[dependencies.trc]
+package = "tracing"
 version = "0.1"
-
-[dependencies.tracing-log]
-version = "0.1"
-
 [dependencies.tracing-subscriber]
 version = "0.3"
 
-[dependencies.log]
-version = "0.4"
-
 [dependencies.config]
-version = "0.13"
+version = "0.14"
 
 [dependencies.shared-config]
-path = "../../shared-config"
+path = "../../lib/shared-config"

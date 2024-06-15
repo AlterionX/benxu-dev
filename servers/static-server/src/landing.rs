@@ -6,7 +6,7 @@ use maud::{html, Markup, Render};
 use spb::{data::{Script, Css, MenuItem, Menu, Logo, LogoLink, PageMetaData, Favicon}, partials::basic_page};
 
 pub async fn page() -> Html<String> {
-    log::info!("Processing landing page request.");
+    trc::info!("Processing landing page request.");
     let (glue, load) = Script::wasm_bindgen_loader("public/js", "public/wasm", "slideshow");
     let meta = PageMetaData {
         scripts: &[

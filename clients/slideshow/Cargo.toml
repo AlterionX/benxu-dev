@@ -32,4 +32,4 @@ features = [
 
 [dependencies.web-sys-bridge]
 version = "0.1"
-path = "../../web-sys-bridge"
+path = "../../lib/web-sys-bridge"

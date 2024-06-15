@@ -3,7 +3,7 @@ resolver = "2"
 members = [
     "servers/static-server",
     "clients/slideshow",
-    # "clients/blog-client",
+    "clients/blog",
 
     # Site specific cfg.
     "shared-config",

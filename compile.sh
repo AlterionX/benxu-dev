@@ -8,7 +8,7 @@ root_dir=`dirname $0`;
 target_dir="$root_dir/target";
 wasm_working_dir="$target_dir/wasm-working";
 base_files="$root_dir/resources";
-output_artifact="$root_dir/active";
+output_artifact="$root_dir/artifact";
 
 shimmed-wasm-pack() {
     local filename="$1";
@@ -48,7 +48,7 @@ shimmed-wasm-pack() {
 rm -rf $wasm_working_dir;
 rm -rf $output_artifact;
 
-# Create active directory & copy static files.
+# Create artifact directory & copy static files.
 cp -R $base_files $output_artifact;
 mkdir -p $output_artifact/public/js;
 mkdir -p $output_artifact/public/wasm;
@@ -73,4 +73,4 @@ cp $target_dir/release/static-server $output_artifact/bin;
 
 set +x;
 
-echo -e "    \e[32mComplete!\e[0m Built files can be found in the \`active\` directory.";
+echo -e "    \e[32mComplete!\e[0m Built files can be found in the \`artifact\` directory.";

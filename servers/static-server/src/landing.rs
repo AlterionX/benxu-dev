@@ -129,20 +129,16 @@ fn my_intro() -> Markup {
     slide(
         "Nice to meet you",
         html! {
-            p { "My name is Ben. I am a developer, but I am also:" }
+            p { "My name is Ben. I am a coder, but I am also:" }
             ul {
                 li {
                     "a reader; I love to read. But that can get long, so let's save the details for later."
                 }
                 li {
-                    "a writer; " a href="https://www.nanowrimo.org/participants/alterionx/novels" { "NaNoWriMo" } " \
-                    (a.k.a. November) is simultaneously my favorite and most hated month of the year."
+                    "a worldbuilder; I love thinking about sapience in weird scenarios."
                 }
                 li {
                     "a gamer; still waiting for " a href="https://robertsspaceindustries.com/" { "Star Citizen." }
-                }
-                li {
-                    "a linguist: I technically know Chinese, and am studying Japanese."
                 }
             }
             p {"\
@@ -155,7 +151,7 @@ fn my_intro() -> Markup {
 }
 fn my_interests() -> Markup {
     slide(
-        "Everything is fascinating",
+        "Fascinations",
         html! {
             p {"\
                 C, C++, and Rust are my favorite languages. I have worked in both OpenGl and Vulkan. \
@@ -166,7 +162,7 @@ fn my_interests() -> Markup {
             p {"\
                 As a note, just for fun, this entire website is built with Rust + WASM \
                 (Such a fun word. Anyways...). I don't know how many browsers it runs on, \
-                but it was definitely fun. \
+                but it was definitely fun.\
             "}
         },
         None,
@@ -174,7 +170,7 @@ fn my_interests() -> Markup {
 }
 fn my_story() -> Markup {
     slide(
-        "Improve a little, day by day",
+        "A bit about my past",
         html! {
             p {"\
                 There was a day in 10th grade, when one of my friends introduced me to Java. I was \
@@ -209,9 +205,8 @@ fn my_work() -> Markup {
                 I fell in love with writing tools and performance-critical programming.\
             "}
             p {"\
-                I've written (with a friend) a ray tracer, a fluid simulation, and a shattering simulation. I am in the \
-                middle of writing a simulation in Rust that combines a majority of these concepts. I ended up devoting \
-                enough time to it that I will make it my thesis project.\
+                I've written (with a friend) a ray tracer, a fluid simulation, and a shattering simulation. I am slowly \
+                working on a simulation in Rust that combines a majority of these concepts.\
             "}
         },
         None,
@@ -219,7 +214,7 @@ fn my_work() -> Markup {
 }
 fn my_passion() -> Markup {
     slide(
-        "Programming and Writing",
+        "Programming and writing",
         html! {
             p {"\
                 I focus on systems development, rendering, and physical simulation. I think I've already said \
@@ -256,8 +251,8 @@ fn my_gaming_time() -> Markup {
         html! {
             p {"\
                 Games are the other half of my free time. Shooters are good as stress relief but my favorites are RPGs. \
-                My favorites, however, is The Last of Us. It is a work of art. Nier: Automata comes in at a close second; it's only lower \
-                due to the PC port -- as a developer, its poor performance was obvious.\
+                My favorite, however, is The Last of Us. It is a work of art. NieR: Automata comes in at a close second and
+                Clair Obscur: Expedition 33 has soared into my shortlist.\
             "}
             p {"\
                 The favorites I'd listed are RPGs, but I find myself more engrossed in Terraria and Stellaris than RPGs since they leave a lot of room to \

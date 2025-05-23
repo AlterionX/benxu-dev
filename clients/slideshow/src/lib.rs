@@ -1,4 +1,4 @@
-#![feature(unboxed_closures, lazy_cell, maybe_uninit_uninit_array, maybe_uninit_array_assume_init)]
+#![feature(unboxed_closures, maybe_uninit_array_assume_init)]
 #![no_std]
 
 //! The wasm functions for managing my slides. This crate should only function in a browser.
@@ -227,9 +227,9 @@ struct SlideClosures {
 
 impl SlideClosures {
     fn new() -> Self {
-        let mut a = core::mem::MaybeUninit::uninit_array();
+        let mut a: [_; 20] = [const { core::mem::MaybeUninit::uninit() }; 20];
         for slide_idx in 0..20 {
-            a[slide_idx] = core::mem::MaybeUninit::new(Closure::new(move || unsafe {
+            a[slide_idx].write(Closure::new(move || unsafe {
                 UI.get().set_active_slide(slide_idx);
             }));
         }

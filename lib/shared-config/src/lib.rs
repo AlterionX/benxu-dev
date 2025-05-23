@@ -11,6 +11,7 @@ pub struct AddressCfg {
 #[derive(Debug, Clone, Deserialize)]
 pub struct PrimaryServerCfg {
     pub address: AddressCfg,
+    pub resource_root: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]

@@ -19,11 +19,14 @@ async fn main() {
         let _ = args.next().expect("first value to be present");
         args.next().expect("config path to be present as first argument")
     };
-    let cfg: Cfg = config::Config::builder()
-        .add_source(config::File::with_name(root_config.as_str()))
-        .add_source(config::Environment::with_prefix("BENXU_DEV"))
-        .build().expect("Configuration parses correctly")
-        .try_deserialize().expect("Configuration parses correctly");
+    let cfg = {
+        let temp: Cfg = config::Config::builder()
+            .add_source(config::File::with_name(root_config.as_str()))
+            .add_source(config::Environment::with_prefix("BENXU_DEV"))
+            .build().expect("Configuration parses correctly")
+            .try_deserialize().expect("Configuration parses correctly");
+        Box::leak(Box::new(temp))
+    };
 
     // Set up logging.
     tracing_subscriber::fmt().init();

@@ -206,7 +206,8 @@ fn my_work() -> Markup {
             "}
             p {"\
                 I've written (with a friend) a ray tracer, a fluid simulation, and a shattering simulation. I am slowly \
-                working on a simulation in Rust that combines a majority of these concepts.\
+                working on a simulation in Rust that combines a majority of these concepts, as well as networking the simulation \
+                to not only make it interactable but capable of being shared across the network.\
             "}
         },
         None,

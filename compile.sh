@@ -7,7 +7,7 @@ set -euxo pipefail;
 root_dir=`dirname $0`;
 target_dir="$root_dir/target";
 wasm_working_dir="$target_dir/wasm-working";
-base_files="$root_dir/base-active";
+base_files="$root_dir/resources";
 output_artifact="$root_dir/active";
 
 shimmed-wasm-pack() {

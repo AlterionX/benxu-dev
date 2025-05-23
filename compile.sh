@@ -57,6 +57,7 @@ mkdir -p $output_artifact/public/wasm;
 mkdir -p $wasm_working_dir;
 # Compile slideshow.
 shimmed-wasm-pack clients/slideshow slideshow;
+shimmed-wasm-pack clients/blog blog;
 
 # Shuffle files.
 mv $wasm_working_dir/*.js $output_artifact/public/js/;

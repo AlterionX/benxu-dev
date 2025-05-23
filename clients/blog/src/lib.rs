@@ -5,6 +5,8 @@ mod post;
 
 mod editor;
 
+use wasm_bindgen::prelude::*;
+
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -41,6 +43,8 @@ fn app() -> Html {
     }
 }
 
-fn main() {
+#[wasm_bindgen(start)]
+pub fn init() -> Result<(), JsValue> {
     yew::Renderer::<Main>::new().render();
+    Ok(())
 }

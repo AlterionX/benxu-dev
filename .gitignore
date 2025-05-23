@@ -12,5 +12,5 @@ Cargo.lock
 active
 
 # Sensitive files
-.cfg/*
-!.cfg/cfg.sample.toml
+resources/.cfg/*
+!resources/.cfg/cfg.sample.toml

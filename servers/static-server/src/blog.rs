@@ -34,8 +34,8 @@ pub async fn page() -> Html<String> {
 
     basic_page(
         html! {
-            div {
-                h1.tagline { "Under Construction!" }
+            .blog {
+                "Under construction, please be patient!"
             }
         },
         Some(&meta),

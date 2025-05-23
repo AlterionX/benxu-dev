@@ -35,6 +35,7 @@ async fn main() {
     let app = Router::new()
         // Starting points
         .route("/", get(landing::page))
+        .route("/blog", get(blog::page))
         .route("/blog/*path", get(blog::page))
         // Static files
         .route("/favicon.svg", get(favicon::svg))

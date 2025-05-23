@@ -45,6 +45,11 @@ fn app() -> Html {
 
 #[wasm_bindgen(start)]
 pub fn init() -> Result<(), JsValue> {
-    yew::Renderer::<Main>::new().render();
+    yew::Renderer::<Main>::with_root(
+        web_sys::window().expect("`window` exists.")
+            .document().expect("`document` exists in `window`.")
+            .query_selector(".blog").expect("lookup to work.").expect("has a blog root.")
+            .dyn_into().expect("blog is an html element.")
+    ).render();
     Ok(())
 }

@@ -6,7 +6,7 @@ use maud::{html, Markup, Render};
 use spb::{data::{Script, Css, MenuItem, Menu, Logo, LogoLink, PageMetaData, Favicon}, partials::basic_page};
 
 pub async fn page() -> Html<String> {
-    trc::info!("Processing landing page request.");
+    trc::info!("build-start page=landing");
     let (glue, load) = Script::wasm_bindgen_loader("public/js", "public/wasm", "slideshow");
     let meta = PageMetaData {
         scripts: &[
@@ -68,7 +68,7 @@ pub async fn page() -> Html<String> {
         my_gaming_time(),
     ]);
 
-    basic_page(
+    let built_page = basic_page(
         html! {
             div.profile {
                 h1.tagline { "Ben Xu | Developer" }
@@ -78,7 +78,11 @@ pub async fn page() -> Html<String> {
             }
         },
         Some(&meta),
-    ).into_string().into()
+    ).into_string().into();
+
+    trc::info!("build-end route=landing");
+
+    built_page
 }
 
 pub struct Links<'a, const N: usize>([LogoLink<'a>; N]);

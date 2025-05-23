@@ -1,0 +1,16 @@
+[Unit]
+Description=benxu-dev server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/home/benxu/artifact/run.sh /home/benxu/artifact/.cfg/cfg.dev.toml
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=benxu-dev
+User=benxu
+Group=benxu
+
+[Install]
+WantedBy=multi-user.target

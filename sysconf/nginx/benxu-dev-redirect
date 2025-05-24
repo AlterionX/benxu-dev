@@ -1,0 +1,27 @@
+server {
+    server_name benxu.dev www.benxu.dev ben-xu.dev www.ben-xu.dev benxu.com www.benxu.com;
+
+    listen 80;
+    listen [::]:80;
+
+    if ($host = www.benxu.dev) {
+        return 301 https://$host$request_uri;
+    }
+    if ($host = benxu.dev) {
+        return 301 https://$host$request_uri;
+    }
+    if ($host = www.ben-xu.dev) {
+        return 301 https://$host$request_uri;
+    }
+    if ($host = ben-xu.dev) {
+        return 301 https://$host$request_uri;
+    }
+    if ($host = www.benxu.com) {
+        return 301 https://$host$request_uri;
+    }
+    if ($host = benxu.com) {
+        return 301 https://$host$request_uri;
+    }
+
+    return 404;
+}

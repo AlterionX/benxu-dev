@@ -1,6 +1,6 @@
 [package]
 name = "static-page-builder"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["AlterionX <ben.xu.cs@gmail.com>"]
 edition = "2018"
 license = "MIT"
@@ -8,7 +8,7 @@ description = "Provides a set of utilities to build static pages. Built off of m
 repository = "https://github.com/AlterionX/benxu-dev"
 
 [dependencies]
-maud = "0.26"
+maud = "0.27"
 [dependencies.chrono]
 version = "0.4"
 features = ["serde"]

@@ -271,9 +271,9 @@ impl<'a> Render for Name<'a> {
         html! {
             (self.first) " " @if let Some(middle) = self.middle {
                 @if let Some(initial) = middle.chars().next() {
-                    (initial)
+                    (initial) ". " 
                 }
-            } ". " (self.last)
+            } (self.last)
         }
     }
 }
